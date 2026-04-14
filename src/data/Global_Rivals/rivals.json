@@ -1,0 +1,732 @@
+[
+    {
+        "id": "global-1",
+        "name": "Fabiano's Force",
+        "ownerName": "Michael Fabiano",
+        "ownerId": "global-fabiano",
+        "roster": {
+            "qb": {
+                "id": "s:20~l:28~a:3139477",
+                "firstName": "Patrick",
+                "lastName": "Mahomes",
+                "team": "KC",
+                "position": "QB"
+            },
+            "rb1": {
+                "id": "9509",
+                "firstName": "Bijan",
+                "lastName": "Robinson",
+                "team": "ATL",
+                "position": "RB"
+            },
+            "rb2": {
+                "id": "4866",
+                "firstName": "Saquon",
+                "lastName": "Barkley",
+                "team": "PHI",
+                "position": "RB"
+            },
+            "wr1": {
+                "id": "7564",
+                "firstName": "Ja'Marr",
+                "lastName": "Chase",
+                "team": "CIN",
+                "position": "WR"
+            },
+            "wr2": {
+                "id": "6786",
+                "firstName": "CeeDee",
+                "lastName": "Lamb",
+                "team": "DAL",
+                "position": "WR"
+            },
+            "te": {
+                "id": "1466",
+                "firstName": "Travis",
+                "lastName": "Kelce",
+                "team": "KC",
+                "position": "TE"
+            },
+            "flex": {
+                "id": "9221",
+                "firstName": "Jahmyr",
+                "lastName": "Gibbs",
+                "team": "DET",
+                "position": "RB"
+            },
+            "k": {
+                "id": "7839",
+                "firstName": "Evan",
+                "lastName": "McPherson",
+                "team": "CIN",
+                "position": "K"
+            },
+            "dst": {
+                "id": "dst-bal",
+                "firstName": "Baltimore",
+                "lastName": "Ravens",
+                "team": "BAL",
+                "position": "DST"
+            }
+        },
+        "bench": [],
+        "scoutNotes": "Expert League Winner (Sleeper Pro)"
+    },
+    {
+        "id": "global-2",
+        "name": "Zachariason's Late Rounds",
+        "ownerName": "J.J. Zachariason",
+        "ownerId": "global-jjz",
+        "roster": {
+            "qb": {
+                "id": "s:20~l:28~a:4426336",
+                "firstName": "Jayden",
+                "lastName": "Daniels",
+                "team": "WAS",
+                "position": "QB"
+            },
+            "rb1": {
+                "id": "9221",
+                "firstName": "Jahmyr",
+                "lastName": "Gibbs",
+                "team": "DET",
+                "position": "RB"
+            },
+            "rb2": {
+                "id": "6813",
+                "firstName": "Jonathan",
+                "lastName": "Taylor",
+                "team": "IND",
+                "position": "RB"
+            },
+            "wr1": {
+                "id": "7547",
+                "firstName": "Amon-Ra",
+                "lastName": "St. Brown",
+                "team": "DET",
+                "position": "WR"
+            },
+            "wr2": {
+                "id": "6794",
+                "firstName": "Justin",
+                "lastName": "Jefferson",
+                "team": "MIN",
+                "position": "WR"
+            },
+            "te": {
+                "id": "s:20~l:28~a:4243281",
+                "firstName": "Kyle",
+                "lastName": "Pitts",
+                "team": "ATL",
+                "position": "TE"
+            },
+            "flex": {
+                "id": "7564",
+                "firstName": "Ja'Marr",
+                "lastName": "Chase",
+                "team": "CIN",
+                "position": "WR"
+            },
+            "k": {
+                "id": "7839",
+                "firstName": "Evan",
+                "lastName": "McPherson",
+                "team": "CIN",
+                "position": "K"
+            },
+            "dst": {
+                "id": "dst-nyj",
+                "firstName": "New York",
+                "lastName": "Jets",
+                "team": "NYJ",
+                "position": "DST"
+            }
+        },
+        "bench": [],
+        "scoutNotes": "Quantitative dominance (ESPN Expert)"
+    },
+    {
+        "id": "global-3",
+        "name": "Cooper's Alarm",
+        "ownerName": "Andrew Cooper",
+        "ownerId": "global-cooper",
+        "roster": {
+            "qb": {
+                "id": "s:20~l:28~a:3918298",
+                "firstName": "Josh",
+                "lastName": "Allen",
+                "team": "BUF",
+                "position": "QB"
+            },
+            "rb1": {
+                "id": "4030",
+                "firstName": "Christian",
+                "lastName": "McCaffrey",
+                "team": "SF",
+                "position": "RB"
+            },
+            "rb2": {
+                "id": "9509",
+                "firstName": "Bijan",
+                "lastName": "Robinson",
+                "team": "ATL",
+                "position": "RB"
+            },
+            "wr1": {
+                "id": "3321",
+                "firstName": "Tyreek",
+                "lastName": "Hill",
+                "team": "MIA",
+                "position": "WR"
+            },
+            "wr2": {
+                "id": "7547",
+                "firstName": "Amon-Ra",
+                "lastName": "St. Brown",
+                "team": "DET",
+                "position": "WR"
+            },
+            "te": {
+                "id": "1466",
+                "firstName": "Travis",
+                "lastName": "Kelce",
+                "team": "KC",
+                "position": "TE"
+            },
+            "flex": {
+                "id": "6786",
+                "firstName": "CeeDee",
+                "lastName": "Lamb",
+                "team": "DAL",
+                "position": "WR"
+            },
+            "k": {
+                "id": "7839",
+                "firstName": "Evan",
+                "lastName": "McPherson",
+                "team": "CIN",
+                "position": "K"
+            },
+            "dst": {
+                "id": "dst-sf",
+                "firstName": "San Francisco",
+                "lastName": "49ers",
+                "team": "SF",
+                "position": "DST"
+            }
+        },
+        "bench": [],
+        "scoutNotes": "High-velocity roster construction"
+    },
+    {
+        "id": "global-4",
+        "name": "Orth's Icons",
+        "ownerName": "Doug Orth",
+        "ownerId": "global-orth",
+        "roster": {
+            "qb": {
+                "id": "s:20~l:28~a:3039707",
+                "firstName": "Joe",
+                "lastName": "Burrow",
+                "team": "CIN",
+                "position": "QB"
+            },
+            "rb1": {
+                "id": "4030",
+                "firstName": "Christian",
+                "lastName": "McCaffrey",
+                "team": "SF",
+                "position": "RB"
+            },
+            "rb2": {
+                "id": "4866",
+                "firstName": "Saquon",
+                "lastName": "Barkley",
+                "team": "PHI",
+                "position": "RB"
+            },
+            "wr1": {
+                "id": "6794",
+                "firstName": "Justin",
+                "lastName": "Jefferson",
+                "team": "MIN",
+                "position": "WR"
+            },
+            "wr2": {
+                "id": "7564",
+                "firstName": "Ja'Marr",
+                "lastName": "Chase",
+                "team": "CIN",
+                "position": "WR"
+            },
+            "te": {
+                "id": "s:20~l:28~a:4036130",
+                "firstName": "T.J.",
+                "lastName": "Hockenson",
+                "team": "MIN",
+                "position": "TE"
+            },
+            "flex": {
+                "id": "9221",
+                "firstName": "Jahmyr",
+                "lastName": "Gibbs",
+                "team": "DET",
+                "position": "RB"
+            },
+            "k": {
+                "id": "7839",
+                "firstName": "Evan",
+                "lastName": "McPherson",
+                "team": "CIN",
+                "position": "K"
+            },
+            "dst": {
+                "id": "dst-dal",
+                "firstName": "Dallas",
+                "lastName": "Cowboys",
+                "team": "DAL",
+                "position": "DST"
+            }
+        },
+        "bench": [],
+        "scoutNotes": "Venerated expert precision"
+    },
+    {
+        "id": "global-5",
+        "name": "Smith's Full-Timers",
+        "ownerName": "Jody Smith",
+        "ownerId": "global-smith",
+        "roster": {
+            "qb": {
+                "id": "s:20~l:28~a:4429617",
+                "firstName": "Anthony",
+                "lastName": "Richardson",
+                "team": "IND",
+                "position": "QB"
+            },
+            "rb1": {
+                "id": "9221",
+                "firstName": "Jahmyr",
+                "lastName": "Gibbs",
+                "team": "DET",
+                "position": "RB"
+            },
+            "rb2": {
+                "id": "6813",
+                "firstName": "Jonathan",
+                "lastName": "Taylor",
+                "team": "IND",
+                "position": "RB"
+            },
+            "wr1": {
+                "id": "6786",
+                "firstName": "CeeDee",
+                "lastName": "Lamb",
+                "team": "DAL",
+                "position": "WR"
+            },
+            "wr2": {
+                "id": "7547",
+                "firstName": "Amon-Ra",
+                "lastName": "St. Brown",
+                "team": "DET",
+                "position": "WR"
+            },
+            "te": {
+                "id": "s:20~l:28~a:4363238",
+                "firstName": "Sam",
+                "lastName": "LaPorta",
+                "team": "DET",
+                "position": "TE"
+            },
+            "flex": {
+                "id": "9509",
+                "firstName": "Bijan",
+                "lastName": "Robinson",
+                "team": "ATL",
+                "position": "RB"
+            },
+            "k": {
+                "id": "7839",
+                "firstName": "Evan",
+                "lastName": "McPherson",
+                "team": "CIN",
+                "position": "K"
+            },
+            "dst": {
+                "id": "dst-kc",
+                "firstName": "Kansas City",
+                "lastName": "Chiefs",
+                "team": "KC",
+                "position": "DST"
+            }
+        },
+        "bench": [],
+        "scoutNotes": "Season-long dominance"
+    },
+    {
+        "id": "global-6",
+        "name": "Florio's Fire",
+        "ownerName": "Michael Florio",
+        "ownerId": "global-florio",
+        "roster": {
+            "qb": {
+                "id": "s:20~l:28~a:4428353",
+                "firstName": "C.J.",
+                "lastName": "Stroud",
+                "team": "HOU",
+                "position": "QB"
+            },
+            "rb1": {
+                "id": "9221",
+                "firstName": "Jahmyr",
+                "lastName": "Gibbs",
+                "team": "DET",
+                "position": "RB"
+            },
+            "rb2": {
+                "id": "4866",
+                "firstName": "Saquon",
+                "lastName": "Barkley",
+                "team": "PHI",
+                "position": "RB"
+            },
+            "wr1": {
+                "id": "8144",
+                "firstName": "Garrett",
+                "lastName": "Wilson",
+                "team": "NYJ",
+                "position": "WR"
+            },
+            "wr2": {
+                "id": "s:20~l:28~a:4362628",
+                "firstName": "Ja'Marr",
+                "lastName": "Chase",
+                "team": "CIN",
+                "position": "WR"
+            },
+            "te": {
+                "id": "s:20~l:28~a:4360411",
+                "firstName": "Pat",
+                "lastName": "Freiermuth",
+                "team": "PIT",
+                "position": "TE"
+            },
+            "flex": {
+                "id": "6786",
+                "firstName": "CeeDee",
+                "lastName": "Lamb",
+                "team": "DAL",
+                "position": "WR"
+            },
+            "k": {
+                "id": "7839",
+                "firstName": "Evan",
+                "lastName": "McPherson",
+                "team": "CIN",
+                "position": "K"
+            },
+            "dst": {
+                "id": "dst-pit",
+                "firstName": "Pittsburgh",
+                "lastName": "Steelers",
+                "team": "PIT",
+                "position": "DST"
+            }
+        },
+        "bench": [],
+        "scoutNotes": "Fierce waiver wire strategy"
+    },
+    {
+        "id": "global-7",
+        "name": "Berry's Pass",
+        "ownerName": "Matthew Berry",
+        "ownerId": "global-berry",
+        "roster": {
+            "qb": {
+                "id": "s:20~l:28~a:3918298",
+                "firstName": "Josh",
+                "lastName": "Allen",
+                "team": "BUF",
+                "position": "QB"
+            },
+            "rb1": {
+                "id": "4030",
+                "firstName": "Christian",
+                "lastName": "McCaffrey",
+                "team": "SF",
+                "position": "RB"
+            },
+            "rb2": {
+                "id": "9509",
+                "firstName": "Bijan",
+                "lastName": "Robinson",
+                "team": "ATL",
+                "position": "RB"
+            },
+            "wr1": {
+                "id": "6794",
+                "firstName": "Justin",
+                "lastName": "Jefferson",
+                "team": "MIN",
+                "position": "WR"
+            },
+            "wr2": {
+                "id": "3321",
+                "firstName": "Tyreek",
+                "lastName": "Hill",
+                "team": "MIA",
+                "position": "WR"
+            },
+            "te": {
+                "id": "1466",
+                "firstName": "Travis",
+                "lastName": "Kelce",
+                "team": "KC",
+                "position": "TE"
+            },
+            "flex": {
+                "id": "6813",
+                "firstName": "Jonathan",
+                "lastName": "Taylor",
+                "team": "IND",
+                "position": "RB"
+            },
+            "k": {
+                "id": "7839",
+                "firstName": "Evan",
+                "lastName": "McPherson",
+                "team": "CIN",
+                "position": "K"
+            },
+            "dst": {
+                "id": "dst-phi",
+                "firstName": "Philadelphia",
+                "lastName": "Eagles",
+                "team": "PHI",
+                "position": "DST"
+            }
+        },
+        "bench": [],
+        "scoutNotes": "Market-mover insights"
+    },
+    {
+        "id": "global-8",
+        "name": "Yates' Field",
+        "ownerName": "Field Yates",
+        "ownerId": "global-yates",
+        "roster": {
+            "qb": {
+                "id": "5846",
+                "firstName": "Kyler",
+                "lastName": "Murray",
+                "team": "ARI",
+                "position": "QB"
+            },
+            "rb1": {
+                "id": "4030",
+                "firstName": "Christian",
+                "lastName": "McCaffrey",
+                "team": "SF",
+                "position": "RB"
+            },
+            "rb2": {
+                "id": "s:20~l:28~a:4036130",
+                "firstName": "David",
+                "lastName": "Montgomery",
+                "team": "DET",
+                "position": "RB"
+            },
+            "wr1": {
+                "id": "s:20~l:28~a:4429905",
+                "firstName": "Drake",
+                "lastName": "London",
+                "team": "ATL",
+                "position": "WR"
+            },
+            "wr2": {
+                "id": "6786",
+                "firstName": "CeeDee",
+                "lastName": "Lamb",
+                "team": "DAL",
+                "position": "WR"
+            },
+            "te": {
+                "id": "s:20~l:28~a:3139477",
+                "firstName": "Trey",
+                "lastName": "McBride",
+                "team": "ARI",
+                "position": "TE"
+            },
+            "flex": {
+                "id": "7564",
+                "firstName": "Ja'Marr",
+                "lastName": "Chase",
+                "team": "CIN",
+                "position": "WR"
+            },
+            "k": {
+                "id": "7839",
+                "firstName": "Evan",
+                "lastName": "McPherson",
+                "team": "CIN",
+                "position": "K"
+            },
+            "dst": {
+                "id": "dst-dal",
+                "firstName": "Dallas",
+                "lastName": "Cowboys",
+                "team": "DAL",
+                "position": "DST"
+            }
+        },
+        "bench": [],
+        "scoutNotes": "Encyclopedic roster depth"
+    },
+    {
+        "id": "global-9",
+        "name": "Jeremiah's Move",
+        "ownerName": "Daniel Jeremiah",
+        "ownerId": "global-jeremiah",
+        "roster": {
+            "qb": {
+                "id": "s:20~l:28~a:3139477",
+                "firstName": "Patrick",
+                "lastName": "Mahomes",
+                "team": "KC",
+                "position": "QB"
+            },
+            "rb1": {
+                "id": "s:20~l:28~a:3139477",
+                "firstName": "Kenneth",
+                "lastName": "Walker III",
+                "team": "SEA",
+                "position": "RB"
+            },
+            "rb2": {
+                "id": "9509",
+                "firstName": "Bijan",
+                "lastName": "Robinson",
+                "team": "ATL",
+                "position": "RB"
+            },
+            "wr1": {
+                "id": "s:20~l:28~a:4362628",
+                "firstName": "Ja'Marr",
+                "lastName": "Chase",
+                "team": "CIN",
+                "position": "WR"
+            },
+            "wr2": {
+                "id": "7547",
+                "firstName": "Amon-Ra",
+                "lastName": "St. Brown",
+                "team": "DET",
+                "position": "WR"
+            },
+            "te": {
+                "id": "1466",
+                "firstName": "Travis",
+                "lastName": "Kelce",
+                "team": "KC",
+                "position": "TE"
+            },
+            "flex": {
+                "id": "6794",
+                "firstName": "Justin",
+                "lastName": "Jefferson",
+                "team": "MIN",
+                "position": "WR"
+            },
+            "k": {
+                "id": "7839",
+                "firstName": "Evan",
+                "lastName": "McPherson",
+                "team": "CIN",
+                "position": "K"
+            },
+            "dst": {
+                "id": "dst-bal",
+                "firstName": "Baltimore",
+                "lastName": "Ravens",
+                "team": "BAL",
+                "position": "DST"
+            }
+        },
+        "bench": [],
+        "scoutNotes": "Film-study backed selections"
+    },
+    {
+        "id": "global-10",
+        "name": "Liz's League",
+        "ownerName": "Liz Loza",
+        "ownerId": "global-loza",
+        "roster": {
+            "qb": {
+                "id": "s:20~l:28~a:4426336",
+                "firstName": "Jayden",
+                "lastName": "Daniels",
+                "team": "WAS",
+                "position": "QB"
+            },
+            "rb1": {
+                "id": "4866",
+                "firstName": "Saquon",
+                "lastName": "Barkley",
+                "team": "PHI",
+                "position": "RB"
+            },
+            "rb2": {
+                "id": "9221",
+                "firstName": "Jahmyr",
+                "lastName": "Gibbs",
+                "team": "DET",
+                "position": "RB"
+            },
+            "wr1": {
+                "id": "s:20~l:28~a:5068228",
+                "firstName": "Malik",
+                "lastName": "Nabers",
+                "team": "NYG",
+                "position": "WR"
+            },
+            "wr2": {
+                "id": "6786",
+                "firstName": "CeeDee",
+                "lastName": "Lamb",
+                "team": "DAL",
+                "position": "WR"
+            },
+            "te": {
+                "id": "s:20~l:28~a:4363238",
+                "firstName": "Sam",
+                "lastName": "LaPorta",
+                "team": "DET",
+                "position": "TE"
+            },
+            "flex": {
+                "id": "7564",
+                "firstName": "Ja'Marr",
+                "lastName": "Chase",
+                "team": "CIN",
+                "position": "WR"
+            },
+            "k": {
+                "id": "7839",
+                "firstName": "Evan",
+                "lastName": "McPherson",
+                "team": "CIN",
+                "position": "K"
+            },
+            "dst": {
+                "id": "dst-det",
+                "firstName": "Detroit",
+                "lastName": "Lions",
+                "team": "DET",
+                "position": "DST"
+            }
+        },
+        "bench": [],
+        "scoutNotes": "Balanced expert construction"
+    }
+]

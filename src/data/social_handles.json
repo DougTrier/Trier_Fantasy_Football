@@ -1,0 +1,626 @@
+[
+    {
+        "player_id": "3918298",
+        "player_name": "Josh Allen",
+        "twitter": "JoshAllenQB",
+        "instagram": "joshallenqb"
+    },
+    {
+        "player_id": "3916387",
+        "player_name": "Lamar Jackson",
+        "twitter": "Lj_era8",
+        "instagram": "new_era8"
+    },
+    {
+        "player_id": "4040715",
+        "player_name": "Jalen Hurts",
+        "twitter": "JalenHurts",
+        "instagram": "jalenhurts"
+    },
+    {
+        "player_id": "3139477",
+        "player_name": "Patrick Mahomes",
+        "twitter": "PatrickMahomes",
+        "instagram": "patrickmahomes"
+    },
+    {
+        "player_id": "3915511",
+        "player_name": "Joe Burrow",
+        "twitter": "JoeyB",
+        "instagram": null
+    },
+    {
+        "player_id": "4426348",
+        "player_name": "Jayden Daniels",
+        "twitter": "JayD__5",
+        "instagram": null
+    },
+    {
+        "player_id": "3117251",
+        "player_name": "Christian McCaffrey",
+        "twitter": "CMC_22",
+        "instagram": "christianmccaffrey"
+    },
+    {
+        "player_id": "3929630",
+        "player_name": "Saquon Barkley",
+        "twitter": "saquon",
+        "instagram": "saquon"
+    },
+    {
+        "player_id": "4427366",
+        "player_name": "Breece Hall",
+        "twitter": "BreeceH",
+        "instagram": "breecehall"
+    },
+    {
+        "player_id": "4430807",
+        "player_name": "Bijan Robinson",
+        "twitter": "Bijan5Robinson",
+        "instagram": "bijan_robinson"
+    },
+    {
+        "player_id": "4242335",
+        "player_name": "Jonathan Taylor",
+        "twitter": "JayT23",
+        "instagram": "jayt23"
+    },
+    {
+        "player_id": "3043078",
+        "player_name": "Derrick Henry",
+        "twitter": "KingHenry_2",
+        "instagram": "last_king_2"
+    },
+    {
+        "player_id": "3054850",
+        "player_name": "Alvin Kamara",
+        "twitter": "A_kamara6",
+        "instagram": "alvinkamara"
+    },
+    {
+        "player_id": "4430737",
+        "player_name": "Kyren Williams",
+        "twitter": null,
+        "instagram": "kyren.williams"
+    },
+    {
+        "player_id": "4262921",
+        "player_name": "Justin Jefferson",
+        "twitter": "JJettas2",
+        "instagram": "jjettas2"
+    },
+    {
+        "player_id": "4362628",
+        "player_name": "Ja'Marr Chase",
+        "twitter": "Real10jayy__",
+        "instagram": "ja_marrchase1"
+    },
+    {
+        "player_id": "4241389",
+        "player_name": "CeeDee Lamb",
+        "twitter": "_CeeDeeThree",
+        "instagram": "ceedeelamb"
+    },
+    {
+        "player_id": "3116406",
+        "player_name": "Tyreek Hill",
+        "twitter": "cheetah",
+        "instagram": "cheetah"
+    },
+    {
+        "player_id": "4374302",
+        "player_name": "Amon-Ra St. Brown",
+        "twitter": "amonra_stbrown",
+        "instagram": "amonra_stbrown"
+    },
+    {
+        "player_id": "4426515",
+        "player_name": "Puka Nacua",
+        "twitter": "AsapPuka",
+        "instagram": "puka.nacua"
+    },
+    {
+        "player_id": "4683062",
+        "player_name": "Xavier Worthy",
+        "twitter": "XavierWorthy",
+        "instagram": "worthyxavier"
+    },
+    {
+        "player_id": "4047646",
+        "player_name": "A.J. Brown",
+        "twitter": "1kalwaysopen_",
+        "instagram": null
+    },
+    {
+        "player_id": "16737",
+        "player_name": "Mike Evans",
+        "twitter": "MikeEvans13",
+        "instagram": "mikeevans"
+    },
+    {
+        "player_id": "4047650",
+        "player_name": "DK Metcalf",
+        "twitter": "dkm14",
+        "instagram": "dk_metcalf"
+    },
+    {
+        "player_id": "16800",
+        "player_name": "Davante Adams",
+        "twitter": "tae15adams",
+        "instagram": "tae15adams"
+    },
+    {
+        "player_id": "4569618",
+        "player_name": "Garrett Wilson",
+        "twitter": "GarrettWilson_V",
+        "instagram": "garrettwilson"
+    },
+    {
+        "player_id": "15847",
+        "player_name": "Travis Kelce",
+        "twitter": "tkelce",
+        "instagram": "killatrav"
+    },
+    {
+        "player_id": "3040151",
+        "player_name": "George Kittle",
+        "twitter": "gkittle46",
+        "instagram": "gkittle46"
+    },
+    {
+        "player_id": "4430027",
+        "player_name": "Sam LaPorta",
+        "twitter": "Samlaporta",
+        "instagram": "samlaporta"
+    },
+    {
+        "player_id": "8439",
+        "player_name": "Aaron Rodgers",
+        "twitter": "AaronRodgers12",
+        "instagram": "aaronrodgers12"
+    },
+    {
+        "player_id": "14881",
+        "player_name": "Russell Wilson",
+        "twitter": "DangeRussWilson",
+        "instagram": "dangerusswilson"
+    },
+    {
+        "player_id": "11252",
+        "player_name": "Joe Flacco",
+        "twitter": "JoeFlacco",
+        "instagram": "joeflacco"
+    },
+    {
+        "player_id": "14880",
+        "player_name": "Kirk Cousins",
+        "twitter": "KirkCousins8",
+        "instagram": "kirkcousins"
+    },
+    {
+        "player_id": "3046779",
+        "player_name": "Jared Goff",
+        "twitter": "JaredGoff16",
+        "instagram": "jaredgoff"
+    },
+    {
+        "player_id": "2577417",
+        "player_name": "Dak Prescott",
+        "twitter": "dak",
+        "instagram": "_4dak"
+    },
+    {
+        "player_id": "3052587",
+        "player_name": "Baker Mayfield",
+        "twitter": "bakermayfield",
+        "instagram": "bakermayfield"
+    },
+    {
+        "player_id": "4038941",
+        "player_name": "Justin Herbert",
+        "twitter": null,
+        "instagram": "justinherbert"
+    },
+    {
+        "player_id": "3917315",
+        "player_name": "Kyler Murray",
+        "twitter": "K1",
+        "instagram": "k1"
+    },
+    {
+        "player_id": "15864",
+        "player_name": "Geno Smith",
+        "twitter": "GenoSmith3",
+        "instagram": "geno"
+    },
+    {
+        "player_id": "3912547",
+        "player_name": "Sam Darnold",
+        "twitter": null,
+        "instagram": "samdarnold"
+    },
+    {
+        "player_id": "4036378",
+        "player_name": "Jordan Love",
+        "twitter": "jordan3love",
+        "instagram": "jordan3love"
+    },
+    {
+        "player_id": "4360310",
+        "player_name": "Trevor Lawrence",
+        "twitter": "Trevorlawrencee",
+        "instagram": "tlawrence16"
+    },
+    {
+        "player_id": "4241479",
+        "player_name": "Tua Tagovailoa",
+        "twitter": "Tua",
+        "instagram": "tuaman"
+    },
+    {
+        "player_id": "12483",
+        "player_name": "Matthew Stafford",
+        "twitter": null,
+        "instagram": null
+    },
+    {
+        "player_id": "4429795",
+        "player_name": "Jahmyr Gibbs",
+        "twitter": "Jahmyr_Gibbs1",
+        "instagram": "jahmyrgibbs"
+    },
+    {
+        "player_id": "4047365",
+        "player_name": "Josh Jacobs",
+        "twitter": "iAM_JoshJacobs",
+        "instagram": "iam_joshjacobs"
+    },
+    {
+        "player_id": "4258173",
+        "player_name": "Nico Collins",
+        "twitter": "lbg_nico",
+        "instagram": "nico.collins"
+    },
+    {
+        "player_id": "4426502",
+        "player_name": "Drake London",
+        "twitter": "DrakeLondon_",
+        "instagram": "drakelondon"
+    },
+    {
+        "player_id": "4890973",
+        "player_name": "Ashton Jeanty",
+        "twitter": "AshtonJeanty2",
+        "instagram": "ashton.jeanty"
+    },
+    {
+        "player_id": "4429160",
+        "player_name": "De'Von Achane",
+        "twitter": "ffearless_1",
+        "instagram": "ffearless_"
+    },
+    {
+        "player_id": "4595348",
+        "player_name": "Malik Nabers",
+        "twitter": "whyguard13",
+        "instagram": "indyysantana"
+    },
+    {
+        "player_id": "4432665",
+        "player_name": "Brock Bowers",
+        "twitter": "brockbowers17",
+        "instagram": "brockbowers17"
+    },
+    {
+        "player_id": "4362238",
+        "player_name": "Chase Brown",
+        "twitter": "chasebrown___",
+        "instagram": "chasebrown._"
+    },
+    {
+        "player_id": "4612826",
+        "player_name": "Ladd McConkey",
+        "twitter": "laddmcconkey02",
+        "instagram": "ladd.mcconkey"
+    },
+    {
+        "player_id": "4239993",
+        "player_name": "Tee Higgins",
+        "twitter": "teehiggins5",
+        "instagram": null
+    },
+    {
+        "player_id": "4426338",
+        "player_name": "Bo Nix",
+        "twitter": null,
+        "instagram": null
+    },
+    {
+        "player_id": "3121422",
+        "player_name": "Terry McLaurin",
+        "twitter": "TheTerry_25",
+        "instagram": "terry_25"
+    },
+    {
+        "player_id": "4430878",
+        "player_name": "Jaxon Smith-Njigba",
+        "twitter": "jaxon_smith1",
+        "instagram": "jaxsn11"
+    },
+    {
+        "player_id": "4431611",
+        "player_name": "Caleb Williams",
+        "twitter": "CALEBcsw",
+        "instagram": "ayeeecaleb"
+    },
+    {
+        "player_id": "15818",
+        "player_name": "Keenan Allen",
+        "twitter": "Keenan13Allen",
+        "instagram": "keenan13allen"
+    },
+    {
+        "player_id": "4431299",
+        "player_name": "Rome Odunze",
+        "twitter": "RomeOdunze",
+        "instagram": "romeodunze"
+    },
+    {
+        "player_id": "4259545",
+        "player_name": "D'Andre Swift",
+        "twitter": "DAndreSwift",
+        "instagram": "dreswift_"
+    },
+    {
+        "player_id": "4258595",
+        "player_name": "Cole Kmet",
+        "twitter": "ColeKmet",
+        "instagram": "colekmet"
+    },
+    {
+        "player_id": "4361093",
+        "player_name": "Kyler Gordon",
+        "twitter": "KylerGordon",
+        "instagram": "kyler.gordon"
+    },
+    {
+        "player_id": "4570044",
+        "player_name": "Jaquan Brisker",
+        "twitter": "JaquanBrisker",
+        "instagram": null
+    },
+    {
+        "player_id": "4686889",
+        "player_name": "Tory Taylor",
+        "twitter": "ToryTaylor09",
+        "instagram": null
+    },
+    {
+        "player_id": "4038457",
+        "player_name": "Teven Jenkins",
+        "twitter": "TevenJenkins",
+        "instagram": null
+    },
+    {
+        "player_id": "3915416",
+        "player_name": "DJ Moore",
+        "twitter": "idjmoore",
+        "instagram": "djmoore"
+    },
+    {
+        "player_id": "4426386",
+        "player_name": "Roschon Johnson",
+        "twitter": "RoschonJ",
+        "instagram": "roschon"
+    },
+    {
+        "player_id": "4035693",
+        "player_name": "Velus Jones Jr.",
+        "twitter": "VelusJr",
+        "instagram": "velusjonesjr"
+    },
+    {
+        "player_id": "4429014",
+        "player_name": "Gervon Dexter Sr.",
+        "twitter": "GervonDexter",
+        "instagram": "gervondexter"
+    },
+    {
+        "player_id": "4426374",
+        "player_name": "Tyrique Stevenson",
+        "twitter": "dreamchaserTy10",
+        "instagram": "tyriquestevenson"
+    },
+    {
+        "player_id": "4723086",
+        "player_name": "Colston Loveland",
+        "twitter": "colstonlovelan1",
+        "instagram": "colstonloveland"
+    },
+    {
+        "player_id": "4036032",
+        "player_name": "Brittain Brown",
+        "twitter": null,
+        "instagram": "brittain_bkb"
+    },
+    {
+        "player_id": "4685278",
+        "player_name": "Luther Burden III",
+        "twitter": null,
+        "instagram": "lutherburden3"
+    },
+    {
+        "player_id": "4039050",
+        "player_name": "Devin Duvernay",
+        "twitter": "Dev_Duv5",
+        "instagram": "dev_duv5"
+    },
+    {
+        "player_id": "2574056",
+        "player_name": "Kevin Byard III",
+        "twitter": "KB31_ERA",
+        "instagram": "kb31_savage"
+    },
+    {
+        "player_id": "3929950",
+        "player_name": "Tremaine Edmunds",
+        "twitter": null,
+        "instagram": "maine_savage22"
+    },
+    {
+        "player_id": "4034953",
+        "player_name": "C.J. Gardner-Johnson",
+        "twitter": "CGJXXIII",
+        "instagram": "ceedy.duce"
+    },
+    {
+        "player_id": "3134690",
+        "player_name": "Montez Sweat",
+        "twitter": "_sweat9",
+        "instagram": "montezsweat9"
+    },
+    {
+        "player_id": "4037457",
+        "player_name": "Travis Homer",
+        "twitter": "travishomer4",
+        "instagram": "travis.homer"
+    },
+    {
+        "player_id": "4241478",
+        "player_name": "DeVonta Smith",
+        "twitter": "DeVontaSmith_6",
+        "instagram": "devontasmith"
+    },
+    {
+        "player_id": "4361529",
+        "player_name": "Isiah Pacheco",
+        "twitter": "isiah_pachecoRB",
+        "instagram": "lil_poppy856"
+    },
+    {
+        "player_id": "4568490",
+        "player_name": "RJ Harvey",
+        "twitter": null,
+        "instagram": "_rjeeezy"
+    },
+    {
+        "player_id": "4426354",
+        "player_name": "George Pickens",
+        "twitter": "2pezzy_",
+        "instagram": "georgepickens"
+    },
+    {
+        "player_id": "4241478",
+        "player_name": "DeVonta Smith",
+        "twitter": "DeVontaSmith_6",
+        "instagram": "devontasmith"
+    },
+    {
+        "player_id": "4361529",
+        "player_name": "Isiah Pacheco",
+        "twitter": "isiah_pachecoRB",
+        "instagram": "lil_poppy856"
+    },
+    {
+        "player_id": "4429615",
+        "player_name": "Zay Flowers",
+        "twitter": "ZayFlowers",
+        "instagram": "zayflowers"
+    },
+    {
+        "player_id": "3116365",
+        "player_name": "Mark Andrews",
+        "twitter": "Mandrews_81",
+        "instagram": "mandrews_81"
+    },
+    {
+        "player_id": "4361050",
+        "player_name": "Isaiah Likely",
+        "twitter": "DaRealLike_1",
+        "instagram": "isaiahlikely_4"
+    },
+    {
+        "player_id": "4575517",
+        "player_name": "Kyle Hamilton",
+        "twitter": "kyledhamilton_",
+        "instagram": "kyledhamilton"
+    },
+    {
+        "player_id": "4596334",
+        "player_name": "Keaton Mitchell",
+        "twitter": "_KeatonMitchell",
+        "instagram": "_deu2e"
+    },
+    {
+        "player_id": "3116385",
+        "player_name": "Joe Mixon",
+        "twitter": "Joe_MainMixon",
+        "instagram": null
+    },
+    {
+        "player_id": "3128720",
+        "player_name": "Nick Chubb",
+        "twitter": "NickChubb21",
+        "instagram": "nchubb27"
+    },
+    {
+        "player_id": "3045147",
+        "player_name": "James Conner",
+        "twitter": "JamesConner_",
+        "instagram": null
+    },
+    {
+        "player_id": "4035538",
+        "player_name": "David Montgomery",
+        "twitter": "Montgomerdy_32",
+        "instagram": "davidmontgomery"
+    },
+    {
+        "player_id": "3059915",
+        "player_name": "Kareem Hunt",
+        "twitter": "Kareemhunt7",
+        "instagram": "kareemhunt7"
+    },
+    {
+        "player_id": "3068267",
+        "player_name": "Austin Ekeler",
+        "twitter": "AustinEkeler",
+        "instagram": "austinekeler"
+    },
+    {
+        "player_id": "2576414",
+        "player_name": "Raheem Mostert",
+        "twitter": "RMos_8Ball",
+        "instagram": "mosballin"
+    },
+    {
+        "player_id": "2976212",
+        "player_name": "Stefon Diggs",
+        "twitter": "stefondiggs",
+        "instagram": "stefondiggs"
+    },
+    {
+        "player_id": "15835",
+        "player_name": "Zach Ertz",
+        "twitter": null,
+        "instagram": "zachertz"
+    },
+    {
+        "player_id": "15795",
+        "player_name": "DeAndre Hopkins",
+        "twitter": "DeAndreHopkins",
+        "instagram": "deandrehopkins"
+    },
+    {
+        "player_id": "16460",
+        "player_name": "Adam Thielen",
+        "twitter": "athielen19",
+        "instagram": "adamthielen19"
+    },
+    {
+        "player_id": "16731",
+        "player_name": "Brandin Cooks",
+        "twitter": "BrandinCooks",
+        "instagram": "thearcher"
+    }
+]

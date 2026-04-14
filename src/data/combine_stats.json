@@ -1,0 +1,359 @@
+[
+    {
+        "player_id": "11566",
+        "player_name": "Jayden Daniels",
+        "data_available": false,
+        "combine_results": {
+            "forty_yard": null,
+            "ten_yard_split": null,
+            "vertical_in": null,
+            "broad_jump_in": null,
+            "bench_press_reps": null,
+            "three_cone": null,
+            "shuttle": null
+        },
+        "measurements": {
+            "height_in": 76.0,
+            "weight_lb": 210,
+            "arm_length_in": 32.5,
+            "hand_size_in": 9.375
+        },
+        "source_url": "https://www.nfl.com/prospects/jayden-daniels/32004441-4e29-0744-9333-e96843431637"
+    },
+    {
+        "player_id": "11560",
+        "player_name": "Caleb Williams",
+        "data_available": false,
+        "combine_results": {
+            "forty_yard": null,
+            "ten_yard_split": null,
+            "vertical_in": null,
+            "broad_jump_in": null,
+            "bench_press_reps": null,
+            "three_cone": null,
+            "shuttle": null
+        },
+        "measurements": {
+            "height_in": 73.0,
+            "weight_lb": 214,
+            "arm_length_in": 32.0,
+            "hand_size_in": 9.75
+        },
+        "source_url": "https://www.nfl.com/prospects/caleb-williams/32005749-4c40-0628-8748-038753239a5c"
+    },
+    {
+        "player_id": "s:20~l:28~a:4432708",
+        "player_name": "Marvin Harrison Jr.",
+        "data_available": false,
+        "combine_results": {
+            "forty_yard": null,
+            "ten_yard_split": null,
+            "vertical_in": null,
+            "broad_jump_in": null,
+            "bench_press_reps": null,
+            "three_cone": null,
+            "shuttle": null
+        },
+        "measurements": {
+            "height_in": 75.0,
+            "weight_lb": 209,
+            "arm_length_in": 31.875,
+            "hand_size_in": 9.5
+        },
+        "source_url": "https://www.nfl.com/prospects/marvin-harrison-jr/32004841-5256-4299-9742-fb7e6c0c242c"
+    },
+    {
+        "player_id": "11632",
+        "player_name": "Malik Nabers",
+        "data_available": false,
+        "combine_results": {
+            "forty_yard": null,
+            "ten_yard_split": null,
+            "vertical_in": null,
+            "broad_jump_in": null,
+            "bench_press_reps": null,
+            "three_cone": null,
+            "shuttle": null
+        },
+        "measurements": {
+            "height_in": 72.0,
+            "weight_lb": 200,
+            "arm_length_in": 31.375,
+            "hand_size_in": 9.875
+        },
+        "source_url": "https://www.nfl.com/prospects/malik-nabers/32004e41-4213-9125-9988-512133463375"
+    },
+    {
+        "player_id": "s:20~l:28~a:4683487",
+        "player_name": "Joe Alt",
+        "data_available": true,
+        "combine_results": {
+            "forty_yard": 5.05,
+            "ten_yard_split": 1.73,
+            "vertical_in": 28.0,
+            "broad_jump_in": 112,
+            "bench_press_reps": 27,
+            "three_cone": 7.31,
+            "shuttle": 4.51
+        },
+        "measurements": {
+            "height_in": 81.0,
+            "weight_lb": 321,
+            "arm_length_in": 34.25,
+            "hand_size_in": 10.0
+        },
+        "source_url": "https://www.nfl.com/prospects/joe-alt/3200414c-5412-1678-7505-181514757591"
+    },
+    {
+        "player_id": "11620",
+        "player_name": "Rome Odunze",
+        "data_available": true,
+        "combine_results": {
+            "forty_yard": 4.45,
+            "ten_yard_split": 1.52,
+            "vertical_in": 39.0,
+            "broad_jump_in": 124,
+            "bench_press_reps": null,
+            "three_cone": 6.88,
+            "shuttle": 4.03
+        },
+        "measurements": {
+            "height_in": 75.0,
+            "weight_lb": 212,
+            "arm_length_in": 32.25,
+            "hand_size_in": 9.25
+        },
+        "source_url": "https://www.nfl.com/prospects/rome-odunze/32004f44-5552-8755-e837-567475355606"
+    },
+    {
+        "player_id": "11604",
+        "player_name": "Brock Bowers",
+        "data_available": false,
+        "combine_results": {
+            "forty_yard": null,
+            "ten_yard_split": null,
+            "vertical_in": null,
+            "broad_jump_in": null,
+            "bench_press_reps": null,
+            "three_cone": null,
+            "shuttle": null
+        },
+        "measurements": {
+            "height_in": 75.0,
+            "weight_lb": 243,
+            "arm_length_in": 32.75,
+            "hand_size_in": 9.75
+        },
+        "source_url": "https://www.nfl.com/prospects/brock-bowers/3200424f-5779-7977-9610-184566144807"
+    },
+    {
+        "player_id": "11564",
+        "player_name": "Drake Maye",
+        "data_available": true,
+        "combine_results": {
+            "forty_yard": null,
+            "ten_yard_split": null,
+            "vertical_in": null,
+            "broad_jump_in": null,
+            "bench_press_reps": null,
+            "three_cone": null,
+            "shuttle": null
+        },
+        "measurements": {
+            "height_in": 76.38,
+            "weight_lb": 223,
+            "arm_length_in": 32.25,
+            "hand_size_in": 9.13
+        },
+        "source_url": "https://www.nfl.com/players/drake-maye/"
+    },
+    {
+        "player_id": "11565",
+        "player_name": "J.J. McCarthy",
+        "data_available": true,
+        "combine_results": {
+            "forty_yard": null,
+            "ten_yard_split": null,
+            "vertical_in": null,
+            "broad_jump_in": null,
+            "bench_press_reps": null,
+            "three_cone": 6.82,
+            "shuttle": 4.23
+        },
+        "measurements": {
+            "height_in": 74.5,
+            "weight_lb": 219,
+            "arm_length_in": 31.75,
+            "hand_size_in": 9.0
+        },
+        "source_url": "https://www.nfl.com/players/j-j-mccarthy/"
+    },
+    {
+        "player_id": "11563",
+        "player_name": "Bo Nix",
+        "data_available": true,
+        "combine_results": {
+            "forty_yard": null,
+            "ten_yard_split": null,
+            "vertical_in": null,
+            "broad_jump_in": null,
+            "bench_press_reps": null,
+            "three_cone": null,
+            "shuttle": null
+        },
+        "measurements": {
+            "height_in": 74.13,
+            "weight_lb": 214,
+            "arm_length_in": 31.38,
+            "hand_size_in": 10.13
+        },
+        "source_url": "https://www.nfl.com/players/bo-nix/"
+    },
+    {
+        "player_id": "s:20~l:28~a:4360423",
+        "player_name": "Michael Penix Jr.",
+        "data_available": true,
+        "combine_results": {
+            "forty_yard": null,
+            "ten_yard_split": null,
+            "vertical_in": null,
+            "broad_jump_in": null,
+            "bench_press_reps": null,
+            "three_cone": null,
+            "shuttle": null
+        },
+        "measurements": {
+            "height_in": 74.25,
+            "weight_lb": 216,
+            "arm_length_in": 33.63,
+            "hand_size_in": 10.5
+        },
+        "source_url": "https://www.nfl.com/players/michael-penix-jr/"
+    },
+    {
+        "player_id": "11624",
+        "player_name": "Xavier Worthy",
+        "data_available": true,
+        "combine_results": {
+            "forty_yard": 4.21,
+            "ten_yard_split": 1.49,
+            "vertical_in": 41.0,
+            "broad_jump_in": 131,
+            "bench_press_reps": null,
+            "three_cone": null,
+            "shuttle": null
+        },
+        "measurements": {
+            "height_in": 71.25,
+            "weight_lb": 165,
+            "arm_length_in": 31.13,
+            "hand_size_in": 8.75
+        },
+        "source_url": "https://www.nfl.com/players/xavier-worthy/"
+    },
+    {
+        "player_id": "11637",
+        "player_name": "Keon Coleman",
+        "data_available": true,
+        "combine_results": {
+            "forty_yard": 4.61,
+            "ten_yard_split": 1.54,
+            "vertical_in": 38.0,
+            "broad_jump_in": 127,
+            "bench_press_reps": null,
+            "three_cone": null,
+            "shuttle": null
+        },
+        "measurements": {
+            "height_in": 75.25,
+            "weight_lb": 213,
+            "arm_length_in": 32.13,
+            "hand_size_in": 9.38
+        },
+        "source_url": "https://www.nfl.com/players/keon-coleman/"
+    },
+    {
+        "player_id": "11635",
+        "player_name": "Ladd McConkey",
+        "data_available": true,
+        "combine_results": {
+            "forty_yard": 4.39,
+            "ten_yard_split": 1.52,
+            "vertical_in": 36.0,
+            "broad_jump_in": 124,
+            "bench_press_reps": null,
+            "three_cone": null,
+            "shuttle": null
+        },
+        "measurements": {
+            "height_in": 71.63,
+            "weight_lb": 186,
+            "arm_length_in": 30.25,
+            "hand_size_in": 8.63
+        },
+        "source_url": "https://www.nfl.com/players/ladd-mcconkey/"
+    },
+    {
+        "player_id": "11638",
+        "player_name": "Ricky Pearsall",
+        "data_available": true,
+        "combine_results": {
+            "forty_yard": 4.41,
+            "ten_yard_split": 1.53,
+            "vertical_in": 42.0,
+            "broad_jump_in": 129,
+            "bench_press_reps": 17,
+            "three_cone": 6.64,
+            "shuttle": 4.05
+        },
+        "measurements": {
+            "height_in": 73.0,
+            "weight_lb": 189,
+            "arm_length_in": 30.88,
+            "hand_size_in": 9.25
+        },
+        "source_url": "https://www.nfl.com/players/ricky-pearsall/"
+    },
+    {
+        "player_id": "s:20~l:28~a:4432773",
+        "player_name": "Brian Thomas Jr.",
+        "data_available": true,
+        "combine_results": {
+            "forty_yard": 4.33,
+            "ten_yard_split": 1.50,
+            "vertical_in": 38.5,
+            "broad_jump_in": 126,
+            "bench_press_reps": null,
+            "three_cone": null,
+            "shuttle": null
+        },
+        "measurements": {
+            "height_in": 74.88,
+            "weight_lb": 209,
+            "arm_length_in": 32.75,
+            "hand_size_in": 9.75
+        },
+        "source_url": "https://www.nfl.com/players/brian-thomas-jr/"
+    },
+    {
+        "player_id": "11625",
+        "player_name": "Adonai Mitchell",
+        "data_available": true,
+        "combine_results": {
+            "forty_yard": 4.34,
+            "ten_yard_split": 1.52,
+            "vertical_in": 39.5,
+            "broad_jump_in": 136,
+            "bench_press_reps": null,
+            "three_cone": null,
+            "shuttle": null
+        },
+        "measurements": {
+            "height_in": 74.25,
+            "weight_lb": 205,
+            "arm_length_in": 32.38,
+            "hand_size_in": 9.0
+        },
+        "source_url": "https://www.nfl.com/players/adonai-mitchell/"
+    }
+]

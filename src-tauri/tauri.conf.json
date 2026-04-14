@@ -1,0 +1,87 @@
+{
+    "build": {
+        "beforeDevCommand": "npm run dev",
+        "beforeBuildCommand": "npm run build",
+        "devPath": "http://localhost:1425/",
+        "distDir": "../dist",
+        "withGlobalTauri": true
+    },
+    "package": {
+        "productName": "Trier Fantasy Football 2026",
+        "version": "1.1.0"
+    },
+    "tauri": {
+        "allowlist": {
+            "all": false,
+            "shell": {
+                "all": false,
+                "open": true
+            },
+            "process": {
+                "relaunch": true,
+                "exit": true
+            }
+        },
+        "bundle": {
+            "active": true,
+            "category": "Sports",
+            "copyright": "2026 Doug Trier",
+            "deb": {
+                "depends": []
+            },
+            "externalBin": [],
+            "icon": [
+                "icons/32x32.png",
+                "icons/128x128.png",
+                "icons/128x128@2x.png",
+                "icons/icon.icns",
+                "icons/icon.ico"
+            ],
+            "identifier": "com.trierfantasy.app",
+            "longDescription": "The official Trier Fantasy Football Desktop Application.",
+            "macOS": {
+                "entitlements": null,
+                "exceptionDomain": "",
+                "frameworks": [],
+                "providerShortName": null,
+                "signingIdentity": null
+            },
+            "resources": [],
+            "shortDescription": "Trier Fantasy Football",
+            "targets": [
+                "msi"
+            ],
+            "windows": {
+                "certificateThumbprint": null,
+                "digestAlgorithm": "sha256",
+                "timestampUrl": "",
+                "nsis": {
+                    "installMode": "currentUser",
+                    "displayLanguageSelector": false,
+                    "installerIcon": "icons/icon.ico"
+                }
+            }
+        },
+        "security": {
+            "csp": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' http://* ws://* localhost:*; img-src 'self' data: blob:;"
+        },
+        "updater": {
+            "active": false
+        },
+        "windows": [
+            {
+                "title": "Trier Fantasy Football 2026 Beta Prerelease",
+                "width": 1200,
+                "height": 800,
+                "resizable": true,
+                "closable": true,
+                "decorations": true,
+                "center": true,
+                "fullscreen": false,
+                "transparent": true,
+                "minWidth": 1024,
+                "minHeight": 768
+            }
+        ]
+    }
+}
