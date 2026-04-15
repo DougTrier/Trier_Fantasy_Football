@@ -1,14 +1,31 @@
+/**
+ * types.ts — Canonical Domain Types
+ * ===================================
+ * Single source of truth for all shared data shapes used across the app,
+ * services, and P2P sync layer. Changing these affects wire format — do
+ * not rename fields without updating EventStore serialization and any
+ * peer-synced payloads simultaneously.
+ */
+
+// All valid fantasy-relevant NFL positions, including IDP (DL/LB/DB).
 export type Position = 'QB' | 'RB' | 'WR' | 'TE' | 'K' | 'DST' | 'LB' | 'DL' | 'DB' | 'OL' | 'P' | 'LS';
 
+/**
+ * Player — The core data entity for every NFL player in the system.
+ * Supports three data tiers:
+ *   - Tier 1: Basic identity (id, name, position, team)
+ *   - Tier 2: Historical/projected stats and bio enrichment
+ *   - Tier 3: Live scoring data sourced from the Sleeper pipeline
+ */
 export interface Player {
     id: string;
     firstName: string;
     lastName: string;
     position: Position;
-    team: string; // NFL Team
+    team: string; // NFL Team abbreviation (e.g. "KC", "BUF")
     photoUrl?: string; // For the "Beautiful" aspect
     projectedPoints: number;
-    adp?: number; // Average Draft Position
+    adp?: number; // Average Draft Position — lower is better
     ownership?: string; // e.g. "98%"
 
     // Bio Stats
@@ -152,13 +169,19 @@ export interface Player {
     espnId?: string;
     sourceId?: string;
 
-    // Performance Differential fields
+    // Performance Differential fields — computed by the Sleeper pipeline.
+    // Positive = player outperformed projection; negative = underperformed.
     total_actual_fantasy_points?: number | null;
     total_projected_fantasy_points?: number | null;
     performance_differential?: number | null;
-    ownerId?: string | null; // "Single Owner" rule
+    ownerId?: string | null; // "Single Owner" rule — null means unowned/free agent
 }
 
+/**
+ * Transaction — Immutable ledger entry for every roster/trade event.
+ * TRADE_OFFER creates escrow; TRADE_ACCEPT or decline releases it.
+ * amount is denominated in Production Points (PTS), not dollars.
+ */
 export interface Transaction {
     id: string;
     type: 'ADD' | 'DROP' | 'TRADE' | 'STASH' | 'SWAP' | 'TRADE_OFFER' | 'TRADE_ACCEPT';
@@ -169,9 +192,17 @@ export interface Transaction {
     teamId?: string;
     otherTeamId?: string;
     playerName?: string;
-    targetPlayerId?: string;
+    targetPlayerId?: string; // The player being offered on / traded away
 }
 
+/**
+ * FantasyTeam — Full team state including roster, bench, and financial ledger.
+ *
+ * ROSTER SLOTS: 9 active starters (fixed) + unlimited bench.
+ * LEDGER: total_production_pts is the team's earned currency from player performance.
+ *         points_escrowed is held temporarily during open trade offers.
+ *         points_spent is the running total of points paid out in completed trades.
+ */
 export interface FantasyTeam {
     id: string;
     name: string;
@@ -184,12 +215,12 @@ export interface FantasyTeam {
         wr1: Player | null;
         wr2: Player | null;
         te: Player | null;
-        flex: Player | null;
+        flex: Player | null; // RB/WR/TE eligible
         k: Player | null;
         dst: Player | null;
     };
     bench: Player[];
-    budget?: number; // Optional
+    budget?: number; // Optional legacy budget field (pre-ledger)
     points?: {
         total: number;
         projected: number;
@@ -197,13 +228,18 @@ export interface FantasyTeam {
     };
     standing?: number;
     transactions?: Transaction[];
-    // Ledger System
+    // Ledger System — tracks Production Points economy
     total_production_pts?: number;
-    points_escrowed?: number;
+    points_escrowed?: number; // Held while an outgoing trade offer is open
     points_spent?: number;
     ownerId?: string;
 }
 
+/**
+ * League — Top-level container for all teams and season configuration.
+ * Settings are optional to support both the legacy roster-only mode and
+ * the full points-economy mode introduced in Season 2.
+ */
 export interface League {
     id: string;
     name: string;

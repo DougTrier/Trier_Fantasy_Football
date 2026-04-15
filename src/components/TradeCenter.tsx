@@ -1,4 +1,21 @@
+/**
+ * TradeCenter — Trade Offer Hub
+ * ==============================
+ * Displays all TRADE_OFFER transactions from the user's perspective:
+ *   - Outgoing: offers the user has sent (from their own transactions list)
+ *   - Incoming: offers other teams sent that target a player the user owns
+ *     (discovered by scanning all teams' transactions for matching targetPlayerId)
+ *
+ * Accepts trigger a two-step confirmation dialog to prevent accidental trades.
+ * The escrow balance check in the confirmation dialog is a soft warning only —
+ * the App layer enforces hard balance constraints when the offer was created.
+ *
+ * Admins see the "Commissioner Override" panel which shows all league-wide
+ * pending offers and allows force-accept or force-cancel of any offer.
+ */
+// useState: tracks the two-step confirmation flow; null = no confirm shown.
 import React, { useState } from 'react';
+// useDialog: imperative async dialogs so we can await user confirmation.
 import { useDialog } from './AppDialog';
 import type { FantasyTeam, Transaction } from '../types';
 import { ArrowRightLeft, History, Clock, CheckCircle, XCircle, Shield } from 'lucide-react';
@@ -15,17 +32,29 @@ interface TradeCenterProps {
     onAdminForceCancel?: (offerId: string, offeringTeamId: string) => void;
 }
 
+/**
+ * TradeCenter — Trade Offer Hub component.
+ * All trade mutation callbacks (accept/decline/cancel) are handled in App.tsx
+ * to keep the event-signing logic (ECDSA + EventStore) centralized. This
+ * component is purely display + user intent capture.
+ */
 export const TradeCenter: React.FC<TradeCenterProps> = ({
     userTeam, allTeams, isAdmin,
     onAccept, onDecline, onCancel,
     onAdminForceAccept, onAdminForceCancel
 }) => {
+    // pendingConfirm: the offer staged for second-step confirmation. null = idle.
     const [pendingConfirm, setPendingConfirm] = useState<{ offer: Transaction; team: FantasyTeam } | null>(null);
     const { showConfirm } = useDialog();
 
+    // Derive offer lists from the transactions arrays — no separate offer store.
     const transactions = userTeam.transactions || [];
+    // Outgoing: offers this team has placed on players they want to buy.
+    // These live in the buyer's own transaction list.
     const outgoingOffers = transactions.filter(tx => tx.type === 'TRADE_OFFER');
 
+    // Incoming: scan every other team's transactions for offers targeting a player I own.
+    // This O(n*m) scan is acceptable because leagues have ≤20 teams and ≤50 offers each.
     const incomingOffers: { offer: Transaction; team: FantasyTeam }[] = [];
     allTeams.forEach(team => {
         if (team.id === userTeam.id) return;
@@ -37,11 +66,12 @@ export const TradeCenter: React.FC<TradeCenterProps> = ({
         });
     });
 
-    // All pending offers across the whole league (admin view)
+    // All pending offers across the whole league (admin view only)
     const allPendingOffers: { offer: Transaction; buyerTeam: FantasyTeam; sellerTeam: FantasyTeam | null }[] = [];
     if (isAdmin) {
         allTeams.forEach(buyerTeam => {
             (buyerTeam.transactions || []).filter(tx => tx.type === 'TRADE_OFFER').forEach(offer => {
+                // Resolve the seller by finding which team currently owns the targeted player
                 const sellerTeam = allTeams.find(t =>
                     [...Object.values(t.roster), ...t.bench].some(p => p && p.id === offer.targetPlayerId)
                 ) || null;
@@ -197,12 +227,14 @@ export const TradeCenter: React.FC<TradeCenterProps> = ({
                 </div>
 
                 {/* ── Ledger History ────────────────────────────────────────────────── */}
+                {/* Shows the 10 most recent transactions — ADD/DROP/SWAP/TRADE events   */}
                 <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.1)', padding: '25px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
                         <History size={20} color="#3b82f6" />
                         <h2 style={{ fontSize: '1.2rem', fontWeight: 800, textTransform: 'uppercase' }}>Ledger History</h2>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                        {/* Cap at 10 entries to keep the panel compact — full history is in transactions array */}
                         {transactions.slice(0, 10).map(tx => (
                             <div key={tx.id} style={{ display: 'flex', alignItems: 'center', gap: '15px', padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}>
                                 <div style={{
@@ -216,6 +248,7 @@ export const TradeCenter: React.FC<TradeCenterProps> = ({
                                     <div style={{ fontSize: '0.85rem', fontWeight: 700 }}>{tx.description}</div>
                                     <div style={{ fontSize: '0.7rem', color: '#6b7280' }}>{new Date(tx.timestamp).toLocaleString()}</div>
                                 </div>
+                                {/* Prefix TRADE_OFFER amounts with "-" to show they reduced the balance */}
                                 {tx.amount && (
                                     <div style={{ fontWeight: 800, color: tx.type === 'TRADE_OFFER' ? '#eab308' : '#fff' }}>
                                         {tx.type === 'TRADE_OFFER' ? '-' : ''}{tx.amount.toLocaleString()}

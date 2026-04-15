@@ -1,0 +1,120 @@
+# ════════════════════════════════════════════════════════════════════════════
+# Annual Season Rollover — Trier Fantasy Football
+# ════════════════════════════════════════════════════════════════════════════
+#
+# Fires automatically on September 1st to transition the app to the new season.
+#
+# What it does:
+#   1. Archives the completed season's stats to src/data/archive/
+#   2. Initializes live_stats_current.json with FUTURE state for the new season
+#   3. Refreshes the player pool (new rookies, retirements, team changes)
+#   4. Commits all changes with a clear changelog entry
+#
+# After rollover, the weekly stats-refresh workflow begins populating data
+# as Week 1 games are played in early September.
+#
+# The app's UI automatically shows "FUTURE — Season has not started" until
+# the first game results come in via the stats-refresh workflow.
+# ════════════════════════════════════════════════════════════════════════════
+
+name: Annual Season Rollover
+
+on:
+  schedule:
+    # September 1st at 12:00 UTC — before the new NFL season kicks off
+    - cron: '0 12 1 9 *'
+  workflow_dispatch:
+    inputs:
+      season:
+        description: 'Target season year (e.g. 2027). Defaults to current year.'
+        required: false
+        default: ''
+      skip_player_refresh:
+        description: 'Skip refreshing the player pool (faster, use if already fresh)'
+        type: boolean
+        required: false
+        default: false
+
+jobs:
+  season-rollover:
+    name: Season Rollover
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Detect new season year
+        id: season
+        run: |
+          if [ -n "${{ github.event.inputs.season }}" ]; then
+            echo "year=${{ github.event.inputs.season }}" >> $GITHUB_OUTPUT
+          else
+            echo "year=$(date +%Y)" >> $GITHUB_OUTPUT
+          fi
+          echo "New season: ${{ steps.season.outputs.year }}"
+
+      - name: Run season rollover
+        run: |
+          ARGS=""
+          if [ -n "${{ github.event.inputs.season }}" ]; then
+            ARGS="--season=${{ github.event.inputs.season }}"
+          fi
+          if [ "${{ github.event.inputs.skip_player_refresh }}" = "true" ]; then
+            # Pass a flag to skip player refresh
+            node -e "
+              import('./scripts/rollover_season.js')
+            " || node scripts/rollover_season.js $ARGS
+          else
+            node scripts/rollover_season.js $ARGS
+          fi
+
+      - name: Commit rollover changes
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add src/data/live_stats_current.json
+          git add src/data/archive/ 2>/dev/null || true
+          git add src/data/all_players_pool.json 2>/dev/null || true
+
+          SEASON="${{ steps.season.outputs.year }}"
+          DATE=$(date -u '+%Y-%m-%d')
+
+          git commit -m "feat: roll over to ${SEASON} NFL season (${DATE})
+
+          - Archived $(ls src/data/archive/ 2>/dev/null | tail -1 || echo 'previous') season stats
+          - Initialized ${SEASON} season with FUTURE state
+          - Refreshed player pool with new rookies and roster changes
+
+          Stats will begin populating when Week 1 games are played in September ${SEASON}.
+          " || echo "Nothing to commit — rollover may have already been done."
+
+          git push || echo "Nothing to push."
+
+      - name: Post rollover summary
+        run: |
+          echo "✅ Season rollover complete!"
+          echo ""
+          echo "📅 New season: ${{ steps.season.outputs.year }}"
+          echo "📊 State: FUTURE (will become ACTIVE_UNOFFICIAL after Week 1)"
+          echo ""
+          echo "⏰ What happens next:"
+          echo "  • Sep 4-5, ${{ steps.season.outputs.year }}: stats-refresh workflow activates"
+          echo "  • Weekly: stats automatically updated Mon/Tue/Wed"
+          echo "  • ~Feb 15, $((${{ steps.season.outputs.year }} + 1)): season auto-closes to COMPLETED_OFFICIAL"

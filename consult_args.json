@@ -1,6 +1,0 @@
-{
-    "title": "Prairie Diagnostic Project Audit",
-    "problem": "Audit the project for security vulnerabilities, race conditions in the request/response contract, pathing inconsistencies, and overall architectural robustness.",
-    "context": "FILES FOR AUDIT:\n\n1. Form1.cs (WinForms Host):\n[Form1.cs Content Summary: Handles UI bridge, schtasks invocation, result polling, and logging. Uses RequestId GUIDs.]\n\n2. PrairieFixEngine.psps1 (SYSTEM Engine):\n[Engine Content Summary: Processes requests from a directory, executes scripts from an allowlist, writes result JSON files with RequestId.]\n\n3. app.js (UI Logic):\n[UI Content Summary: Generates GUIDs, manages job lifecycle cards, handles inline validation logging.]\n\nFull Code Context follows in subsequent segments if needed, but the primary contract uses C:\\MSS\\temp\\requests and C:\\MSS\\temp\\results for IPC isolated by GUID.",
-    "logs": "No active errors, but looking for proactive architectural refinement."
-}

@@ -319,7 +319,7 @@ export const P2PService = {
         const conn = this.connections.get(sender_id);
         if (conn && conn.peer) {
             if (sdp) {
-                conn.peer.signal({ type: type_ as any, sdp });
+                conn.peer.signal({ type: type_ as 'offer' | 'answer', sdp });
             } else if (candidate) {
                 conn.peer.signal({ candidate });
             }
@@ -408,7 +408,10 @@ export const P2PService = {
             }
         });
 
-        // @ts-ignore
+        // @ts-ignore — 'iceStateChange' is a valid SimplePeer event relayed from the underlying
+        // RTCPeerConnection, but simple-peer's TypeScript definitions only declare the subset of
+        // events in their public API. Removing this ignore causes a compile error with no runtime
+        // impact; the event fires correctly at runtime.
         p.on('iceStateChange', (_state: string) => { /* available for diagnostics */ });
 
         p.on('data', async (data: any) => {

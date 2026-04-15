@@ -1,0 +1,120 @@
+# ════════════════════════════════════════════════════════════════════════════
+# NFL Stats Refresh — Trier Fantasy Football
+# ════════════════════════════════════════════════════════════════════════════
+#
+# Automatically fetches the latest NFL stats from the Sleeper API and commits
+# updated data to the repository. This keeps live_stats_current.json fresh
+# throughout the season without any manual intervention.
+#
+# Schedule:
+#   • During regular season (Sep–Jan):  Mon/Tue/Wed at 10:00 UTC (after game results finalize)
+#   • Off-season (Feb–Aug):             Weekly on Monday (for roster moves, status updates)
+#   • Manual:                           Dispatch anytime via GitHub Actions UI
+#
+# The pipeline is smart:
+#   • Auto-detects the current NFL season year
+#   • Auto-sets season_state (FUTURE / ACTIVE_UNOFFICIAL / COMPLETED_OFFICIAL)
+#   • Skips the commit if data hasn't changed (no noise in git history)
+#   • Merges regular + playoff stats for completed seasons
+#
+# Permissions: needs write access to push the stats file back to the repo.
+# ════════════════════════════════════════════════════════════════════════════
+
+name: NFL Stats Refresh
+
+on:
+  schedule:
+    # During season: Mon/Tue/Wed at 10:00 UTC (game results from Sun/Mon/Thu finalized)
+    - cron: '0 10 * * 1'   # Monday
+    - cron: '0 10 * * 2'   # Tuesday
+    - cron: '0 10 * * 3'   # Wednesday
+  workflow_dispatch:
+    inputs:
+      season:
+        description: 'Override NFL season year (e.g. 2026). Leave blank for auto-detect.'
+        required: false
+        default: ''
+      dry_run:
+        description: 'Dry run — fetch data but do not commit'
+        type: boolean
+        required: false
+        default: false
+
+jobs:
+  refresh-stats:
+    name: Refresh NFL Stats
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    permissions:
+      contents: write   # needed to push the updated JSON
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Fetch NFL stats from Sleeper API
+        run: |
+          ARGS=""
+          if [ -n "${{ github.event.inputs.season }}" ]; then
+            ARGS="--season=${{ github.event.inputs.season }}"
+          fi
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            ARGS="$ARGS --dry-run"
+          fi
+          node scripts/fetch_official_stats.js $ARGS
+
+      - name: Check if stats changed
+        id: check-changes
+        run: |
+          if git diff --quiet src/data/live_stats_current.json 2>/dev/null; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "📊 Stats unchanged — skipping commit."
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "📊 Stats updated — will commit."
+          fi
+
+      - name: Commit and push updated stats
+        if: steps.check-changes.outputs.changed == 'true' && github.event.inputs.dry_run != 'true'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add src/data/live_stats_current.json
+          git add src/data/archive/ 2>/dev/null || true
+
+          # Generate informative commit message
+          SEASON=$(node -e "const d=require('./src/data/live_stats_current.json'); console.log(d.season)")
+          STATE=$(node  -e "const d=require('./src/data/live_stats_current.json'); console.log(d.season_state)")
+          COUNT=$(node  -e "const d=require('./src/data/live_stats_current.json'); console.log(Object.keys(d.stats||{}).length)")
+          DATE=$(date -u '+%Y-%m-%d')
+
+          git commit -m "data: refresh NFL ${SEASON} stats [${STATE}] — ${COUNT} players (${DATE})"
+          git push
+
+      - name: Summary
+        run: |
+          if [ -f src/data/live_stats_current.json ]; then
+            node -e "
+              const d = require('./src/data/live_stats_current.json');
+              console.log('');
+              console.log('📊 Stats Summary:');
+              console.log('  Season:      ' + d.season);
+              console.log('  State:       ' + d.season_state);
+              console.log('  Status:      ' + d.data_status);
+              console.log('  Players:     ' + Object.keys(d.stats || {}).length);
+              console.log('  Updated:     ' + d.last_updated);
+            "
+          fi

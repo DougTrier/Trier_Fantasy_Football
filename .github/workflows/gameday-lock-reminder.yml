@@ -1,0 +1,118 @@
+# ════════════════════════════════════════════════════════════════════════════
+# Game Day Lock Reminder — Trier Fantasy Football
+# ════════════════════════════════════════════════════════════════════════════
+#
+# Fires before each major NFL kickoff window and creates a GitHub issue
+# reminding the commissioner to lock active teams.
+#
+# NFL kickoff windows (ET → UTC):
+#   Sunday   1:00 PM ET  = 17:00 UTC  → reminder at 16:45 UTC
+#   Sunday   4:05/4:25   = 20:05 UTC  → reminder at 20:00 UTC
+#   Sunday   8:20 PM ET  = 00:20 UTC  → reminder at 00:00 UTC (Monday)
+#   Monday   8:15 PM ET  = 00:15 UTC  → reminder at 00:00 UTC (Tuesday)
+#   Thursday 8:20 PM ET  = 00:20 UTC  → reminder at 00:00 UTC (Friday)
+#
+# The workflow only runs Sep–Feb (active season months).
+# Outside the season it's a no-op — the cron just doesn't create an issue.
+#
+# To lock teams: open the app → Settings → Commissioner Center → LOCK ALL
+# or lock individual teams by clicking their toggle.
+# ════════════════════════════════════════════════════════════════════════════
+
+name: Game Day Lock Reminder
+
+on:
+  schedule:
+    # Sunday early games — 16:45 UTC (12:45 PM ET)
+    - cron: '45 16 * * 0'
+
+    # Sunday late games — 20:00 UTC (4:00 PM ET)
+    - cron: '0 20 * * 0'
+
+    # Sunday Night Football + Monday Night Football (both ~00:00 UTC Mon/Tue)
+    - cron: '0 0 * * 1'
+    - cron: '0 0 * * 2'
+
+    # Thursday Night Football — 00:00 UTC Friday
+    - cron: '0 0 * * 5'
+
+  workflow_dispatch:
+    inputs:
+      window:
+        description: 'Kickoff window description (shown in issue)'
+        required: false
+        default: 'Manual trigger'
+
+jobs:
+  lock-reminder:
+    name: Game Day Lock Reminder
+    runs-on: ubuntu-latest
+
+    permissions:
+      issues: write
+
+    steps:
+      - name: Check if active season
+        id: season-check
+        run: |
+          MONTH=$(date -u '+%-m')
+          # Active season: September (9) through February (2)
+          if [ "$MONTH" -ge 9 ] || [ "$MONTH" -le 2 ]; then
+            echo "active=true" >> $GITHUB_OUTPUT
+            echo "🏈 Active season month (${MONTH}) — creating reminder."
+          else
+            echo "active=false" >> $GITHUB_OUTPUT
+            echo "⏸️  Off-season month (${MONTH}) — skipping reminder."
+          fi
+
+      - name: Determine kickoff window
+        if: steps.season-check.outputs.active == 'true'
+        id: window
+        run: |
+          if [ -n "${{ github.event.inputs.window }}" ]; then
+            echo "label=${{ github.event.inputs.window }}" >> $GITHUB_OUTPUT
+          else
+            DOW=$(date -u '+%u')  # 1=Mon … 7=Sun
+            HOUR=$(date -u '+%H')
+            case "$DOW-$HOUR" in
+              7-16) echo "label=Sunday Early Games (1:00 PM ET)" >> $GITHUB_OUTPUT ;;
+              7-20) echo "label=Sunday Late Games (4:05/4:25 PM ET)" >> $GITHUB_OUTPUT ;;
+              1-00) echo "label=Sunday Night Football (8:20 PM ET)" >> $GITHUB_OUTPUT ;;
+              2-00) echo "label=Monday Night Football (8:15 PM ET)" >> $GITHUB_OUTPUT ;;
+              5-00) echo "label=Thursday Night Football (8:20 PM ET)" >> $GITHUB_OUTPUT ;;
+              *)    echo "label=NFL Kickoff Window" >> $GITHUB_OUTPUT ;;
+            esac
+          fi
+
+      - name: Create lock reminder issue
+        if: steps.season-check.outputs.active == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const window = '${{ steps.window.outputs.label }}';
+            const date = new Date().toUTCString();
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🔒 Game Day Lock Reminder — ${window}`,
+              body: [
+                `## Commissioner Action Required`,
+                ``,
+                `**Kickoff window:** ${window}`,
+                `**Triggered:** ${date}`,
+                ``,
+                `### Steps to lock:`,
+                `1. Open the Trier Fantasy app`,
+                `2. Go to **Settings** → **Commissioner Center**`,
+                `3. Enter your commissioner password`,
+                `4. Click **LOCK ALL** to lock all teams, or toggle individual teams`,
+                ``,
+                `> ⚠️ Players on locked teams cannot be swapped or dropped until you click **UNLOCK ALL** after the games finish.`,
+                ``,
+                `*Close this issue once you've locked the active teams.*`,
+              ].join('\n'),
+              labels: ['game-day', 'commissioner'],
+            });
+
+            console.log(`✅ Lock reminder issue created for: ${window}`);

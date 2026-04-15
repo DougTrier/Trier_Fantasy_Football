@@ -1,3 +1,24 @@
+/**
+ * PlayersPage — Full League Player Database Browser
+ * ===================================================
+ * Displays the entire player pool with rich filtering and sorting.
+ * Unlike PlayerSelector (which is scoped to a single slot), this page shows
+ * all players regardless of roster status and is used for scouting and
+ * trade target research.
+ *
+ * PERFORMANCE DIFFERENTIAL SORT:
+ *   PERF_DIFF sorts by (actual_pts - projected_pts) sourced from the Sleeper
+ *   pipeline. Positive = outperforming; negative = underperforming. Players
+ *   without pipeline data sort to the bottom (null maps to -Infinity).
+ *
+ * INFINITE SCROLL:
+ *   Uses window scroll events (not IntersectionObserver) because the page
+ *   content is in the document body, not an overflow container.
+ *   visibleCount grows by 50 per trigger.
+ */
+// useMemo: playersWithTotals (historical stat sums), filteredPlayers (sort+filter).
+// useState: teamFilter, posFilter, search text, sortBy mode, visibleCount.
+// useEffect: window scroll listener for infinite load + visibleCount reset on filter change.
 import React, { useMemo, useState, useEffect } from 'react';
 import type { Player } from '../types';
 import { PlayerCard } from './PlayerCard';
@@ -5,6 +26,8 @@ import { NFL_TEAMS } from '../utils/constants';
 import { Users, Filter, TrendingUp } from 'lucide-react';
 import { PlayerTradingCard } from './PlayerTradingCard';
 import leatherTexture from '../assets/leather_texture.png';
+// ScoringEngine calculates actual points for the PERF_DIFF badge on each card.
+import { ScoringEngine } from '../utils/ScoringEngine';
 
 interface PlayersPageProps {
     players: Player[];
@@ -14,10 +37,16 @@ interface PlayersPageProps {
 
 type SortOption = 'PROJ' | 'ADP' | 'PASS_YDS' | 'RUSH_YDS' | 'REC_YDS' | 'GAMES' | 'NAME' | 'PERF_DIFF';
 
+/**
+ * PlayersPage — scouting and research browser.
+ * Read-only display; onMakeOffer is the only mutation pathway (opens TradeOfferModal).
+ */
 export const PlayersPage: React.FC<PlayersPageProps> = ({ players, onMakeOffer }) => {
     const [teamFilter, setTeamFilter] = useState('ALL');
+    // viewingPlayer: when set, opens PlayerTradingCard full-screen overlay.
     const [viewingPlayer, setViewingPlayer] = useState<Player | null>(null);
     const [search, setSearch] = useState('');
+    // Default sort is ADP (average draft position) — most relevant for waiver decisions.
     const [sortBy, setSortBy] = useState<SortOption>('ADP');
     const [visibleCount, setVisibleCount] = useState(100);
 
@@ -61,6 +90,7 @@ export const PlayersPage: React.FC<PlayersPageProps> = ({ players, onMakeOffer }
                 case 'REC_YDS': return b.totals.recYds - a.totals.recYds;
                 case 'GAMES': return b.totals.games - a.totals.games;
                 case 'PERF_DIFF': {
+                    // Players without pipeline data (null) sink to the bottom
                     const valA = a.performance_differential ?? -Infinity;
                     const valB = b.performance_differential ?? -Infinity;
                     return valB - valA;
@@ -168,7 +198,7 @@ export const PlayersPage: React.FC<PlayersPageProps> = ({ players, onMakeOffer }
                                 }}
                             >
                                 <option value="ADP">Sort by: ADP / Rank</option>
-                                <option value="PROJ">Sort by: 2025 Projected Pts</option>
+                                <option value="PROJ">Sort by: {ScoringEngine.getOrchestrationStatus().season} Projected Pts</option>
                                 <option value="PASS_YDS">Sort by: Career Passing Yards</option>
                                 <option value="RUSH_YDS">Sort by: Career Rushing Yards</option>
                                 <option value="REC_YDS">Sort by: Career Receiving Yards</option>

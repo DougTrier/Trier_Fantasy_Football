@@ -1,3 +1,27 @@
+/**
+ * H2HPage — Head-to-Head Matchup Analysis
+ * =========================================
+ * Compares the user's team against a selected opponent (league rival or
+ * Global Top 10) using the H2HEngine to generate per-player matchups and
+ * an aggregate team advantage score.
+ *
+ * MATCHUP MODES:
+ *   OFF_VS_DEF — User's offensive starters vs opponent's DST players (default)
+ *   OFF_VS_OFF — Direct fantasy point projections comparison
+ *   DEF_VS_OFF — User's DST vs opponent's offensive starters
+ *   DEF_VS_DEF — Unit-level defensive matchup analysis
+ *
+ * GLOBAL RIVALS:
+ *   In addition to in-league opponents, managers can compare against the
+ *   pre-seeded "Global Top 10" teams stored in rivals.json. These provide
+ *   always-available comparison targets even in single-team leagues.
+ *
+ * SCORING:
+ *   teamAdvantage averages all per-matchup advantageScore values (0–100).
+ *   >50 = user's team has the edge; <50 = opponent has the edge.
+ */
+// useState: selectedOpponentId, activeMatchup (for modal), matchupMode.
+// useMemo: starters, userDefense, opponentDefenders, matchups, teamAdvantage.
 import React, { useState, useMemo } from 'react';
 import type { Player, FantasyTeam } from '../types';
 
@@ -6,10 +30,13 @@ import { Shield, Zap, Target } from 'lucide-react';
 import h2hEmblem from '../assets/h2h_emblem_user.png';
 import ScoutingReportModal from './ScoutingReportModal';
 import type { H2HMatchupResult, MatchupMode } from '../utils/H2HEngine';
+// H2HEngine.getMatchups produces the per-player matchup list and advantage scores.
 import { H2HEngine } from '../utils/H2HEngine';
+// rivals.json is bundled statically — no network request needed at runtime.
 import globalRivalsData from '../data/Global_Rivals/rivals.json';
 
-const globalRivals = globalRivalsData as any[] as FantasyTeam[];
+// Cast rivals JSON to FantasyTeam for type-safe access without a full validation pass
+const globalRivals = globalRivalsData as unknown as FantasyTeam[];
 
 const GoldenSeal: React.FC<{ size?: number }> = ({ size = 60 }) => (
     <div style={{
@@ -109,13 +136,21 @@ const PowerBar = ({ score, metric }: { score: number, metric: string }) => {
     );
 };
 
+/**
+ * H2HPage — top-level Head-to-Head component.
+ * All analysis is derived (via useMemo) from current roster state — no API
+ * calls are made. ScoutingReportModal is mounted lazily via activeMatchup.
+ */
 export const H2HPage: React.FC<H2HPageProps> = ({ userTeam, allTeams, allPlayers }) => {
+    // Default to first opponent in list so the view is never empty on initial render.
     const [selectedOpponentId, setSelectedOpponentId] = useState<string>(
         allTeams.find(t => t.id !== userTeam.id)?.id || ''
     );
+    // activeMatchup: when set, renders ScoutingReportModal for that specific matchup.
     const [activeMatchup, setActiveMatchup] = useState<H2HMatchupResult | null>(null);
     const [matchupMode, setMatchupMode] = useState<MatchupMode>('OFF_VS_DEF');
 
+    // Check local league first, then fall back to global rivals for the selected opponent
     const opponentTeam = useMemo(() => {
         const localOpponent = allTeams.find(t => t.id === selectedOpponentId);
         if (localOpponent) return localOpponent;
@@ -125,11 +160,13 @@ export const H2HPage: React.FC<H2HPageProps> = ({ userTeam, allTeams, allPlayers
     const starters = useMemo(() => {
         const s = userTeam.roster;
         const pts = [s.qb, s.rb1, s.rb2, s.wr1, s.wr2, s.te, s.flex, s.k, s.dst].filter(Boolean) as Player[];
-        // Ensure local user ownership is tagged for the Golden Seal
+        // Tag ownerId so PlayerCard knows to render the Golden Seal ownership badge
         return pts.map(p => ({ ...p, ownerId: userTeam.id }));
     }, [userTeam]);
 
 
+    // userDefense: real defensive unit players from allPlayers for the user's DST team.
+    // These are used in DEF_VS_OFF mode where we compare the user's defense to the rival's offense.
     const userDefense = useMemo(() => {
         const dstTeam = userTeam.roster.dst?.team;
         if (!dstTeam) return [];
@@ -138,6 +175,7 @@ export const H2HPage: React.FC<H2HPageProps> = ({ userTeam, allTeams, allPlayers
             .map(p => ({ ...p, ownerId: userTeam.id }));
     }, [userTeam, allPlayers]);
 
+    // opponentDefenders: same lookup for the rival team's DST (DEF_VS_DEF mode).
     const opponentDefenders = useMemo(() => {
         const dstTeam = opponentTeam?.roster.dst?.team;
         if (!dstTeam) return [];
@@ -150,10 +188,15 @@ export const H2HPage: React.FC<H2HPageProps> = ({ userTeam, allTeams, allPlayers
         return [s.qb, s.rb1, s.rb2, s.wr1, s.wr2, s.te, s.flex, s.k, s.dst].filter(Boolean) as Player[];
     }, [opponentTeam]);
 
+    // Recalculate matchups whenever any roster, mode, or opponent changes.
     const matchups = useMemo(() => {
         return H2HEngine.getMatchups(starters, userDefense, rivalStarters, opponentDefenders, matchupMode);
     }, [starters, userDefense, rivalStarters, opponentDefenders, matchupMode]);
 
+    /**
+     * Aggregated team advantage: average of all individual matchup scores.
+     * Defaults to 50 (neutral) when no matchups exist to avoid divide-by-zero.
+     */
     const teamAdvantage = useMemo(() => {
         if (matchups.length === 0) return 50;
         return matchups.reduce((acc, m) => acc + m.advantageScore, 0) / matchups.length;
@@ -291,7 +334,9 @@ export const H2HPage: React.FC<H2HPageProps> = ({ userTeam, allTeams, allPlayers
                 </div>
             </div>
 
-            {/* Matchups Grid */}
+            {/* ── Per-Matchup Cards ──────────────────────────────────────────────── */}
+            {/* Each card represents one primary-vs-rival matchup as computed by H2HEngine. */}
+            {/* Clicking opens ScoutingReportModal with full film + intelligence view.        */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '20px' }}>
                 {matchups.map((m, idx) => (
                     <div key={idx} style={{
@@ -312,7 +357,7 @@ export const H2HPage: React.FC<H2HPageProps> = ({ userTeam, allTeams, allPlayers
                         onClick={() => setActiveMatchup(m)}
                         title="Click to view full scouting report and player metrics."
                     >
-                        {/* Glow effect */}
+                        {/* Left-edge accent stripe — green when user has advantage, red otherwise */}
                         <div style={{
                             position: 'absolute',
                             top: 0,
@@ -333,7 +378,7 @@ export const H2HPage: React.FC<H2HPageProps> = ({ userTeam, allTeams, allPlayers
                             alignItems: 'center',
                             gap: '15px'
                         }}>
-                            {/* Dedicated Ownership Badge Area */}
+                            {/* Golden Seal shown only when the primary player is on the user's own team */}
                             <div style={{ gridArea: 'seal', display: 'flex', justifyContent: 'center', minWidth: '70px' }}>
                                 {m.primaryPlayer.ownerId === userTeam.id && <GoldenSeal size={60} />}
                             </div>

@@ -1,3 +1,15 @@
+/**
+ * TradeOfferModal — Send a Production Points Offer for a Player
+ * ==============================================================
+ * Allows a team manager to specify a PTS amount to offer for a player owned
+ * by another team. Points are drawn from the available balance (earned minus
+ * already-spent). Once submitted, the App layer moves the offered amount into
+ * escrow on the buyer's team, blocking re-use until the offer resolves.
+ *
+ * Validation: the offer is blocked if amount ≤ 0 or exceeds the available
+ * balance — the submit button is disabled and a warning is shown inline.
+ */
+// useState holds the offer amount; initialized at 100 PTS as a reasonable default.
 import React, { useState } from 'react';
 import type { Player, FantasyTeam } from '../types';
 import { Wallet, Info, AlertTriangle, Zap } from 'lucide-react';
@@ -9,10 +21,18 @@ interface TradeOfferModalProps {
     onSubmit: (amount: number) => void;
 }
 
+/**
+ * TradeOfferModal — inline PTS offer entry.
+ * Validation is local-only (disabled button); the App layer enforces the
+ * balance check again on submit to guard against race conditions.
+ */
 export const TradeOfferModal: React.FC<TradeOfferModalProps> = ({ player, userTeam, onClose, onSubmit }) => {
     const [amount, setAmount] = useState<number>(100);
+    // Available balance = earned points minus what's already been spent (excludes escrowed).
+    // Escrowed points aren't deducted until the offer resolves — they just show as reserved.
     const balance = (userTeam.total_production_pts || 0) - (userTeam.points_spent || 0);
 
+    // isInvalid drives the disabled state of the submit button.
     const isInvalid = amount > balance || amount <= 0;
 
     return (

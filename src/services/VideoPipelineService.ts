@@ -2,6 +2,30 @@
 import { VIDEO_SOURCES, type VideoSource } from '../../scripts/VIDEO_SOURCES';
 import { VideoValidationService } from './VideoValidationService';
 import { videoBlacklist } from './VideoBlacklistService';
+/**
+ * VideoPipelineService — Multi-Tier Video Search & Relevance Engine
+ * ==================================================================
+ * Fetches and ranks video content for NFL player scouting reports.
+ *
+ * PIPELINE ARCHITECTURE:
+ *   Tiers A → D provide progressively relaxed relevance thresholds:
+ *     Tier A (score ≥ 15): Official sources, strict must-include rules
+ *     Tier B (score ≥ 5):  Curated fan channels
+ *     Tier C (score ≥ 1):  Broad keyword match
+ *     Tier D (score ≥ -10): Last resort — any mention of player name
+ *
+ *   Search stops as soon as MIN_RESULTS (3) candidates are accepted to
+ *   avoid burning YouTube API quota on deep tiers for popular players.
+ *
+ * RELEVANCE ENGINE:
+ *   Scores candidates by title/channel/description keyword matching. Hard
+ *   blocks for known troll content (e.g. Rick Roll). Source-level
+ *   mustInclude / mustNotInclude rules in VIDEO_SOURCES config.
+ *
+ * CACHING:
+ *   Per-session in-memory cache keyed by "{playerName}-{team}". Prevents
+ *   redundant API calls when the same player appears in multiple matchups.
+ */
 
 // --- Interfaces ---
 

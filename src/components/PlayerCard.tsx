@@ -1,6 +1,32 @@
+/**
+ * PlayerCard — Stylised NFL Trading Card Component
+ * ==================================================
+ * Renders a player as a collectible-style trading card with a layered
+ * background (leather top 55% / turf bottom 45%), team color stripe,
+ * player photo, stats, and optional action buttons.
+ *
+ * VISUAL LAYERS (bottom to top):
+ *   1. Leather texture (top half)
+ *   2. Turf texture (bottom half)
+ *   3. Horizon gradient overlay — sky/stands/turf transition
+ *   4. 6px team color stripe at the very top
+ *   5. Info panel — paper-white card inset with player name and stats
+ *   6. Golden Seal watermark (shown when showSeal=true)
+ *
+ * The 9:14 aspect ratio matches standard sports card proportions.
+ * Font sizes scale fluidly via clamp() so the card works at any grid size.
+ *
+ * highlightStat: optional floating badge (rotated "sticker") shown for
+ * top-ranked players in the PlayerSelector — drives at-a-glance sorting context.
+ */
+// PlayerCard.tsx — no React import needed because JSX is handled by the
+// project's Vite plugin with automatic JSX transform (react-jsx runtime).
+// TypeScript will infer React.FC types from @types/react global declarations.
 import type { Player } from '../types';
 import { Twitter, Instagram } from 'lucide-react';
 
+// GoldenSeal — SVG ownership badge shown in the top-right corner when showSeal=true.
+// The metalEmbossPC SVG filter adds specular highlight to simulate a stamped medal.
 const GoldenSeal: React.FC<{ size?: number }> = ({ size = 40 }) => (
     <div style={{
         width: `${size}px`,
@@ -38,6 +64,10 @@ const GoldenSeal: React.FC<{ size?: number }> = ({ size = 40 }) => (
     </div>
 );
 
+// ─── Props ─────────────────────────────────────────────────────────────────────
+// variant: 'small' is used in PlayerSelector grid; 'large' in standalone views.
+// showSeal: true when the card belongs to the currently active team — adds
+//   the GoldenSeal badge to visually mark owned players.
 interface PlayerCardProps {
     player: Player;
     onAction?: () => void;
@@ -51,7 +81,13 @@ interface PlayerCardProps {
     showSeal?: boolean;
 }
 
+/**
+ * PlayerCard renders the physical card. Hover effects are applied inline via
+ * event handlers so they degrade gracefully if CSS classes are absent.
+ * All font sizes use clamp() for fluid scaling across the card grid.
+ */
 export const PlayerCard: React.FC<PlayerCardProps> = ({ player, onAction, actionLabel, variant = 'large', highlightStat, onMakeOffer, showSeal }) => {
+    // isLarge drives clamp() size ranges throughout the component.
     const isLarge = variant === 'large';
 
     return (
@@ -73,7 +109,8 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player, onAction, action
             boxSizing: 'border-box',
             fontSize: 'clamp(0.8rem, 1.5vw, 1.1rem)' // FLUID SCALING
         }}
-            onMouseEnter={(e) => {
+            // onAction guard prevents hover animation when card is display-only.
+        onMouseEnter={(e) => {
                 if (onAction) {
                     e.currentTarget.style.transform = 'translateY(-6px) scale(1.02)'; // Slight scale up
                     e.currentTarget.style.zIndex = '10';
@@ -81,6 +118,7 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player, onAction, action
                     e.currentTarget.style.borderColor = '#fff';
                 }
             }}
+            // Restore card to resting state — must match initial inline style values.
             onMouseLeave={(e) => {
                 if (onAction) {
                     e.currentTarget.style.transform = 'translateY(0) scale(1)';
@@ -132,7 +170,9 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player, onAction, action
                 pointerEvents: 'none'
             }} />
 
-            {/* Team Background Stripe - Top Accent */}
+            {/* Team Color Stripe — hardcoded for top 3 teams; others default to #333.
+                Full theme palette is available via teamThemes.ts but not used here
+                to keep the PlayerCard self-contained without a heavy lookup. */}
             <div style={{
                 position: 'absolute',
                 top: 0,
@@ -237,9 +277,10 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player, onAction, action
                     </svg>
                 </div>
 
-                {/* Ownership Seal Overlay */}
+                {/* Ownership Seal Overlay — rendered above the watermark when showSeal=true.
+                    Positioned slightly outside the card boundary for a "sticker" effect. */}
                 {showSeal && (
-                    <div style={{ position: 'absolute', top: '-10px', right: '-5px', zIndex: 10 }}> {/* Adjusted to sit better inside */}
+                    <div style={{ position: 'absolute', top: '-10px', right: '-5px', zIndex: 10 }}>
                         <GoldenSeal size={isLarge ? 45 : 30} />
                     </div>
                 )}
@@ -291,6 +332,8 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player, onAction, action
             </div>
 
             {/* ACTION AREA */}
+            {/* ACTION AREA: rendered only when onAction is provided.
+                e.stopPropagation() prevents the card's own onClick from firing too. */}
             {onAction && (
                 <button
                     onClick={(e) => { e.stopPropagation(); onAction(); }}

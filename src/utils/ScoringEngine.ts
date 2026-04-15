@@ -1,7 +1,7 @@
 import type { Player } from '../types';
-import liveStatsSource from '../data/live_stats_2025.json';
+import liveStatsSource from '../data/live_stats_current.json';
 
-const liveData = liveStatsSource as any;
+const liveData = liveStatsSource as Record<string, unknown>;
 
 /**
  * ScoringEngine (Protocol v2)
@@ -28,6 +28,11 @@ export class ScoringEngine {
         // 1. Check Protocol Constraints
         if (liveData.season_state === "FUTURE") {
             return { total: null, status: "NO_DATA_AVAILABLE", reason: "Season has not started" };
+        }
+
+        if (liveData.season_state === "PRESEASON") {
+            // Preseason stats are visible for scouting but do not count toward fantasy scoring
+            return { total: null, status: "PRESEASON", reason: "Preseason stats are for scouting only — fantasy scoring begins Week 1" };
         }
 
         if (liveData.data_status !== "VALIDATED") {
@@ -88,14 +93,56 @@ export class ScoringEngine {
             total += pts;
         }
 
+        // Kicker (K)
+        if (player.position === 'K') {
+            const fg0_19  = stats.fgm_0_19  || 0;
+            const fg20_29 = stats.fgm_20_29 || 0;
+            const fg30_39 = stats.fgm_30_39 || 0;
+            const fg40_49 = stats.fgm_40_49 || 0;
+            const fg50p   = stats.fgm_50p   || 0;
+            const xpm     = stats.xpm       || 0;
+            const xpmiss  = stats.xpmiss    || 0;
+
+            const kickerPts =
+                (fg0_19  * 3) +
+                (fg20_29 * 3) +
+                (fg30_39 * 3) +
+                (fg40_49 * 4) +
+                (fg50p   * 5) +
+                (xpm     * 1) +
+                (xpmiss  * -1);
+
+            breakdown.kicker = kickerPts;
+            total += kickerPts;
+        }
+
         // Defense (DST)
         if (player.position === 'DST') {
-            const sacks = stats.sack || 0;
-            const ints = stats.def_int || 0;
-            const defTDs = stats.def_td || 0;
-            const safeties = stats.safety || 0;
+            const sacks    = stats.sack    || 0;
+            const ints     = stats.def_int || 0;
+            const defTDs   = stats.def_td  || 0;
+            const safeties = stats.safety  || 0;
+            const fumRec   = stats.fum_rec || 0;
 
-            total += sacks + (ints * 2) + (defTDs * 6) + (safeties * 2);
+            breakdown.dstBase =
+                sacks + (ints * 2) + (defTDs * 6) + (safeties * 2) + (fumRec * 2);
+            total += breakdown.dstBase;
+
+            // Points-allowed brackets
+            const ptsAllowed = stats.pts_allow;
+            if (ptsAllowed !== undefined) {
+                let paBracketPts = 0;
+                if      (ptsAllowed === 0)              paBracketPts = 10;
+                else if (ptsAllowed <= 6)               paBracketPts = 7;
+                else if (ptsAllowed <= 13)              paBracketPts = 4;
+                else if (ptsAllowed <= 20)              paBracketPts = 1;
+                else if (ptsAllowed <= 27)              paBracketPts = 0;
+                else if (ptsAllowed <= 34)              paBracketPts = -1;
+                else                                    paBracketPts = -4;
+
+                breakdown.dstPointsAllowed = paBracketPts;
+                total += paBracketPts;
+            }
         }
 
         return {
@@ -107,8 +154,8 @@ export class ScoringEngine {
     }
 
     static calculateTeamTotal(team: any) {
-        if (liveData.season_state === "FUTURE" || liveData.data_status !== "VALIDATED") {
-            return { total: 0, status: "NO_DATA_AVAILABLE" };
+        if (liveData.season_state === "FUTURE" || liveData.season_state === "PRESEASON" || liveData.data_status !== "VALIDATED") {
+            return { total: 0, status: liveData.season_state === "PRESEASON" ? "PRESEASON" : "NO_DATA_AVAILABLE" };
         }
 
         let grandTotal = 0;

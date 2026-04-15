@@ -60,6 +60,7 @@ import { P2PService } from './services/P2PService';
 import { IdentityService } from './services/IdentityService';
 import { NetworkPage } from './components/NetworkPage';
 import { GlobalEventStore } from './services/EventStore';
+import { ScoringEngine } from './utils/ScoringEngine';
 import type { EventLogEntry } from './types/P2P';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -164,12 +165,15 @@ import { normalizeTeam } from './utils/dataNormalizer';
 export default function App() {
   const { showAlert, showConfirm, showPrompt } = useDialog();
 
+  // ─────────────────────────────────────────────────────────────────────────────
+  // PERSISTENT STATE — initializers run once at mount, reading from localStorage
+  // ─────────────────────────────────────────────────────────────────────────────
   const [userTeams, setUserTeams] = useState<FantasyTeam[]>(() => {
     const saved = localStorage.getItem('trier_fantasy_all_teams_v3');
     try {
       const parsed = saved ? JSON.parse(saved) : null;
       if (Array.isArray(parsed) && parsed.length > 0) {
-        // Normalize EVERY loaded team immediately
+        // Normalize EVERY loaded team immediately — ensures missing fields get defaults
         return parsed.map(t => normalizeTeam(t));
       }
     } catch (e) { console.error("Failed to load V3 teams", e); }
@@ -584,10 +588,12 @@ export default function App() {
     }));
   }, []);
 
+  /** Applies a functional update to the currently active team only. */
   const updateActiveTeam = (updater: (prev: FantasyTeam) => FantasyTeam) => {
     setUserTeams(prev => prev.map(t => t.id === activeTeamId ? updater(t) : t));
   };
 
+  /** Appends an immutable transaction record to the active team's ledger. */
   const recordTransaction = (type: 'ADD' | 'DROP' | 'SWAP', description: string, playerName?: string) => {
     updateActiveTeam(prev => ({
       ...prev,
@@ -604,7 +610,12 @@ export default function App() {
     }));
   };
 
-  const [isAdmin, setIsAdmin] = useState(false); // Global Admin Mode
+  // ─────────────────────────────────────────────────────────────────────────────
+  // ADMIN / SECURITY
+  // Admin mode is session-only (not persisted). The password hash is persisted
+  // in localStorage as "sha256:{hex}" — never the plaintext.
+  // ─────────────────────────────────────────────────────────────────────────────
+  const [isAdmin, setIsAdmin] = useState(false);
   // Holds the SHA-256 hash of the admin password (never the plaintext).
   const adminPasswordHash = useRef<string>('');
 
@@ -882,7 +893,7 @@ export default function App() {
     });
 
     const updatedHistory = league.history?.map(h =>
-      h.year === 2025 ? { ...h, points: myPoints } : h
+      h.year === ScoringEngine.getOrchestrationStatus().season ? { ...h, points: myPoints } : h
     );
 
     return {
@@ -1008,6 +1019,12 @@ export default function App() {
     return { valid: true };
   };
 
+  /**
+   * executeSwap — The canonical roster mutation entry point.
+   * Validates the move, applies it to local state via applyRosterMoveEvent,
+   * signs the resulting EventLogEntry with ECDSA, and broadcasts it to all
+   * VERIFIED peers. All of this runs in a single synchronous state update batch.
+   */
   const executeSwap = async (targetPlayer: Player | null, targetSlot?: string) => {
     if (!swapCandidate) return;
 

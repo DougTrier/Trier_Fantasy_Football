@@ -1,3 +1,21 @@
+/**
+ * CreatePlayerForm — Manual / Smart-Import Custom Player Creator
+ * ===============================================================
+ * Allows managers to create custom players not in the official database.
+ * Two creation paths:
+ *
+ *   Manual: fill in fields directly (name, team, position, projected points,
+ *           optional photo URL).
+ *
+ *   Smart Import: paste an nfl.com player profile URL to auto-populate
+ *                 name fields from the URL slug and attempt to scrape the
+ *                 player photo via the allorigins CORS proxy.
+ *                 Falls back silently if scraping fails — the user can still
+ *                 enter the photo URL manually.
+ *
+ * Generated player IDs use the "custom-{timestamp}" convention to avoid
+ * collisions with official pipeline IDs which are numeric strings.
+ */
 import React, { useState } from 'react';
 import type { Player, Position } from '../types';
 import { UserPlus, X } from 'lucide-react';
@@ -7,7 +25,7 @@ import { NFL_TEAMS, POSITIONS } from '../utils/constants';
 interface CreatePlayerFormProps {
     onClose: () => void;
     onCreate: (player: Player) => void;
-    initialPosition?: string;
+    initialPosition?: string; // Pre-selects position based on the target slot
 }
 
 

@@ -1,3 +1,28 @@
+/**
+ * SettingsPage — League Administration & Team Management
+ * ========================================================
+ * Central hub for all configuration that isn't part of normal gameplay:
+ *
+ *  1. Commissioner Center — toggle admin mode, create test franchises,
+ *     manage Game Day locks per NFL team, configure YouTube API key.
+ *
+ *  2. Sideband Network — shows discovered and connected P2P peers.
+ *
+ *  3. Team Management — edit team name/owner/password, export/import .tff
+ *     backup files (AES-encrypted via SecurityService), delete teams.
+ *
+ * GAME DAY LOCKS:
+ *   The commissioner can lock individual NFL teams (or fetch live schedule
+ *   to auto-lock active games). While locked, players on that team cannot
+ *   be swapped in or out of starting lineups — enforced in isPlayerLocked().
+ *
+ * BACKUP FORMAT:
+ *   Exports use a .tff extension (Trier Fantasy Football). The file is
+ *   encrypted with AES-GCM. Password is optional; a default key prevents
+ *   casual plaintext edits without providing real security guarantees.
+ */
+// useRef: the hidden file input element for the .tff import trigger.
+// useState: inline form state + create-franchise modal visibility.
 import React, { useRef, useState } from 'react';
 import { useDialog } from './AppDialog';
 import {
@@ -5,8 +30,11 @@ import {
     Trash2, RefreshCw, Globe, HardDrive, Plus, Edit2, Youtube, Radio
 } from 'lucide-react';
 import type { FantasyTeam } from '../types';
+// SecurityService wraps AES-GCM encryption/decryption for .tff backup files.
 import { SecurityService } from '../utils/SecurityService';
+// NetworkHealth renders real-time P2P diagnostics inside the Sideband panel.
 import { NetworkHealth } from './diagnostics/NetworkHealth';
+// NFL_TEAMS is a complete list of 32 abbreviations used for the lock grid.
 import { NFL_TEAMS } from '../utils/gamedayLogic';
 import leatherTexture from '../assets/leather_texture.png';
 
@@ -20,8 +48,8 @@ interface SettingsPageProps {
     onDeleteTeam: (teamId: string) => void;
     onUpdateDetails: (teamId: string, name: string, owner: string, password?: string) => void;
     onCreateTeam: (name: string, owner: string, password?: string) => void;
-    peers: string[]; // Discovered Peers
-    connectedPeers: string[]; // ACTIVE WebRTC Connections
+    peers: string[];         // Discovered but not yet connected peers
+    connectedPeers: string[]; // VERIFIED WebRTC connections with full game-data access
     onImportTeam: (team: FantasyTeam) => void;
     lockedNFLTeams: string[];
     onToggleLock: (team: string) => void;
@@ -30,6 +58,13 @@ interface SettingsPageProps {
     onFetchSchedule: () => Promise<void>;
 }
 
+/**
+ * SettingsPage — main component.
+ * All mutation callbacks originate in App.tsx so this component stays free
+ * of direct localStorage access except for the YouTube API key (admin-only).
+ * The file import flow uses a hidden <input type="file"> triggered via ref
+ * rather than a visible input for layout control.
+ */
 export const SettingsPage: React.FC<SettingsPageProps> = ({
     teams,
     activeTeamId,
@@ -49,25 +84,33 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     onUnlockAll,
     onFetchSchedule,
 }) => {
+    // fileInputRef: the hidden <input type="file"> used for .tff import clicks.
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [editingId, setEditingId] = useState<string | null>(null);
+    const [editingId, setEditingId] = useState<string | null>(null); // Which team is being edited inline
     const [isCreating, setIsCreating] = useState(false);
+    // fetchingSchedule: prevents double-clicks on the Live Schedule button.
     const [fetchingSchedule, setFetchingSchedule] = useState(false);
 
-    // Edit Form States
+    // Edit Form States — populated when editingId is set
     const [editName, setEditName] = useState('');
     const [editOwner, setEditOwner] = useState('');
     const [editPass, setEditPass] = useState('');
 
-    // New Team Form States
+    // New Team Form States — cleared after successful creation
     const [newName, setNewName] = useState('');
     const [newOwner, setNewOwner] = useState('');
     const [newPass, setNewPass] = useState('');
 
-    // YouTube API key (admin-only; stored in localStorage)
+    // YouTube API key (admin-only; stored in localStorage so it survives reloads).
+    // Lazy initializer reads the stored value once rather than on every render.
     const [ytApiKey, setYtApiKey] = useState(() => localStorage.getItem('trier_yt_api_key') || '');
     const { showAlert, showConfirm, showPrompt } = useDialog();
 
+    /**
+     * Encrypts and downloads the team as a .tff file.
+     * Uses the team's existing password if set, otherwise prompts.
+     * The v2 envelope includes a version tag and timestamp for future migration support.
+     */
     const handleExport = async (team: FantasyTeam) => {
         try {
             const encryptionPass = team.password ||
@@ -85,6 +128,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
         } catch (e) { showAlert("Export failed. Please try again.", "Export Error"); }
     };
 
+    // handleImportFile — decrypts and imports a .tff backup into the league.
+    // Supports both legacy (raw JSON) and v2 (AES-GCM encrypted) formats.
     const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -310,7 +355,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     </div>
                 </section>
 
-                {/* 3. Franchise Management */}
+                {/* ── Franchise Management ─────────────────────────────────────────── */}
+                {/* Spans full grid width so franchise cards don't wrap awkwardly      */}
                 <section style={{ ...cardStyle, gridColumn: '1 / -1' }}>
                     <div style={headerStyle}>
                         <Users size={22} color="#eab308" />
@@ -320,6 +366,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                         {teams.map(t => {
                             const active = t.id === activeTeamId;
                             const editing = editingId === t.id;
+                            // Only the active owner (or admin) can edit/backup their own franchise.
+                            // Gold border on active team card for quick visual identification.
+                            // editingId drives the inline form; null = display mode.
                             return (
                                 <div key={t.id} style={{
                                     background: active ? 'rgba(234, 179, 8, 0.1)' : 'rgba(255,255,255,0.03)',
@@ -438,7 +487,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     </div>
                 </section>
 
-                {/* 4. Data Ops */}
+                {/* ── Data Operations ──────────────────────────────────────────────── */}
+                {/* Import is always available; Factory Reset requires admin confirmation */}
                 <section style={cardStyle}>
                     <div style={headerStyle}>
                         <HardDrive size={22} color="#eab308" />
@@ -450,6 +500,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                         </button>
                         {isAdmin && (
                             <button onClick={async () => {
+                                // Double-confirm to prevent accidental wipes — no undo possible
                                 if (await showConfirm("WARNING: This will permanently erase all teams, rosters, and settings. This cannot be undone.", "Factory Reset", "ERASE EVERYTHING")) {
                                     localStorage.clear();
                                     window.location.reload();
@@ -513,11 +564,20 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 
             </div>
 
+            {/* Hidden file input — triggered programmatically by the Import button */}
             <input type="file" ref={fileInputRef} style={{ display: 'none' }} accept=".tff,.json" onChange={handleImportFile} />
         </div>
     );
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Shared style objects — defined at module level so they don't recreate on
+// every render. All use CSSProperties for IDE autocomplete.
+// Keeping styles outside the component prevents a new object allocation on
+// every render cycle, which is measurable when the franchise list is large.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// cardStyle — base panel container; heavy blur + dark tint for legibility.
 const cardStyle: React.CSSProperties = {
     background: 'rgba(15, 23, 42, 0.9)',
     backdropFilter: 'blur(12px)',
@@ -527,6 +587,7 @@ const cardStyle: React.CSSProperties = {
     boxShadow: '0 20px 50px rgba(0,0,0,0.5)'
 };
 
+// headerStyle — section heading row with icon + title + bottom divider.
 const headerStyle: React.CSSProperties = {
     display: 'flex',
     alignItems: 'center',
@@ -536,6 +597,7 @@ const headerStyle: React.CSSProperties = {
     paddingBottom: 'clamp(8px, 1.5vh, 15px)'
 };
 
+// titleStyle — uppercase section label; matches the stadium placard aesthetic.
 const titleStyle: React.CSSProperties = {
     fontSize: '1.2rem',
     fontWeight: 900,
@@ -544,6 +606,7 @@ const titleStyle: React.CSSProperties = {
     letterSpacing: '1px'
 };
 
+// btnStyle — primary action button; background/color overridden per usage site.
 const btnStyle: React.CSSProperties = {
     padding: '10px 20px',
     borderRadius: '8px',
@@ -554,6 +617,7 @@ const btnStyle: React.CSSProperties = {
     fontSize: '0.9rem'
 };
 
+// inputStyle — text fields in the edit/create forms; dark background for contrast.
 const inputStyle: React.CSSProperties = {
     background: 'rgba(0,0,0,0.4)',
     border: '1px solid rgba(255,255,255,0.1)',
@@ -563,6 +627,8 @@ const inputStyle: React.CSSProperties = {
     fontSize: '0.95rem'
 };
 
+// actionBtnStyle — ghost button for per-franchise actions (Backup / Import / Edit).
+// Uses no background so it doesn't visually compete with the franchise card.
 const actionBtnStyle: React.CSSProperties = {
     background: 'none',
     border: 'none',

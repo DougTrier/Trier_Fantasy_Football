@@ -1,3 +1,17 @@
+/**
+ * MiniPlayerCard — Compact 64×96 px Trading Card Visual
+ * =======================================================
+ * Renders a miniaturised version of the player card for use inside roster
+ * slot rows (Roster.tsx). Mirrors the full PlayerTradingCard visual language
+ * — team colors, gradient, photo — at a fraction of the size so it doesn't
+ * dominate the lineup view.
+ *
+ * The slot banner uses a diagonal clip-path to mimic a folded card tab.
+ * Player photos are displayed with a fade-to-transparent mask at the bottom
+ * so they blend naturally into the team-color gradient beneath.
+ */
+// MiniPlayerCard uses the same teamThemes color system as the full card but
+// renders at 64×96 px — fixed dimensions so roster rows stay uniformly aligned.
 import React from 'react';
 import type { Player } from '../types';
 import { getTeamTheme } from '../utils/teamThemes';
@@ -5,10 +19,11 @@ import { Shield } from 'lucide-react';
 
 interface MiniPlayerCardProps {
     player: Player;
-    slotLabel: string;
+    slotLabel: string; // Positional label displayed in the banner (e.g. "QB", "FLEX")
 }
 
 export const MiniPlayerCard: React.FC<MiniPlayerCardProps> = ({ player, slotLabel }) => {
+    // Drives the color palette — falls back to generic NFL theme for unknown teams
     const theme = getTeamTheme(player.team);
 
     return (

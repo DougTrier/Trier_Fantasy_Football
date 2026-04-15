@@ -1,4 +1,20 @@
-
+/**
+ * NetworkHealth — Developer Diagnostics Panel
+ * =============================================
+ * A low-level debug view used within SettingsPage to inspect the live state
+ * of the P2P mesh and EventStore. Not surfaced in the main navigation.
+ *
+ * EVENT LOG: Subscribes reactively to GlobalEventStore so any new event
+ * (local or inbound from a peer) appears immediately. Shows the last 10
+ * events to keep the panel compact.
+ *
+ * PEERS: Polled every 1s because P2PService does not yet expose a reactive
+ * store for connection state — a future improvement would replace the
+ * interval with an onConnectionStatus subscriber.
+ *
+ * TODO: Type the peers array properly once P2PService exports a typed
+ * connection summary interface.
+ */
 import React, { useEffect, useState } from 'react';
 import { GlobalEventStore } from '../../services/EventStore';
 import type { EventLogEntry } from '../../types/P2P';
@@ -6,21 +22,20 @@ import { P2PService } from '../../services/P2PService';
 
 export const NetworkHealth: React.FC = () => {
     const [events, setEvents] = useState<EventLogEntry[]>([]);
-    const [peers, setPeers] = useState<any[]>([]); // To be typed properly later
+    const [peers, setPeers] = useState<any[]>([]); // TODO: type with P2PConnection summary
 
     useEffect(() => {
-        // Subscribe to Store
+        // Subscribe to Store — updates state on every new event for live diagnostics
         const unsub = GlobalEventStore.subscribe((all) => {
             setEvents([...all]);
         });
 
-        // Poll Peers (Temporary until P2PService has reactive store)
+        // Poll Peers — temporary until P2PService gains a reactive connection store
         const interval = setInterval(() => {
-            // @ts-ignore - Accessing internal map for debug
             const list = Array.from(P2PService.connections.values()).map(c => ({
                 id: c.nodeId,
                 state: c.state,
-                latency: c.iceStats?.srflx || 0 // Mock use of stat
+                latency: c.iceStats?.srflx || 0 // srflx = server-reflexive ICE candidate RTT
             }));
             setPeers(list);
         }, 1000);

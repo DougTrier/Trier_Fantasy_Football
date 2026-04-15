@@ -346,5 +346,69 @@ export const IdentityService = {
     get(): CoachIdentity {
         if (!this.identity) throw new Error('[Identity] Not initialized. Call init() first.');
         return this.identity;
-    }
+    },
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Password Hashing
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * SHA-256 hashes a plaintext password for storage.
+     * Returns 'sha256:<hex>' in secure contexts, 'plain:<text>' as a fallback
+     * when crypto.subtle is unavailable (HTTP dev mode).
+     */
+    async hashPassword(plaintext: string): Promise<string> {
+        if (!crypto?.subtle) return `plain:${plaintext}`;
+        const encoded = new TextEncoder().encode(plaintext);
+        const buffer = await crypto.subtle.digest('SHA-256', encoded);
+        const hex = Array.from(new Uint8Array(buffer))
+            .map(b => b.toString(16).padStart(2, '0')).join('');
+        return `sha256:${hex}`;
+    },
+
+    /**
+     * Verifies a plaintext password against a stored hash (sha256:... or plain:...).
+     * Safe to call in both secure and insecure contexts.
+     */
+    async verifyPassword(plaintext: string, stored: string): Promise<boolean> {
+        if (stored.startsWith('plain:')) return plaintext === stored.slice(6);
+        const hashed = await this.hashPassword(plaintext);
+        return hashed === stored;
+    },
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Key Rotation
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Generates a fresh ECDSA P-256 keypair, overwrites the stored one, and
+     * updates the identity's public key. Use this for "lost device" recovery
+     * or when a keypair may have been compromised.
+     *
+     * After rotation all peers must re-handshake — existing VERIFIED sessions
+     * will be invalid because they hold the old public key.
+     */
+    async rotateKeys(): Promise<void> {
+        if (!crypto?.subtle) {
+            console.warn('[Identity] rotateKeys: crypto.subtle unavailable.');
+            return;
+        }
+        console.log('[Identity] Rotating keypair...');
+        // Clear stored keys so initKeys() regenerates fresh ones
+        localStorage.removeItem(STORAGE_KEY_KEYS);
+        this.privateKey = null;
+        this._publicKey = null;
+
+        await this.initKeys();
+
+        // Sync the new public key into the persisted identity
+        if (this.identity) {
+            this.identity.publicKey = await this.getPublicKeyBase64();
+            const { P2PService } = await import('./P2PService');
+            if (P2PService.port === 15432) {
+                localStorage.setItem(STORAGE_KEY_IDENTITY, JSON.stringify(this.identity));
+            }
+        }
+        console.log('[Identity] Keypair rotation complete. All peers must re-handshake.');
+    },
 };

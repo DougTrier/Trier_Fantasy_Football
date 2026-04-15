@@ -1,18 +1,35 @@
+/**
+ * teamThemes.ts — Official NFL Team Color Palette & Logo Registry
+ * ================================================================
+ * Maps every NFL 2–3-letter abbreviation to its brand-accurate primary/
+ * secondary/accent colors plus the ESPN CDN logo URL. Used throughout the UI
+ * wherever a player or team needs visual differentiation (roster slots,
+ * MiniPlayerCards, PlayerCard stripes, etc.).
+ *
+ * Colors are sourced from official NFL brand guidelines and ESPN assets.
+ * Logo URLs use the ESPN CDN combiner which is publicly accessible and
+ * returns optimised PNGs — no API key required.
+ *
+ * Fallback: unknown abbreviations resolve to 'NFL' (free agent / default).
+ */
+
 // teamThemes.ts - Official NFL Color Mappings & Assets
 
 export interface TeamTheme {
-    primary: string;
-    secondary: string;
-    accent: string;
-    logoUrl: string; // ESPN CDN standard
+    primary: string;    // Dominant brand color (used for backgrounds)
+    secondary: string;  // Accent/contrast color (used for banners, borders)
+    accent: string;     // Tertiary highlight (helmets, trim)
+    logoUrl: string;    // ESPN CDN standard — publicly accessible PNG
     fullName: string;
 }
 
+/** Looks up a theme by abbreviation, falling back to the generic NFL entry. */
 export const getTeamTheme = (teamAbbr: string): TeamTheme => {
     const code = teamAbbr.toUpperCase();
     return TEAM_THEMES[code] || TEAM_THEMES['NFL'];
 };
 
+// All 32 NFL teams + generic NFL fallback for free agents
 const TEAM_THEMES: Record<string, TeamTheme> = {
     'ARI': { primary: '#97233F', secondary: '#000000', accent: '#FFB612', fullName: 'Arizona Cardinals', logoUrl: 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/nfl/500/ari.png' },
     'ATL': { primary: '#A71930', secondary: '#000000', accent: '#A5ACAF', fullName: 'Atlanta Falcons', logoUrl: 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/nfl/500/atl.png' },

@@ -22,3 +22,24 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Build / debug artifacts
+*.txt
+*.xlsx
+audit_result.json
+consult_args.json
+
+# Temp / scratch directories
+temp_*/
+output/
+
+# Test artifacts
+test-results/
+playwright-report/
+docs/screenshots/
+
+# Claude Code session files
+.claude/
+
+# Tauri build artifacts
+src-tauri/target/

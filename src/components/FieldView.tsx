@@ -1,3 +1,27 @@
+/**
+ * FieldView — Interactive Tactical Field Diagram
+ * ================================================
+ * Renders a top-down football field with draggable player token positions.
+ * Managers can toggle between OFFENSE, DEFENSE, SPECIAL TEAMS, and COACH
+ * (all-22) views. In edit mode, tokens can be dragged to custom coordinates
+ * which are persisted in local component state (reset on remount).
+ *
+ * COORDINATE SYSTEM:
+ *   Positions are stored as percentage values (top/left as % of container)
+ *   so the layout scales correctly at any window size. The container uses
+ *   position:relative and tokens use position:absolute.
+ *
+ * EDIT MODE:
+ *   Uses window-level mousemove/mouseup listeners (attached via useEffect)
+ *   rather than element-level events so dragging doesn't break if the cursor
+ *   briefly leaves the token boundary during fast movement.
+ *
+ * NOTE: FieldView is decorative / tactical planning — it does not drive
+ * actual roster slots. Roster changes are made via the Roster component.
+ */
+// useState: mode, isEditMode, coords (token positions), selectedId, isDragging.
+// useEffect: attaches/detaches window mousemove/mouseup listeners for drag.
+// useRef: containerRef used to convert absolute pixel coords to percentages.
 import React, { useState, useEffect, useRef } from 'react';
 import type { FantasyTeam, Player } from '../types';
 import { Save, Edit3, PlusCircle } from 'lucide-react';
@@ -8,7 +32,8 @@ interface FieldViewProps {
     onRemovePlayer: (player: Player) => void;
 }
 
-// Initial Coordinate State
+// Default token positions — tuned to a realistic top-down formation layout.
+// Values are percentages of the container dimensions for resolution independence.
 const INITIAL_COORDS: Record<string, { top: number, left: number, width: number, height: number, shape: 'round' | 'square' }> = {
     "s1": { "top": 29.21, "left": 51.56, "width": 105, "height": 105, "shape": "square" },
     "mlb": { "top": 47.32, "left": 39.83, "width": 88, "height": 88, "shape": "square" },
@@ -43,11 +68,17 @@ const INITIAL_COORDS: Record<string, { top: number, left: number, width: number,
     "pr": { "top": 50, "left": 20, "width": 65, "height": 65, "shape": "round" }
 };
 
-// Keys to filter display modes
+// Slot key groups for display mode filtering — specials/kickers not included in offense/defense sets
 const OFFENSE_KEYS = ['qb', 'rb1', 'wr1', 'wr2', 'te', 'lt', 'lg', 'c', 'rg', 'rt', 'flex'];
 const DEFENSE_KEYS = ['s1', 'mlb', 's2', 'cb1', 'de1', 'dt', 'lb1', 'lb2', 'dt2', 'de2', 'cb2'];
 
+/**
+ * FieldView — tactical field diagram.
+ * The component owns its own coords state (reset on remount) so position
+ * changes are non-destructive — they don't persist to the League record.
+ */
 export const FieldView: React.FC<FieldViewProps> = ({ team, onSelectPlayer }) => {
+    // mode: filters which token groups are visible — offense-only, specials, or all-22.
     const [mode, setMode] = useState<'ALL' | 'SPECIAL' | 'COACH'>('ALL');
 
     // EDIT MODE STATE
@@ -97,6 +128,8 @@ export const FieldView: React.FC<FieldViewProps> = ({ team, onSelectPlayer }) =>
         };
     }, [isDragging, selectedId]);
 
+    // handleMouseDown: initiates a drag on the selected token.
+    // preventDefault stops text selection on the page during drag.
     const handleMouseDown = (e: React.MouseEvent, id: string) => {
         if (!isEditMode) return;
         e.preventDefault();
@@ -105,6 +138,8 @@ export const FieldView: React.FC<FieldViewProps> = ({ team, onSelectPlayer }) =>
         setIsDragging(true);
     };
 
+    // handleAddMarker: adds a custom coach-label token at the center of the field.
+    // The prompt-based ID input keeps the UI minimal (no inline form needed).
     const handleAddMarker = () => {
         const id = prompt("Enter ID for new marker (e.g., st_gunner_l):");
         if (!id) return;

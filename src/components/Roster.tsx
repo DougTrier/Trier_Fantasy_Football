@@ -1,23 +1,54 @@
+/**
+ * Roster.tsx — Starting Lineup & Bench View
+ * ===========================================
+ * Renders the full 9-slot starting lineup plus bench for a single FantasyTeam.
+ *
+ * SWAP FLOW:
+ *   Clicking an occupied slot while swapCandidate is set compares positions to
+ *   determine eligibility. The parent (App.tsx) owns the swap state and calls
+ *   applyRosterMoveEvent when the swap is confirmed.
+ *
+ * LOCK INDICATORS:
+ *   Players whose NFL team appears in lockedTeams are shown with a red LOCKED
+ *   badge. Clicking them triggers the shake animation (managed by App.tsx via
+ *   shakingPlayerId) instead of opening the PlayerSelector.
+ *
+ * SCORING DISPLAY:
+ *   Shows both Projected Points (from player data) and Actual/Provisional Points
+ *   (from ScoringEngine). Color shifts from green (provisional) to gold (official)
+ *   based on the season orchestration state.
+ */
+// Roster.tsx — imports
+// useMemo prevents the teamProjection/teamActual recalculation on every render
+// because those sums iterate all 9 starters, which is measurable on slow devices.
 import React, { useMemo } from 'react';
 import type { FantasyTeam, Player } from '../types';
 // import turfBg from '../assets/turf1.jpg'; // Removed
 import leatherTexture from '../assets/leather_texture.png';
 import { Plus, Lock, Twitter, Instagram, Activity } from 'lucide-react';
 import { MiniPlayerCard } from './MiniPlayerCard';
+// ScoringEngine.calculatePoints is pure — safe to call inside render without state.
 import { ScoringEngine } from '../utils/ScoringEngine';
 
 interface RosterProps {
     team: FantasyTeam;
-    lockedTeams: string[];
+    lockedTeams: string[];     // NFL team abbreviations with active game locks
     onSelectSlot?: (slotId: string) => void;
     onSelectPlayer?: (player: Player) => void;
-    swapCandidate?: Player | null;
-    shakingPlayerId?: string | null;
+    swapCandidate?: Player | null;   // Player staged for a swap — highlights eligible targets
+    shakingPlayerId?: string | null; // Player ID to animate when a locked slot is clicked
 }
 
+// getTeamTheme supplies the primary/secondary color pair used for the slot gradient.
+// Falls back to #1f2937 / #374151 (dark gray) when the team abbreviation is unknown.
 import { getTeamTheme } from '../utils/teamThemes';
+// isPlayerLocked checks the player's NFL team abbreviation against lockedTeams.
 import { isPlayerLocked } from '../utils/gamedayLogic';
 
+// ─── Sub-Component: RosterSlot ────────────────────────────────────────────────
+// A single horizontal card representing one lineup position. Uses the player's
+// team colors for background gradient when occupied; dashed outline when empty.
+// isShaking drives the CSS 'player-shake' keyframe defined in index.css.
 const RosterSlot = ({
     label,
     player,
@@ -33,6 +64,7 @@ const RosterSlot = ({
     isSwapTarget?: boolean;
     isShaking?: boolean;
 }) => {
+    // Null when slot is empty; used for gradient colors only.
     const theme = player ? getTeamTheme(player.team) : null;
     return (
         <div
@@ -276,8 +308,14 @@ const RosterSlot = ({
     );
 };
 
+/**
+ * Roster — Starting Lineup + Bench view for one FantasyTeam.
+ * The component is read-only for display; all mutations go through
+ * onSelectSlot / onSelectPlayer callbacks back up to App.tsx.
+ */
 export const Roster: React.FC<RosterProps> = ({ team, onSelectSlot, onSelectPlayer, lockedTeams, swapCandidate, shakingPlayerId }) => {
-    // Explicit list of slots to verify type safety and order
+    // Explicit ordered list — determines the visual slot order in the lineup card.
+    // Using 'as const' lets TypeScript narrow slot.key to the exact union type.
     const starters = [
         { key: 'qb', label: 'QB' },
         { key: 'rb1', label: 'RB' },
@@ -290,17 +328,25 @@ export const Roster: React.FC<RosterProps> = ({ team, onSelectSlot, onSelectPlay
         { key: 'dst', label: 'DEF' },
     ] as const;
 
+    // Compute header stats — both are derived so we memoize together to avoid double-rerender
     const { teamProjection, teamActual } = useMemo(() => {
+        // Sum pre-season projected points across all 9 starting slots
         const proj = starters.reduce((acc, slot) => {
             const p = team.roster[slot.key];
             return acc + (p?.projectedPoints || 0);
         }, 0);
 
+        // Actual YTD points from ScoringEngine (reflects live/official data)
         const actual = ScoringEngine.calculateTeamTotal(team).total;
 
         return { teamProjection: proj, teamActual: actual };
     }, [team]);
 
+    /**
+     * Validates whether a swap candidate is eligible for a given slot.
+     * FLEX accepts RB/WR/TE per standard fantasy rules.
+     * Bench (fallthrough) accepts any position.
+     */
     const checkPos = (p: Player, slotLabel: string) => {
         const s = slotLabel.toUpperCase();
         if (s.startsWith('QB')) return p.position === 'QB';
@@ -310,9 +356,14 @@ export const Roster: React.FC<RosterProps> = ({ team, onSelectSlot, onSelectPlay
         if (s.startsWith('K')) return p.position === 'K';
         if (s.startsWith('DEF') || s.startsWith('DST')) return p.position === 'DST';
         if (s.startsWith('FLEX')) return ['RB', 'WR', 'TE'].includes(p.position);
-        return true; // Bench
+        return true; // Bench accepts any position
     };
 
+    /**
+     * Routes a slot click to the appropriate callback:
+     * - Occupied slot with no swap in progress → opens player detail (onSelectPlayer)
+     * - Empty slot or swap mode → opens PlayerSelector for that slot (onSelectSlot)
+     */
     const handleSlotClick = (slotKey: string, player: Player | null) => {
         if (player && onSelectPlayer) {
             onSelectPlayer(player);
@@ -321,6 +372,10 @@ export const Roster: React.FC<RosterProps> = ({ team, onSelectSlot, onSelectPlay
         }
     };
 
+    // ── Render ────────────────────────────────────────────────────────────────
+    // Field background image sits behind a 65% black overlay so text stays
+    // readable regardless of what portion of the texture is visible.
+    // The grid uses a single 1fr column so starters stack vertically in order.
     return (
         <div style={{
             maxWidth: '1200px',
@@ -426,7 +481,7 @@ export const Roster: React.FC<RosterProps> = ({ team, onSelectSlot, onSelectPlay
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px' }}>
-                    {/* Starters Section */}
+                    {/* ── Starting Lineup (9 fixed slots) ────────────────────────────────── */}
                     <div style={{
                         background: 'rgba(0,0,0,0.2)',
                         padding: '24px',
@@ -443,6 +498,9 @@ export const Roster: React.FC<RosterProps> = ({ team, onSelectSlot, onSelectPlay
                                     player={player}
                                     isLocked={isLocked}
                                     isShaking={!!player && player.id === shakingPlayerId}
+                                    // Highlight as swap target only if position-eligible and not the candidate itself
+                                                    // Highlight as swap target: candidate exists, slot is unlocked,
+                                    // position matches, and the player isn't the candidate itself.
                                     isSwapTarget={!!swapCandidate && !isLocked && checkPos(swapCandidate, slot.label) && player?.id !== swapCandidate.id}
                                     onClick={() => {
                                         if (isLocked) return;
@@ -453,7 +511,7 @@ export const Roster: React.FC<RosterProps> = ({ team, onSelectSlot, onSelectPlay
                         })}
                     </div>
 
-                    {/* Bench Section - More compact */}
+                    {/* ── Bench (variable length, all positions allowed) ─────────────────── */}
                     <div style={{ marginTop: '20px' }}>
                         <div style={{
                             display: 'flex',
@@ -533,6 +591,8 @@ export const Roster: React.FC<RosterProps> = ({ team, onSelectSlot, onSelectPlay
                                     </div>
                                 );
                             })}
+                            {/* Pad bench to 7 empty slots so the grid always looks full.
+                                Math.max(0,...) prevents a negative length array on large benches. */}
                             {Array.from({ length: Math.max(0, 7 - team.bench.length) }).map((_, i) => {
                                 const slotId = `bench-${i}`;
                                 // Empty bench slots are never 'locked' in the sense they can't be filled,

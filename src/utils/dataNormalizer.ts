@@ -1,6 +1,36 @@
+/**
+ * Trier Fantasy Football
+ * © 2026 Doug Trier
+ *
+ * Licensed under the MIT License.
+ * See LICENSE file for details.
+ *
+ * "Trier OS" and "Trier Fantasy Football" are trademarks of Doug Trier.
+ */
+
+/**
+ * dataNormalizer — Team Data Integrity Guard
+ * ===========================================
+ * Coerces loaded team data (from localStorage, imports, or P2P sync) into a
+ * guaranteed-valid FantasyTeam shape before it enters React state.
+ *
+ * WHY THIS EXISTS:
+ *   Team data is serialized/deserialized across multiple paths (localStorage v1→v3
+ *   migrations, peer sync, file imports). Any one of those paths can produce malformed
+ *   objects — missing roster slots, undefined bench arrays, no ID, etc.
+ *   This normalizer runs as a firewall on every load path so the rest of the app
+ *   can assume a fully valid FantasyTeam at all times.
+ *
+ * @module dataNormalizer
+ */
 
 import type { FantasyTeam } from '../types';
 
+/**
+ * Accepts any unknown object and returns a guaranteed-valid FantasyTeam.
+ * Creates safe fallback values for every required field if missing.
+ * All load and sync paths should run team data through this before setState.
+ */
 export const normalizeTeam = (team: any): FantasyTeam => {
     if (!team || typeof team !== 'object') {
         console.warn('[Normalizer] Invalid team object encountered', team);

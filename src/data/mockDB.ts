@@ -3,13 +3,13 @@ import allPlayersData from './all_players_pool.json';
 import careerStatsRaw from './rosters/career_stats.json';
 import combineStatsRaw from './combine_stats.json';
 import socialHandlesRaw from './social_handles.json';
-import liveStatsRaw from './live_stats_2025.json';
+import liveStatsRaw from './live_stats_current.json';
 import { getTeamTheme } from '../utils/teamThemes';
 
-const careerStats = careerStatsRaw as Record<string, any[]>;
-const combineStats = combineStatsRaw as any[];
-const socialHandles = socialHandlesRaw as any[];
-const liveStats = liveStatsRaw as Record<string, any>;
+const careerStats = careerStatsRaw as unknown as Record<string, Record<string, unknown>[]>;
+const combineStats = combineStatsRaw as unknown as Record<string, unknown>[];
+const socialHandles = socialHandlesRaw as unknown as Record<string, unknown>[];
+const liveStats = liveStatsRaw as unknown as Record<string, unknown>;
 
 const generateNflProfileUrl = (firstName: string, lastName: string): string => {
     // Basic slugify: lowercase, remove non-alphanumeric (except splitters), replace spaces with dashes
@@ -41,7 +41,7 @@ const processPlayers = (players: any[]): Player[] => {
                 // Mapping Orchestrated API fields to internal UI schema
                 const normalized = {
                     ...liveEntry,
-                    year: 2025,
+                    year: liveStats.season || 2025,
                     team: liveEntry.team || (p.team || 'NFL'),
                     gamesPlayed: liveEntry.gp || 0,
                     fantasyPoints: liveEntry.pts_ppr || liveEntry.pts_std || 0,
@@ -54,7 +54,7 @@ const processPlayers = (players: any[]): Player[] => {
                     rushingYards: liveEntry.rush_yd || 0,
                     rushingTDs: liveEntry.rush_td || 0,
                 };
-                history = history.filter((h: any) => h.year !== 2025);
+                history = history.filter((h: any) => h.year !== (liveStats.season || 2025));
                 history.push(normalized);
             }
         }
@@ -151,7 +151,7 @@ const nflDefenses: Player[] = nflTeams.map(teamCode => {
         historicalStats: (liveStats.data_status === "VALIDATED" && liveStats.stats?.[`dst-${teamCode.toLowerCase()}`])
             ? [{
                 ...liveStats.stats[`dst-${teamCode.toLowerCase()}`],
-                year: 2025,
+                year: liveStats.season || 2025,
                 fantasyPoints: liveStats.stats[`dst-${teamCode.toLowerCase()}`].pts_ppr || liveStats.stats[`dst-${teamCode.toLowerCase()}`].pts_std || 0
             }]
             : [],

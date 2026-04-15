@@ -1,3 +1,39 @@
+/**
+ * Trier Fantasy Football
+ * © 2026 Doug Trier
+ *
+ * Licensed under the MIT License.
+ * See LICENSE file for details.
+ *
+ * "Trier OS" and "Trier Fantasy Football" are trademarks of Doug Trier.
+ */
+
+/**
+ * DiscoveryService — Peer Discovery (Phase A: LAN mDNS / Phase B: WAN Invite Codes)
+ * ====================================================================================
+ * Finds other running instances of this app on the network and maintains
+ * a live peer registry. Operates in two modes:
+ *
+ *   Phase A — LAN mDNS:
+ *     Uses Rust (Tauri) to broadcast and listen on the local network via mDNS.
+ *     When a peer announces itself, it appears in this service's peer map within seconds.
+ *     This is the primary path for home/LAN play.
+ *
+ *   Phase B — Invite Code (WAN):
+ *     Generates a short alphanumeric code that can be shared out-of-band (text, chat).
+ *     The remote peer enters the code, resolving to a relay signaling endpoint.
+ *     Used for cross-network play where mDNS is blocked by the router.
+ *
+ * ARCHITECTURE:
+ *   - peers Map<nodeId, DiscoveredPeer> — the live registry, updated on every mDNS event.
+ *   - subscribe(fn) — UI components receive push updates when the peer list changes.
+ *   - setIpResolver() is called by P2PService so it can look up IPs by nodeId.
+ *
+ * This service does NOT handle trust or authentication — that is P2PService's job.
+ * A discovered peer is just a network address until the handshake completes.
+ *
+ * @module DiscoveryService
+ */
 
 import { invoke } from '@tauri-apps/api/tauri';
 import { listen } from '@tauri-apps/api/event';
@@ -20,21 +56,20 @@ export const DiscoveryService = {
     listeners: [] as ((peers: DiscoveredPeer[]) => void)[],
 
     async init() {
-        const identity = await IdentityService.init();
-
-        console.log('[Discovery] Initializing with ID:', identity.nodeId);
-
-        // Check environment
+        // Guard first — no need to init identity/keys if we're not in Tauri.
         const { isTauri } = await import('../utils/tauriEnv');
         if (!isTauri()) {
-            console.log('[Discovery] Browser mode detected. P2P discovery disabled.');
+            console.log('[Discovery] Browser mode — P2P discovery disabled.');
             return;
         }
+
+        const identity = await IdentityService.init();
+        console.log('[Discovery] Initializing with ID:', identity.nodeId);
 
         // 1. Listen for Peers from Rust
         try {
             await listen('PEER_DISCOVERED', (event) => {
-                const peerRaw = event.payload as any;
+                const peerRaw = event.payload as Record<string, unknown>;
                 // Validate
                 if (!peerRaw.id || !peerRaw.ip) return;
 
@@ -68,8 +103,7 @@ export const DiscoveryService = {
             console.log('[Discovery] P2P Services Started on port:', allocatedPort);
 
             // Notify listeners that port is ready
-            // @ts-ignore - accessing internal property for simpler implementation matching P2PService structure
-            P2PService.portAssignmentListeners.forEach((l: any) => l(allocatedPort));
+            P2PService.portAssignmentListeners.forEach((l) => l(allocatedPort));
 
             // Set IP Resolver for P2P Service
             P2PService.setIpResolver((id) => {
@@ -110,7 +144,7 @@ export const DiscoveryService = {
         }
     },
 
-    notifyTimer: null as any,
+    notifyTimer: null as ReturnType<typeof setTimeout> | null,
     notifyListenersDebounced() {
         if (this.notifyTimer) clearTimeout(this.notifyTimer);
         this.notifyTimer = setTimeout(() => {

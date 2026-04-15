@@ -1,17 +1,46 @@
+/**
+ * LeagueTable — Standings Table + Inline League Chat
+ * ====================================================
+ * Renders the full league standings, trophy panel, and a real-time chat
+ * panel for all connected managers.
+ *
+ * STANDINGS DATA:
+ *   Team totals come from ScoringEngine.calculateTeamTotal (live stat data).
+ *   Falls back to team.points.total when the engine returns 0, preserving
+ *   manually entered historical scores from before live data was available.
+ *
+ * CHAT:
+ *   Messages are broadcast via SyncService's BroadcastChannel (same-machine
+ *   multi-window) and P2P WebRTC (cross-machine). Own messages are added
+ *   optimistically because BroadcastChannel does not echo to the sender tab.
+ *   The chat list is capped at 100 messages to prevent unbounded growth.
+ *
+ * BLOCKING STATE:
+ *   When ScoringEngine reports NO_DATA_AVAILABLE (pre-season or missing file),
+ *   an error panel blocks the standings to prevent displaying all-zero tables
+ *   that could be mistaken for real scores.
+ */
+// React hooks used: useMemo for sorted standings, useState for chat input/list,
+// useEffect for subscription lifecycle, useRef for auto-scroll anchor.
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import type { League } from '../types';
 import { Trophy, Send } from 'lucide-react';
+// ScoringEngine called once at component top to cache orchestration status.
 import { ScoringEngine } from '../utils/ScoringEngine';
 import leatherTexture from '../assets/leather_texture.png';
+// SyncService provides both the listener API and the sendChat helper.
 import { SyncService, type SidebandMessage, type ChatPayload } from '../utils/SyncService';
 import { AnimatePresence, motion } from 'framer-motion';
 
+// ─── Types ─────────────────────────────────────────────────────────────────────
+// ChatMessage is local-only — it's never stored in League state or synced.
+// isMe drives bubble alignment (right for own messages, left for others).
 interface ChatMessage {
     id: string;
     sender: string;
     text: string;
     ts: number;
-    isMe: boolean;
+    isMe: boolean; // True when the message was sent by this browser instance
 }
 
 interface LeagueTableProps {
@@ -19,7 +48,14 @@ interface LeagueTableProps {
     myTeamName?: string;
 }
 
+/**
+ * LeagueTable — League Standings + Chat panel.
+ * Reads from ScoringEngine (no mutations) and subscribes to SyncService for
+ * incoming chat messages. All state is ephemeral: refresh resets chat.
+ */
 export const LeagueTable: React.FC<LeagueTableProps> = ({ league, myTeamName }) => {
+    // status is read once per render; no polling needed because re-renders are
+    // triggered by parent (App.tsx) on data file reload or league prop change.
     const status = ScoringEngine.getOrchestrationStatus();
 
     // ── League Chat ───────────────────────────────────────────────────────────
@@ -56,6 +92,7 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({ league, myTeamName }) 
     const sendChat = () => {
         const text = chatInput.trim();
         if (!text) return;
+        // Broadcast to all peers via P2P/BroadcastChannel
         SyncService.sendChat(myTeamName || 'Anonymous', text);
         // Add own message optimistically (won't arrive back via BroadcastChannel on same instance)
         setChatMessages(prev => [...prev, {
@@ -68,6 +105,7 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({ league, myTeamName }) 
         setChatInput('');
     };
 
+    // Enter = send, Shift+Enter = newline (standard chat UX convention).
     const handleChatKey = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
@@ -75,12 +113,15 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({ league, myTeamName }) 
         }
     };
 
-    // DATA PROCESSING
+    // ── Standings Computation ──────────────────────────────────────────────────
+    // Spread-then-map so the original league.teams array is never mutated.
+    // Sort is descending so index 0 = league leader for getRankStyle gold styling.
     const sortedTeams = useMemo(() => {
         return [...league.teams].map(team => {
             const audit = ScoringEngine.calculateTeamTotal(team);
             let total = audit.total;
 
+            // Preserve manually entered totals when live engine returns zero (pre-live-data era)
             if (team.points?.total !== undefined && total === 0) total = team.points.total;
 
             return { ...team, totalPoints: total, audit };
@@ -106,6 +147,10 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({ league, myTeamName }) 
         );
     }
 
+    /**
+     * Returns rank-specific styling for gold/silver/bronze podium positions.
+     * Teams ranked 4th and below get a neutral dark background.
+     */
     const getRankStyle = (index: number) => {
         if (index === 0) return { bg: 'linear-gradient(135deg, rgba(234, 179, 8, 0.2) 0%, rgba(234, 179, 8, 0.05) 100%)', border: '#eab308', glow: '0 0 30px rgba(234, 179, 8, 0.3)', icon: '/trophy-gold.png', label: 'LEAGUE LEADER' };
         if (index === 1) return { bg: 'linear-gradient(135deg, rgba(229, 231, 235, 0.2) 0%, rgba(156, 163, 175, 0.05) 100%)', border: '#9ca3af', glow: '0 0 20px rgba(156, 163, 175, 0.2)', icon: '/trophy-silver.png', label: '2ND PLACE' };

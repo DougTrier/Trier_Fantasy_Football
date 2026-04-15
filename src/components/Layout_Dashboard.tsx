@@ -1,10 +1,42 @@
+/**
+ * Layout_Dashboard — Application Shell with Sidebar Navigation
+ * =============================================================
+ * Provides the full-screen layout: a fixed sidebar on the left and a
+ * scrollable content area on the right. All page navigation routes through
+ * the sidebar items, which report back via onNavigate.
+ *
+ * SIDEBAR DESIGN:
+ *   - Turf background texture + repeating yard-marker lines for stadium feel.
+ *   - Each nav item uses a gel/leather material effect when active, simulating
+ *     a dimensional placard on the field wall.
+ *   - Dashboard and My Team items are disabled (pointer-events: none) for guests
+ *     who haven't selected a team yet.
+ *
+ * STATUS BAR:
+ *   Shows season state and data validation status from ScoringEngine so managers
+ *   always know whether scores are provisional or officially verified.
+ *
+ * TRADE BADGE:
+ *   Red dot appears on Trade Center nav item when hasNewOffers is true,
+ *   alerting the user to pending incoming offers without disrupting flow.
+ */
+// External imports — lucide-react icons are tree-shaken at build time so only
+// the imported names contribute to bundle size. Each icon is ~1KB gzipped.
 import React from 'react';
 import { LayoutDashboard, Users, Trophy, User, Settings, LogOut, BookOpen, Swords, Wallet, Zap, ArrowRightLeft, Wifi } from 'lucide-react';
+// ScoringEngine is read-only here (getOrchestrationStatus); no mutation occurs.
+// It is imported as a module-level singleton — no React state needed for status.
 import { ScoringEngine } from '../utils/ScoringEngine';
 import type { FantasyTeam } from '../types';
+// Static assets — resolved to hashed filenames by Vite at build time.
 import turfBg from '../assets/turf1.jpg';
 import leatherTexture from '../assets/leather_texture.png';
 import brandedFootball from '../assets/branded_football_on_grass.png';
+
+// ─── Sub-Component: SidebarItem ───────────────────────────────────────────────
+// Each nav link uses a gel/leather material effect when active. The high-gloss
+// reflection div is a purely decorative pseudo-element implemented as a real
+// DOM node because CSS ::before is unavailable on inline-styled elements.
 
 interface SidebarItemProps {
     icon: React.ReactNode;
@@ -14,6 +46,9 @@ interface SidebarItemProps {
     title?: string;
 }
 
+// SidebarItem renders a single navigation entry with stadium-themed styling.
+// The hover handlers mutate inline styles directly to avoid re-render overhead
+// on rapid mouse events (dozens of items × each mouse move = noisy state diff).
 const SidebarItem: React.FC<SidebarItemProps> = ({ icon, label, isActive, onClick, title }) => (
     <div
         onClick={onClick}
@@ -26,6 +61,8 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ icon, label, isActive, onClic
             margin: '8px 0',
             borderRadius: '50px', // STADIUM OVAL
             cursor: 'pointer',
+            // Leather texture image is composited over a brown gradient via
+            // backgroundImage stacking (first URL = top layer) to mimic depth.
             // GEL LOOK BASE - Realistic Leather Active State (Matched to Standings)
             backgroundImage: isActive
                 ? `url(/leather_panel_large.png), linear-gradient(135deg, rgba(120, 53, 15, 0.4) 0%, rgba(69, 26, 3, 0.4) 100%)`
@@ -38,6 +75,7 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ icon, label, isActive, onClic
             fontWeight: isActive ? 800 : 600,
             transition: 'transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease',
             willChange: 'transform',
+            // Inset highlights simulate a convex surface catching overhead light.
             // 3D PLACARD SHADOWS
             boxShadow: isActive
                 ? '0 10px 25px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.4), inset 0 -1px 0 rgba(0,0,0,0.5)'
@@ -48,15 +86,19 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ icon, label, isActive, onClic
             zIndex: 5,
             overflow: 'hidden'
         }}
+        // onMouseEnter: lift up + intensify shadow for active, lighten bg for inactive.
         onMouseEnter={(e) => {
             e.currentTarget.style.transform = 'translateY(-2px)';
             if (!isActive) {
+                // Inactive: subtle gold border tint reveals the nav item as clickable.
                 e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)';
                 e.currentTarget.style.borderColor = 'rgba(234, 179, 8, 0.4)';
             } else {
+                // Active: deeper shadow amplifies the 3D placard effect on hover.
                 e.currentTarget.style.boxShadow = '0 12px 30px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.5)';
             }
         }}
+        // onMouseLeave: restore resting state — translate back, reset colors.
         onMouseLeave={(e) => {
             e.currentTarget.style.transform = 'translateY(0)';
             if (!isActive) {
@@ -99,6 +141,11 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ icon, label, isActive, onClic
     </div>
 );
 
+// ─── Main Component Props ──────────────────────────────────────────────────────
+// hasNewOffers drives the red notification dot on the Trade Center nav item.
+// onSaveAndClose triggers Tauri persist + window.close(); it bypasses normal
+// React navigation so it lives here rather than in the settings page.
+
 interface LayoutDashboardProps {
     children: React.ReactNode;
     activeView: string;
@@ -110,6 +157,13 @@ interface LayoutDashboardProps {
     hasNewOffers?: boolean;
 }
 
+/**
+ * Layout_Dashboard — top-level app shell.
+ * Renders the fixed sidebar and the scrollable main content area. The KPI
+ * header (Total Production / Trade Points Used / Balance) is only injected
+ * when activeView === 'dashboard'; all other views receive a plain {children}
+ * slot so they can control their own padding and layout.
+ */
 export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
     children,
     activeView,
@@ -120,18 +174,22 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
     onSaveAndClose,
     hasNewOffers
 }) => {
+    // Find the active team from the userTeams array for KPI display.
+    // Linear scan is fine — leagues rarely exceed 20 teams.
     const activeTeam = userTeams.find(t => t.id === activeTeamId);
 
-
-    // Guest Mode Fallback
+    // Guest Mode: when no team is selected (e.g. first launch or after team deletion),
+    // render a stub so the layout doesn't crash on missing team properties.
     const displayTeam = activeTeam || {
         name: 'Guest User',
         ownerName: 'Read Only Mode',
         id: 'guest',
         roster: {}, bench: [], transactions: [],
         total_production_pts: 0, points_escrowed: 0, points_spent: 0
-    } as any;
+    } as unknown as FantasyTeam;
 
+    // overflow:hidden on the outer wrapper prevents the sidebar from causing
+    // horizontal scroll; only the <main> element scrolls vertically.
     return (
         <div style={{
             display: 'flex',
@@ -156,7 +214,8 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
                 position: 'relative',
                 flexShrink: 0
             }}>
-                {/* Yard Markers Overlay */}
+                {/* Yard Markers Overlay — repeating white stripes at 40px intervals
+                    simulate sideline yard-marker lines; purely decorative */}
                 <div style={{
                     position: 'absolute',
                     top: 0,
@@ -212,6 +271,8 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
                         overflow: 'hidden',
                         border: '4px solid rgba(234, 179, 8, 0.4)',
                         boxShadow: '0 10px 25px rgba(0,0,0,0.6)',
+                        // Radial gradient mask fades the football image to transparent
+                        // at the edges, blending it naturally into the sidebar background.
                         // Vignette for the image itself
                         maskImage: 'radial-gradient(circle at center, black 60%, transparent 100%)',
                         WebkitMaskImage: 'radial-gradient(circle at center, black 60%, transparent 100%)'
@@ -224,7 +285,9 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
                     </div>
                 </div>
 
-                {/* Orchestration Status Bar (Moved and Enhanced with Tooltip) */}
+                {/* Orchestration Status Bar — green dot = VALIDATED (cross-checked),
+                    red dot = any other state (in-progress, provisional, or missing).
+                    Tooltip expands abbreviations for non-technical commissioners. */}
                 <div
                     title={`Season: ${ScoringEngine.getOrchestrationStatus().season_state} | Data: ${ScoringEngine.getOrchestrationStatus().data_status}\n\n- COMPLETED_OFFICIAL: All games finished and verified.\n- VALIDATED: Points cross-checked against official box scores.`}
                     style={{
@@ -258,10 +321,14 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
                     </span>
                 </div>
 
-                {/* Middle: Navigation - Evenly Spaced */}
+                {/* ── Navigation Links ──────────────────────────────────────────────
+                    justifyContent:'space-evenly' distributes items without hard-coded
+                    pixel gaps, so the sidebar scales cleanly on short screens. */}
                 <nav style={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column', justifyContent: 'space-evenly', gap: '4px', zIndex: 10, overflowY: 'auto', minHeight: '100px' }}>
 
-                    {/* Dashboard & My Team: Disabled for guests */}
+                    {/* Dashboard & My Team: Disabled for guests.
+                        Opacity 0.3 + pointer-events:none visually greys out and
+                        prevents click without removing the element from the DOM. */}
                     <div style={{ opacity: displayTeam.id === 'guest' ? 0.3 : 1, pointerEvents: displayTeam.id === 'guest' ? 'none' : 'auto', cursor: displayTeam.id === 'guest' ? 'not-allowed' : 'pointer' }}>
                         <SidebarItem
                             icon={<div style={{ width: 20 }}><LayoutDashboard size={20} /></div>}
@@ -308,12 +375,16 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
                 <div style={{ paddingTop: 'clamp(10px, 2vh, 20px)', borderTop: '1px solid rgba(255,255,255,0.2)', zIndex: 10 }}>
                     <SidebarItem icon={<div style={{ width: 20 }}><Settings size={20} /></div>} label="Settings / Create Team" isActive={activeView === 'settings'} onClick={() => onNavigate('settings')} title="Franchise administration and league commissioner settings." />
 
+                    {/* Log Out clears the active team — onSelectTeam('') signals
+                        the parent (App.tsx) to drop back to the team-selection screen */}
                     {displayTeam.id !== 'guest' && (
                         <SidebarItem icon={<div style={{ width: 20 }}><LogOut size={20} /></div>} label="Log Out" isActive={false} onClick={() => onSelectTeam('')} title="Sign out of your currently active franchise." />
                     )}
                 </div>
 
-                {/* SAVE AND CLOSE BUTTON */}
+                {/* ── Save and Close Button ─────────────────────────────────────────
+                    Placed below Settings/Logout so it's never accidentally clicked
+                    during normal navigation. Red leather treatment signals "exit". */}
                 <div
                     onClick={onSaveAndClose}
                     title="Persist all changes to disk and exit the application safely."
@@ -339,11 +410,13 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
                         zIndex: 10,
                         overflow: 'hidden'
                     }}
+                    // brightness(1.1) on hover gives tactile "press about to happen" feedback.
                     onMouseEnter={(e) => {
                         e.currentTarget.style.transform = 'translateY(-2px)';
                         e.currentTarget.style.boxShadow = '0 12px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.4)';
                         e.currentTarget.style.filter = 'brightness(1.1)';
                     }}
+                    // Restore resting state on leave — no lingering hover effects.
                     onMouseLeave={(e) => {
                         e.currentTarget.style.transform = 'translateY(0)';
                         e.currentTarget.style.boxShadow = '0 8px 15px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3)';
@@ -363,7 +436,10 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
                     <span style={{ position: 'relative', zIndex: 1 }}>Save and Close</span>
                 </div>
 
-                {/* CREATOR BRANDING */}
+                {/* ── Creator Branding + Donate ─────────────────────────────────────
+                    Anchored to the sidebar bottom via marginTop:'auto'.
+                    The donate link uses Tauri shell.open() when running as a desktop
+                    app, falling back to window.open() in browser previews. */}
                 <div
                     style={{
                         marginTop: 'auto',
@@ -401,7 +477,7 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
                         a Trier OS product
                     </div>
 
-                    {/* DONATE BUTTON */}
+                    {/* DONATE BUTTON — uses Tauri shell.open for desktop, window.open as browser fallback */}
                     <a
                         href="https://buymeacoffee.com/dougtrier"
                         onClick={(e) => {
@@ -434,11 +510,14 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
                             cursor: 'pointer',
                             userSelect: 'none',
                         }}
+                        // Scale-up on hover gives the donate button extra personality —
+                        // it's not a navigation item so the stronger animation is intentional.
                         onMouseEnter={(e) => {
                             e.currentTarget.style.transform = 'translateY(-2px) scale(1.04)';
                             e.currentTarget.style.boxShadow = '0 8px 20px rgba(255,149,0,0.75), inset 0 1px 0 rgba(255,255,255,0.5)';
                             e.currentTarget.style.filter = 'brightness(1.08)';
                         }}
+                        // Reset transforms on leave to avoid sticky state after fast moves.
                         onMouseLeave={(e) => {
                             e.currentTarget.style.transform = 'translateY(0)';
                             e.currentTarget.style.boxShadow = '0 4px 12px rgba(255,149,0,0.55), inset 0 1px 0 rgba(255,255,255,0.45)';
@@ -462,7 +541,9 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
                 </div>
             </aside>
 
-            {/* Main Content */}
+            {/* ── Main Content Area ────────────────────────────────────────────── */}
+            {/* Scrollable right-hand panel. All page components render here as  */}
+            {/* children, passed from App.tsx based on activeView.               */}
             <main style={{
                 flex: 1,
                 overflowY: 'auto',
@@ -480,9 +561,14 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
                     display: 'flex',
                     flexDirection: 'column'
                 }}>
+                    {/* ── Dashboard Overview — 3-metric KPI header ──────────────────── */}
+                    {/* Shown only on the dashboard view; other views render just {children} */}
+                    {/* KPI panel is injected before {children} on the dashboard view.
+                        Other views skip this entirely and receive unobstructed {children}. */}
                     {activeView === 'dashboard' && (
+                        // 3-column grid keeps the KPIs at equal width regardless of values.
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '40px' }}>
-                            {/* Total Production Points */}
+                            {/* Total Production Points — sum of all actual fantasy points earned */}
                             <div style={{
                                 background: 'rgba(0,0,0,0.6)',
                                 padding: '24px',
@@ -517,7 +603,7 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
                                 </div>
                             </div>
 
-                            {/* Trade Points Used */}
+                            {/* Trade Points Used — escrowed + spent (both reduce available balance) */}
                             <div style={{
                                 background: 'rgba(0,0,0,0.6)',
                                 padding: '24px',
@@ -548,11 +634,13 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
                                     letterSpacing: '2px',
                                     lineHeight: '1.2'
                                 }}>
+                                    {/* Escrowed = held for pending offers; Spent = finalized trades.
+                                        Both reduce the usable balance so they're summed here. */}
                                     {((displayTeam.points_escrowed || 0) + (displayTeam.points_spent || 0)).toLocaleString()} <span style={{ fontSize: '1.2rem', color: '#d1d5db', fontWeight: 600, textShadow: '0 1px 3px rgba(0,0,0,1)' }}>PTS</span>
                                 </div>
                             </div>
 
-                            {/* Actual League Balance */}
+                            {/* Available Balance = total_production_pts - points_escrowed - points_spent */}
                             <div style={{
                                 background: 'rgba(0,0,0,0.65)',
                                 padding: '24px',
@@ -583,11 +671,14 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
                                     letterSpacing: '2px',
                                     lineHeight: '1.2'
                                 }}>
+                                    {/* Escrowed points are NOT subtracted here because they're
+                                        only reserved; the balance becomes final on trade accept. */}
                                     {((displayTeam.total_production_pts || 0) - (displayTeam.points_spent || 0)).toLocaleString()} <span style={{ fontSize: '1.2rem', color: '#d1d5db', fontWeight: 600, textShadow: '0 1px 3px rgba(0,0,0,1)' }}>PTS</span>
                                 </div>
                             </div>
                         </div>
                     )}
+                    {/* All non-dashboard views render their full page component here */}
                     {children}
                 </div>
             </main>

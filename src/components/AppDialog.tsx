@@ -26,7 +26,7 @@ interface DialogState {
     defaultValue?: string;
     confirmLabel?: string;
     cancelLabel?: string;
-    resolve: (value: any) => void;
+    resolve: (value: unknown) => void;
 }
 
 interface DialogAPI {
@@ -48,11 +48,15 @@ export const DialogProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const inputRef = useRef<HTMLInputElement>(null);
     const [inputValue, setInputValue] = useState('');
 
+    /**
+     * Generic dialog opener — stores resolve on state so any button can
+     * complete the promise. Returns a typed promise to callers.
+     */
     const open = <T,>(partial: Omit<DialogState, 'resolve'>): Promise<T> =>
         new Promise<T>(resolve => {
-            setInputValue((partial as any).defaultValue ?? '');
+            setInputValue((partial as Partial<Pick<DialogState, 'defaultValue'>>).defaultValue ?? '');
             setState({ ...partial, resolve } as DialogState);
-            // Focus input on next tick
+            // Focus input on next tick to ensure the DOM node exists before calling focus()
             if (partial.mode === 'prompt') {
                 setTimeout(() => inputRef.current?.focus(), 50);
             }
@@ -67,6 +71,7 @@ export const DialogProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             open({ mode: 'prompt', title, message, placeholder: opts?.placeholder, defaultValue: opts?.defaultValue }),
     };
 
+    /** Resolves the promise with the appropriate affirmative value for each mode. */
     const handleConfirm = () => {
         if (!state) return;
         if (state.mode === 'prompt') state.resolve(inputValue);
@@ -75,6 +80,7 @@ export const DialogProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setState(null);
     };
 
+    /** Resolves the promise with a "cancelled/no" value and closes the dialog. */
     const handleCancel = () => {
         if (!state) return;
         if (state.mode === 'confirm') state.resolve(false);

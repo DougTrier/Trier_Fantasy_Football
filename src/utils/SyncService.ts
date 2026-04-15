@@ -1,12 +1,46 @@
+/**
+ * Trier Fantasy Football
+ * © 2026 Doug Trier
+ *
+ * Licensed under the MIT License.
+ * See LICENSE file for details.
+ *
+ * "Trier OS" and "Trier Fantasy Football" are trademarks of Doug Trier.
+ */
+
+/**
+ * SyncService — Sideband State Synchronization
+ * ==============================================
+ * Keeps league state consistent across two surfaces simultaneously:
+ *   1. Local browser tabs (via BroadcastChannel — same machine, different windows)
+ *   2. LAN peers (via P2PService WebRTC data channel)
+ *
+ * WHY SIDEBAND (not EventStore) FOR FULL SYNC:
+ *   SYNC_TEAMS is a full-state snapshot, not a granular event. It handles the
+ *   initial state handshake when a new peer connects (VERIFIED). Granular mutations
+ *   (e.g. ROSTER_MOVE) are routed through EventStore instead.
+ *   These two channels are complementary — sideband for bulk init, EventStore for deltas.
+ *
+ * NOTE: The P2PService.onData hook in this constructor only processes SYNC_TEAMS
+ * and PING messages. All EVENT messages bypass this service entirely and go
+ * directly to App.tsx → applyRosterMoveEvent().
+ *
+ * @module SyncService
+ */
 import type { FantasyTeam } from '../types';
 
 const SYNC_CHANNEL = 'trier_fantasy_sideband';
 
 export interface SidebandMessage {
-    type: 'PING' | 'PONG' | 'SYNC_TEAMS';
+    type: 'PING' | 'PONG' | 'SYNC_TEAMS' | 'CHAT';
     senderId: string;
     payload?: any;
     timestamp: number;
+}
+
+export interface ChatPayload {
+    sender: string; // team/owner display name
+    text: string;
 }
 
 import { P2PService } from '../services/P2PService';
@@ -69,6 +103,15 @@ class SidebandSyncService {
         this.channel.postMessage(msg);
         // 2. Broadcast to P2P Network
         P2PService.broadcast(msg);
+    }
+
+    public sendChat(sender: string, text: string) {
+        this.sendMessage({
+            type: 'CHAT',
+            senderId: this.instanceId,
+            payload: { sender, text } as ChatPayload,
+            timestamp: Date.now()
+        });
     }
 
     public getInstanceId() {

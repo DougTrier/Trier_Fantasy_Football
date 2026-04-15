@@ -1,21 +1,48 @@
+/**
+ * Trier Fantasy Football
+ * © 2026 Doug Trier
+ *
+ * Licensed under the MIT License.
+ * See LICENSE file for details.
+ *
+ * "Trier OS" and "Trier Fantasy Football" are trademarks of Doug Trier.
+ */
 
+/**
+ * tauriEnv — Runtime Environment Guards
+ * =======================================
+ * Detects whether the app is running inside a Tauri desktop shell or a plain browser.
+ *
+ * WHY THIS EXISTS:
+ *   The app runs in two modes — browser (dev/testing) and Tauri (production desktop).
+ *   Tauri-specific APIs (invoke, file system, mDNS, NTP) crash the browser build if called
+ *   without this guard. All Tauri-only code paths must check isTauri() first.
+ *
+ *   safeInvoke() wraps invoke() for convenience — it no-ops in browser mode
+ *   and logs a warning so developers can see what would have been called.
+ *
+ * @module tauriEnv
+ */
+
+/**
+ * Returns true if the app is running inside the Tauri desktop shell.
+ * Uses the presence of `__TAURI_IPC__` on window — injected by Tauri at startup.
+ */
 export function isTauri(): boolean {
     return typeof window !== 'undefined' && '__TAURI_IPC__' in window;
 }
 
+/**
+ * Safe wrapper around Tauri's invoke(). No-ops silently in browser mode.
+ * @param command - The Rust command name registered in src-tauri/src/main.rs
+ * @param args - Optional arguments passed to the Rust handler
+ * @returns The Rust return value, or null if not running in Tauri
+ */
 export async function safeInvoke<T>(command: string, args?: any): Promise<T | null> {
     if (!isTauri()) {
         console.warn(`[Tauri] Skipping invoke('${command}') - Not running in Tauri`);
         return null;
     }
-    // Dynamic import to avoid bundling issues if possible, though safe via polyfills now
-    // But better to use the module we likely already imported or Import it top level?
-    // Let's assume top level import is fine if we don't call it. 
-    // Actually, if we import from @tauri-apps/api, it might try to access window.__TAURI_IPC__ at module level?
-    // Usually it doesn't until called.
-
-    // We'll use the one passed from arguments or import dynamically?
-    // For simplicity, let's assume the calling service handles the import or we import here.
     const { invoke } = await import('@tauri-apps/api/tauri');
     return invoke(command, args);
 }

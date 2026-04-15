@@ -1,18 +1,44 @@
+/**
+ * PlayerSelector — Full-Screen Draft/Add Player Modal
+ * =====================================================
+ * Opened when a manager clicks an empty roster slot or the bench add button.
+ * Provides a filtered, sorted, and virtually-scrolled grid of available players.
+ *
+ * POSITION FILTERING:
+ *   AUTO mode: derives allowed positions from the target slot using
+ *   getAllowedPositionsForSlot (e.g. FLEX slot allows RB/WR/TE).
+ *   Manual override lets users browse all positions if desired.
+ *
+ * VIRTUAL SCROLL:
+ *   Renders only the first visibleCount cards; loads 40 more when the user
+ *   scrolls within 400px of the bottom. Prevents rendering 500+ cards at once.
+ *
+ * HIGHLIGHT BADGES:
+ *   Top 20 players in non-NAME sort modes display a rotated stat badge
+ *   ("sticker") to surface the ranking context at a glance.
+ *
+ * Creates a custom player via CreatePlayerForm when "Create Custom" is clicked.
+ */
+// useMemo: allowedPositions, filteredAndSorted, scoredPlayers.
+// useState: search, filter controls, visibleCount for virtual scroll.
+// useEffect: window scroll listener for infinite-load trigger.
 import React, { useMemo, useState, useEffect } from 'react';
 import type { Player } from '../types';
 import { PlayerCard } from './PlayerCard';
 import { PlayerTradingCard } from './PlayerTradingCard';
 import { CreatePlayerForm } from './CreatePlayerForm';
+// getAllowedPositionsForSlot converts a slot key (e.g. "flex") into position list.
 import { getAllowedPositionsForSlot } from '../utils/positionLogic';
 import { NFL_TEAMS } from '../utils/constants';
 import { X, Plus } from 'lucide-react';
+import { ScoringEngine } from '../utils/ScoringEngine';
 
 interface PlayerSelectorProps {
     isOpen: boolean;
     onClose: () => void;
     onSelect: (player: Player) => void;
     availablePlayers: Player[];
-    targetSlotId: string | null;
+    targetSlotId: string | null; // The slot being filled — drives AUTO position filter
 }
 
 type SortOption = 'PROJ' | 'ADP' | 'PASS_YDS' | 'RUSH_YDS' | 'REC_YDS' | 'GAMES' | 'NAME';
@@ -27,6 +53,7 @@ export const PlayerSelector: React.FC<PlayerSelectorProps> = ({
     const [sortBy, setSortBy] = useState<SortOption>('ADP');
     const [visibleCount, setVisibleCount] = useState(60);
 
+    // Resolve the allowed position list from slot context or manual override
     const allowedPositions = useMemo(() => {
         if (posFilter !== 'AUTO') {
             if (posFilter === 'ALL') return [];
@@ -169,7 +196,7 @@ export const PlayerSelector: React.FC<PlayerSelectorProps> = ({
                         style={{ padding: '10px', background: '#1f2937', color: 'white', border: '1px solid #4b5563', borderRadius: '8px', fontWeight: 600 }}
                     >
                         <option value="ADP">Sort by: ADP / Rank</option>
-                        <option value="PROJ">Sort by: 2025 Projected Pts</option>
+                        <option value="PROJ">Sort by: {ScoringEngine.getOrchestrationStatus().season} Projected Pts</option>
                         <option value="PASS_YDS">Sort by: Career Passing Yards</option>
                         <option value="RUSH_YDS">Sort by: Career Rushing Yards</option>
                         <option value="REC_YDS">Sort by: Career Receiving Yards</option>

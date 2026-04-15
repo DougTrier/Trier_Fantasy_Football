@@ -1,10 +1,26 @@
+/**
+ * SecurityService — AES-GCM Encryption Wrapper
+ * ==============================================
+ * Uses the native Web Crypto API (SubtleCrypto) so no external crypto
+ * library is required and private keys never leave the browser.
+ *
+ * Algorithm: PBKDF2(SHA-256, 100k iterations) → AES-GCM-256.
+ * The 12-byte IV is generated fresh per encrypt call and prepended to the
+ * ciphertext so the combined Base64 blob is self-contained.
+ *
+ * SECURITY NOTE: The static SALT is intentional — this protects against
+ * casual clipboard edits ("security through friction"), not adversarial
+ * brute-force. User-supplied passwords add the real entropy.
+ */
 
 // SecurityService.ts - Native Web Crypto Wrapper
 
 export class SecurityService {
-    private static SALT = new TextEncoder().encode("TRIER_FANTASY_V1_SALT"); // Static salt for simplicity in this context
+    // Static salt — acceptable here because the goal is tamper-resistance,
+    // not cryptographic hardening against offline dictionary attacks.
+    private static SALT = new TextEncoder().encode("TRIER_FANTASY_V1_SALT");
 
-    // Derive a key from a password
+    /** Derives a 256-bit AES-GCM key from a plaintext password via PBKDF2. */
     private static async getKey(password: string): Promise<CryptoKey> {
         const enc = new TextEncoder();
         const keyMaterial = await window.crypto.subtle.importKey(
@@ -29,7 +45,11 @@ export class SecurityService {
         );
     }
 
-    // Encrypt data object to Base64 String
+    /**
+     * Serialises `data` to JSON and encrypts it to a Base64 string.
+     * Falls back to a well-known default key when no password is given —
+     * this at least prevents casual plaintext editing of exported files.
+     */
     static async encrypt(data: any, password?: string): Promise<string> {
         try {
             // Use a default system password if none provided, to at least prevent Notepad edits
@@ -57,7 +77,11 @@ export class SecurityService {
         }
     }
 
-    // Decrypt Base64 String to data object
+    /**
+     * Decrypts a Base64 string produced by encrypt() back to the original object.
+     * Throws "Invalid password or corrupted file integrity." on auth tag failure,
+     * which the caller (SettingsPage) uses to prompt for a retry.
+     */
     static async decrypt(base64Str: string, password?: string): Promise<any> {
         try {
             const pass = password || "TRIER_DEFAULT_SYSTEM_KEY_99";

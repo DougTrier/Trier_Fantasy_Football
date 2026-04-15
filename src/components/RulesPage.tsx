@@ -1,8 +1,23 @@
 import React from 'react';
-import { Target, Users, Zap, Shield, HelpCircle, BookOpen, Lock, Wifi, ArrowLeftRight } from 'lucide-react';
+import { Target, Users, Zap, Shield, HelpCircle, BookOpen, Lock, Wifi, ArrowLeftRight, Github, Database } from 'lucide-react';
 import leatherTexture from '../assets/leather_texture.png';
 
+/** Returns the NFL season year currently in focus.
+ * Logic: January–mid-Feb → previous year's season (playoffs/Super Bowl).
+ *        Mid-Feb onward → upcoming/active season (off-season or current year).
+ * After the Super Bowl (~Feb 15) the next season year becomes the display year.
+ */
+function getDisplaySeason(): number {
+    const now = new Date();
+    const month = now.getMonth(); // 0 = Jan
+    const year = now.getFullYear();
+    if (month === 0) return year - 1;                   // January: playoffs for prior season
+    if (month === 1 && now.getDate() <= 15) return year - 1; // Early Feb: Super Bowl
+    return year;                                          // Feb 16+ through Dec: upcoming/active
+}
+
 export const RulesPage: React.FC = () => {
+    const displaySeason = getDisplaySeason();
     return (
         <div style={{
             color: 'white',
@@ -57,8 +72,47 @@ export const RulesPage: React.FC = () => {
                         textTransform: 'uppercase',
                         letterSpacing: '1px'
                     }}>
-                        Official guidelines and technical protocols for the 2025 Season
+                        Official guidelines and technical protocols for the {displaySeason} Season
                     </p>
+                </div>
+
+                {/* Developer Credit — under subtitle, dark pill for readability */}
+                <div style={{
+                    marginTop: '14px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '6px 18px',
+                    background: 'rgba(0,0,0,0.72)',
+                    backdropFilter: 'blur(6px)',
+                    borderRadius: '50px',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    boxShadow: '0 2px 12px rgba(0,0,0,0.5)'
+                }}>
+                    <span style={{ color: '#9ca3af', fontSize: '0.8rem', whiteSpace: 'nowrap' }}>Built by</span>
+                    <strong style={{ color: '#fff', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>Doug Trier</strong>
+                    <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '0.75rem' }}>·</span>
+                    <a
+                        href="https://github.com/DougTrier"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            color: '#eab308',
+                            textDecoration: 'none',
+                            fontWeight: 700,
+                            fontSize: '0.8rem',
+                            whiteSpace: 'nowrap',
+                            transition: 'color 0.2s ease'
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.color = '#fde047'; }}
+                        onMouseLeave={e => { e.currentTarget.style.color = '#eab308'; }}
+                    >
+                        <Github size={13} />
+                        github.com/DougTrier
+                    </a>
                 </div>
             </div>
 
@@ -117,10 +171,16 @@ export const RulesPage: React.FC = () => {
                     content={[
                         "Sack: 1 pt",
                         "Interception: 2 pts",
+                        "Fumble Recovery: 2 pts",
                         "Safety: 2 pts",
                         "Defensive / Return TD: 6 pts",
-                        "Note: Points-allowed brackets and fumble",
-                        "recoveries are not yet in the scoring engine"
+                        "0 pts allowed: +10 pts",
+                        "1–6 pts allowed: +7 pts",
+                        "7–13 pts allowed: +4 pts",
+                        "14–20 pts allowed: +1 pt",
+                        "21–27 pts allowed: 0 pts",
+                        "28–34 pts allowed: -1 pt",
+                        "35+ pts allowed: -4 pts"
                     ]}
                 />
 
@@ -129,12 +189,11 @@ export const RulesPage: React.FC = () => {
                     icon={<Target size={32} color="#eab308" />}
                     title="Kicker Scoring"
                     content={[
-                        "FG 0–39 yds: 3 pts (planned)",
-                        "FG 40–49 yds: 4 pts (planned)",
-                        "FG 50+ yds: 5 pts (planned)",
-                        "Extra Point: 1 pt (planned)",
-                        "Note: Kicker scoring is not yet automated",
-                        "in the scoring engine — kickers score 0"
+                        "FG 0–39 yds: 3 pts",
+                        "FG 40–49 yds: 4 pts",
+                        "FG 50+ yds: 5 pts",
+                        "Extra Point made: 1 pt",
+                        "Missed Extra Point: -1 pt"
                     ]}
                 />
 
@@ -185,11 +244,26 @@ export const RulesPage: React.FC = () => {
                     icon={<BookOpen size={32} color="#eab308" />}
                     title="Season State Protocol"
                     content={[
-                        "FUTURE: Season not yet started — scores blocked",
-                        "ACTIVE_UNOFFICIAL: Live provisional scoring",
-                        "COMPLETED_OFFICIAL: All scores final & frozen",
-                        "SCANNED: Raw play-by-play data ingested",
-                        "VALIDATED: Official box scores verified"
+                        "FUTURE: Off-season — no scoring data available",
+                        "PRESEASON: Aug 1 – Sep 4 — scouting only, no fantasy points",
+                        "ACTIVE_UNOFFICIAL: Sep 5 → Super Bowl — live provisional scoring",
+                        "COMPLETED_OFFICIAL: Post-Super Bowl — all scores final & frozen",
+                        "Note: Data status — SCANNED = raw play-by-play ingested; VALIDATED = official box scores confirmed"
+                    ]}
+                />
+
+                {/* NFL Data Pipeline */}
+                <RuleCard
+                    icon={<Database size={32} color="#eab308" />}
+                    title="NFL Data Pipeline"
+                    content={[
+                        "Powered by Sleeper API — free, no auth required",
+                        "Post-draft (May 1): rookies + UDFA signings settled",
+                        "Training camp (Jul 25): depth charts + camp cuts",
+                        "Final cuts (Aug 27): official 53-man rosters locked",
+                        "In-season Mon / Wed / Fri: trades, injuries, IR moves",
+                        "Off-season Mondays: free agent signings, retirements",
+                        "Note: Fully automated via GitHub Actions — zero maintenance"
                     ]}
                 />
             </div>
@@ -225,9 +299,10 @@ export const RulesPage: React.FC = () => {
                             <Shield size={22} /> Season State Protocol
                         </h3>
                         <ul style={{ paddingLeft: '20px', marginBottom: '24px' }}>
-                            <li><strong>FUTURE:</strong> Scoring blocked — "Season has not started" enforced until the data pipeline is activated.</li>
-                            <li><strong>ACTIVE_UNOFFICIAL:</strong> Live "Provisional" scoring active. Totals update in real time but are not yet finalized.</li>
-                            <li><strong>COMPLETED_OFFICIAL:</strong> Data is frozen. Final badges issued; results archived as official league records.</li>
+                            <li><strong>FUTURE</strong> (Feb 16 – Jul 31): Off-season. No scoring data. Use this window to build rosters via the player pool.</li>
+                            <li><strong>PRESEASON</strong> (Aug 1 – Sep 4): Hall of Fame + 3 preseason weeks. Stats visible for scouting but do not count toward fantasy scoring. Roster moves unrestricted.</li>
+                            <li><strong>ACTIVE_UNOFFICIAL</strong> (Sep 5 → Super Bowl): Regular season + playoffs live. Provisional scoring updates weekly.</li>
+                            <li><strong>COMPLETED_OFFICIAL</strong> (Feb 16+): Season complete. Data frozen; results archived. Rollover to next season begins.</li>
                         </ul>
                     </div>
 
@@ -239,6 +314,18 @@ export const RulesPage: React.FC = () => {
                             <li><strong>Making an Offer:</strong> Open Trade Center, select a player from another team, set your points offer, and submit. Points are escrowed immediately.</li>
                             <li><strong>Accepting / Declining:</strong> The receiving team sees the offer in Trade Center. Accepting completes the trade; declining refunds the escrowed points.</li>
                             <li><strong>Commissioner Override:</strong> Admins can force-accept or force-cancel any trade from the Commissioner panel.</li>
+                        </ul>
+
+                        <h3 style={{ color: '#eab308', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.4rem', fontWeight: 800, fontFamily: "'Teko', sans-serif", textTransform: 'uppercase' }}>
+                            <Database size={22} /> Player Pool & Live Data
+                        </h3>
+                        <ul style={{ paddingLeft: '20px', marginBottom: '24px' }}>
+                            <li><strong>Data Source:</strong> All player and stat data comes from the Sleeper API — the same backend used by Sleeper fantasy apps. Free, no API key required.</li>
+                            <li><strong>Post-Draft (May 1):</strong> Full player pool refresh after the NFL Draft and UDFA signings settle. Rookies, position changes, and team assignments are all updated.</li>
+                            <li><strong>Training Camp (Jul 25):</strong> Depth chart positions and practice squad designations updated as camps open.</li>
+                            <li><strong>Final Cuts (Aug 27):</strong> Official 53-man rosters locked in just before the regular season.</li>
+                            <li><strong>In-Season (Mon / Wed / Fri):</strong> Rolling updates for trades, injuries, IR designations, and waiver wire moves throughout the season.</li>
+                            <li><strong>Automation:</strong> All pulls run via GitHub Actions on a schedule — no manual intervention needed. Only commits when data actually changed.</li>
                         </ul>
 
                         <h3 style={{ color: '#eab308', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.4rem', fontWeight: 800, fontFamily: "'Teko', sans-serif", textTransform: 'uppercase' }}>
@@ -261,8 +348,9 @@ export const RulesPage: React.FC = () => {
                     fontSize: '1.1rem',
                     fontWeight: 600
                 }}>
-                    <strong>Protocol Note:</strong> This app uses a local-first architecture. All franchise data is stored on your device in browser local storage — nothing is sent to a central server. Roster move events are signed with your node's private key and verified by peers before being accepted.
+                    <strong>Protocol Note:</strong> This app uses a local-first architecture. All franchise data is stored on your device in browser local storage — nothing is sent to a central server. Roster move events are signed with your node's private key and verified by peers before being accepted. NFL player and stat data is fetched from the Sleeper API on a calendar-aware schedule and committed directly to the app — no runtime API calls, no rate limits, no outages.
                 </p>
+
             </div>
         </div>
     );

@@ -1,0 +1,181 @@
+# ════════════════════════════════════════════════════════════════════════════
+# Player Pool Refresh — Trier Fantasy Football
+# ════════════════════════════════════════════════════════════════════════════
+#
+# NFL calendar-aware player pool updates. Four strategic pulls per year plus
+# rolling in-season updates for trades, injuries, and roster moves.
+#
+# Schedule:
+#   ① May 1       — Post-draft: rookies + UDFA signings settled (~1 wk post-draft)
+#   ② July 25     — Training camp open: depth charts take shape
+#   ③ August 27   — Final 53-man cuts: rosters locked for regular season
+#   ④ Sep–Jan M/W/F — In-season: trades, injuries, IR moves (3×/week)
+#   ⑤ Mar–Aug Mon  — Off-season maintenance: retirements, FA signings, etc.
+#
+# Only commits if data actually changed (smart diff in refresh_player_pool.js).
+# ════════════════════════════════════════════════════════════════════════════
+
+name: Player Pool Refresh
+
+on:
+  schedule:
+    # ① Post-draft pull — May 1st at 12:00 UTC (rookies + UDFA settled ~1 week after draft)
+    - cron: '0 12 1 5 *'
+
+    # ② Training camp — July 25th at 12:00 UTC (depth charts begin forming)
+    - cron: '0 12 25 7 *'
+
+    # ③ Final 53-man roster cuts — August 27th at 12:00 UTC
+    - cron: '0 12 27 8 *'
+
+    # ④ In-season: Monday/Wednesday/Friday at 08:00 UTC (Sep–Dec, active season)
+    - cron: '0 8 * 9-12 1,3,5'
+
+    # ④ In-season: Monday/Wednesday/Friday at 08:00 UTC (Jan–Feb, playoffs + Super Bowl)
+    - cron: '0 8 * 1-2 1,3,5'
+
+    # ⑤ Off-season maintenance: every Monday at 08:00 UTC (Mar–Aug)
+    - cron: '0 8 * 3-8 1'
+
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Pull mode override (auto-detected if omitted)'
+        type: choice
+        required: false
+        default: ''
+        options:
+          - ''
+          - post-draft
+          - training-camp
+          - final-cuts
+          - preseason
+          - in-season
+          - offseason
+      dry_run:
+        description: 'Preview changes without writing files'
+        type: boolean
+        required: false
+        default: false
+
+jobs:
+  refresh-players:
+    name: Refresh Player Pool
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Detect pull mode
+        id: detect-mode
+        run: |
+          # Use manually specified mode if provided, otherwise auto-detect
+          if [ -n "${{ github.event.inputs.mode }}" ]; then
+            MODE="${{ github.event.inputs.mode }}"
+            echo "📅 Manual mode override: ${MODE}"
+          else
+            MONTH=$(date -u '+%-m')
+            DAY=$(date -u '+%-d')
+            echo "📅 Auto-detecting mode (month=${MONTH}, day=${DAY})..."
+
+            if   [ "$MONTH" -eq 5  ] && [ "$DAY" -le 3  ]; then MODE="post-draft"
+            elif [ "$MONTH" -eq 7  ] && [ "$DAY" -ge 23 ]; then MODE="training-camp"
+            elif [ "$MONTH" -eq 8  ] && [ "$DAY" -ge 25 ] && [ "$DAY" -le 31 ]; then MODE="final-cuts"
+            elif [ "$MONTH" -eq 8  ] || ([ "$MONTH" -eq 9  ] && [ "$DAY" -le 4 ]); then MODE="preseason"
+            elif ([ "$MONTH" -ge 9 ] && [ "$MONTH" -le 12 ]) || [ "$MONTH" -le 2 ]; then MODE="in-season"
+            else MODE="offseason"
+            fi
+            echo "📅 Auto-detected mode: ${MODE}"
+          fi
+
+          echo "mode=${MODE}" >> $GITHUB_OUTPUT
+          echo "MODE=${MODE}" >> $GITHUB_ENV
+
+      - name: Refresh player pool from Sleeper API
+        run: |
+          ARGS="--mode=${{ steps.detect-mode.outputs.mode }}"
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            ARGS="${ARGS} --dry-run"
+          fi
+          echo "▶ Running: node scripts/refresh_player_pool.js ${ARGS}"
+          node scripts/refresh_player_pool.js $ARGS
+
+      - name: Check for changes
+        id: check-changes
+        run: |
+          CHANGED_FILES=$(git diff --name-only src/data/)
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "👥 Player pool unchanged — no commit needed."
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+
+            # Count player additions/removals in the pool file
+            if git diff --quiet src/data/all_players_pool.json 2>/dev/null; then
+              ADDED=0
+              REMOVED=0
+            else
+              ADDED=$(git diff src/data/all_players_pool.json   | grep '^+' | grep -c '"id"' || true)
+              REMOVED=$(git diff src/data/all_players_pool.json | grep '^-' | grep -c '"id"' || true)
+            fi
+
+            echo "added=${ADDED}"     >> $GITHUB_OUTPUT
+            echo "removed=${REMOVED}" >> $GITHUB_OUTPUT
+            echo "files=${CHANGED_FILES}" >> $GITHUB_OUTPUT
+            echo "👥 Changes detected: +${ADDED} added, -${REMOVED} removed"
+          fi
+
+      - name: Commit updated player data
+        if: steps.check-changes.outputs.changed == 'true' && github.event.inputs.dry_run != 'true'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Stage all player data changes (pool + changelog)
+          git add src/data/all_players_pool.json
+          git add src/data/player_pool_changelog.json 2>/dev/null || true
+
+          DATE=$(date -u '+%Y-%m-%d')
+          MODE="${{ steps.detect-mode.outputs.mode }}"
+          ADDED="${{ steps.check-changes.outputs.added }}"
+          REMOVED="${{ steps.check-changes.outputs.removed }}"
+
+          git commit -m "data: player pool [${MODE}] +${ADDED}/-${REMOVED} (${DATE})"
+          git push
+
+      - name: Job summary
+        run: |
+          MODE="${{ steps.detect-mode.outputs.mode }}"
+          echo "## 👥 Player Pool Refresh" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Mode:** \`${MODE}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Date:** $(date -u '+%Y-%m-%d %H:%M UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -f src/data/all_players_pool.json ]; then
+            COUNT=$(node -e "const p=require('./src/data/all_players_pool.json'); console.log(Array.isArray(p)?p.length:Object.keys(p).length)" 2>/dev/null || echo "unknown")
+            echo "**Total players in pool:** ${COUNT}" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ "${{ steps.check-changes.outputs.changed }}" = "true" ]; then
+            echo "**Changes:** +${{ steps.check-changes.outputs.added }} added, -${{ steps.check-changes.outputs.removed }} removed" >> $GITHUB_STEP_SUMMARY
+            echo "**Committed:** ${{ github.event.inputs.dry_run == 'true' && 'No (dry run)' || 'Yes' }}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**Changes:** None — pool already up to date" >> $GITHUB_STEP_SUMMARY
+          fi

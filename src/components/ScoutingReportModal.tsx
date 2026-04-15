@@ -1,11 +1,41 @@
+/**
+ * ScoutingReportModal — Deep-Dive Player Intelligence Panel
+ * ===========================================================
+ * Opens from the H2H matchup grid to provide a rich per-player analysis view.
+ * Supports toggling between two players in the matchup (primary/rival) and
+ * between INTEL (written analysis) and FILM (video playlist) views.
+ *
+ * VIDEO PLAYLISTS:
+ *   Fetched asynchronously from VideoPipelineService on first open. A
+ *   StrictMode guard (hasInitialized ref) prevents the double-fetch that
+ *   would otherwise occur in development due to double-effect invocation.
+ *   Each player gets an independent video index so pausing one doesn't
+ *   affect the other player's position.
+ *
+ * INTEL VIEW:
+ *   Pulls from IntelligenceStore (curated) and falls back to generated text
+ *   using ScoutVocab templates when no entry exists for the player.
+ *
+ * PRINT:
+ *   useReactToPrint targets the printRef div, which renders a printer-friendly
+ *   version of the report without the video player or modal chrome.
+ */
+// useRef: printRef for react-to-print + hasInitialized StrictMode guard.
+// useMemo: report object regenerated only when activePlayerId or matchup changes.
+// useEffect: playlist fetch, video index reset, scroll lock, player-switch reset.
 import React, { useRef, useState, useMemo, useEffect } from 'react';
 import { Mail, FileText, X } from 'lucide-react';
+// useReactToPrint wraps the printRef div in a hidden print-only frame.
 import { useReactToPrint } from 'react-to-print';
 import { motion, AnimatePresence } from 'framer-motion';
+// UniversalPlayer handles both YouTube iframe and local video playback.
 import { UniversalPlayer } from './video/UniversalPlayer';
+// VideoPipelineService performs the multi-tier video search (A→D relevance tiers).
 import { VideoPipelineService, type VideoCandidate } from '../services/VideoPipelineService';
+// videoBlacklist filters out previously flagged low-quality videos per session.
 import { videoBlacklist } from '../services/VideoBlacklistService';
 import type { H2HMatchupResult } from '../utils/H2HEngine';
+// getIntelForPlayer returns curated scouting intel or null for unknown players.
 import { getIntelForPlayer } from '../utils/IntelligenceStore';
 import { PlayerCard } from './PlayerCard';
 
@@ -15,34 +45,45 @@ interface ScoutingReportModalProps {
     isOpen: boolean;
 }
 
+/**
+ * ScoutingReportModal — the full-page deep-dive overlay.
+ * Mount/unmount lifecycle: playlist fetch runs on mount (guarded by hasInitialized),
+ * body scroll is locked while open, and all local state resets when isOpen flips.
+ */
 export const ScoutingReportModal: React.FC<ScoutingReportModalProps> = ({ matchup, onClose, isOpen }) => {
+    // printRef targets the notebook-paper div for react-to-print.
     const printRef = useRef<HTMLDivElement>(null);
     const { primaryPlayer: off, rivalPlayer: def, advantageScore, metric } = matchup;
 
-    // ACTIVE PLAYER STATE (Default to Primary)
+    // Which player's report is currently displayed (default: primary/offensive player)
     const [activePlayerId, setActivePlayerId] = useState<string>(off.id);
-    // View State (Intel vs Film)
+    // Toggle between written intelligence (INTEL) and highlight film (FILM)
     const [viewMode, setViewMode] = useState<'INTEL' | 'FILM'>('INTEL');
 
-    // Reset view to Intel when player changes or modal opens
+    // Always return to INTEL when switching players — film index state is preserved.
+    // This prevents the user from seeing the previous player's video while the new
+    // playlist is still loading (avoids confusing mismatched film/player combos).
     useEffect(() => {
         setViewMode('INTEL');
     }, [activePlayerId]);
 
-    // Derived Active Player Object
+    // Derived Active Player Object — falls back to off if def is null (no rival exists).
     const activePlayer = activePlayerId === off.id ? off : (def || off);
+    // opponentPlayer: the "other" player — used for report narrative and comparison display.
     const opponentPlayer = activePlayerId === off.id ? def : off;
 
-    // Playback State (Independent Indices)
+    // Independent video indices: switching active player doesn't reset film position,
+    // which allows the user to resume watching the other player's film on switch-back.
+    // Each player gets an independent video index to allow mid-session switching
     const [offVideoIndex, setOffVideoIndex] = useState(0);
     const [defVideoIndex, setDefVideoIndex] = useState(0);
     const [showOverlay, setShowOverlay] = useState(true);
 
-    // DYNAMIC PLAYLIST STATE
+    // Playlist state — populated by async VideoPipelineService call on mount
     const [playlists, setPlaylists] = useState<{ off: VideoCandidate[], def: VideoCandidate[] }>({ off: [], def: [] });
     const [isLoading, setIsLoading] = useState(false);
 
-    // StrictMode Guard
+    // Guards against double-fetch in React StrictMode (dev double-effect invocation)
     const hasInitialized = useRef(false);
 
     // Load & Verify Playlists on Mount/Player Change
@@ -98,7 +139,8 @@ export const ScoutingReportModal: React.FC<ScoutingReportModalProps> = ({ matchu
         }
     }, [activePlayerId]);
 
-    // Safety Clamp for Indices (if playlist shrinks)
+    // Safety clamp: if a video is removed from the playlist mid-session (blacklisted),
+    // snap the index back to the last valid position rather than showing empty state.
     useEffect(() => {
         if (offVideoIndex >= playlists.off.length && playlists.off.length > 0) {
             setOffVideoIndex(playlists.off.length - 1);
@@ -108,7 +150,8 @@ export const ScoutingReportModal: React.FC<ScoutingReportModalProps> = ({ matchu
         }
     }, [playlists, offVideoIndex, defVideoIndex]);
 
-    // Body Scroll Lock
+    // Body scroll lock prevents the page behind the modal from scrolling.
+    // Cleanup restores scroll when the modal unmounts.
     useEffect(() => {
         document.body.style.overflow = 'hidden';
         return () => {
@@ -116,13 +159,16 @@ export const ScoutingReportModal: React.FC<ScoutingReportModalProps> = ({ matchu
         };
     }, []);
 
-    // Printing Hook
+    // react-to-print hook — targets printRef and uses the player's last name in the filename.
     const handlePrint = useReactToPrint({
         contentRef: printRef,
         documentTitle: `ScoutingReport_${activePlayer.lastName} `,
     });
 
-    // Dynamic Report Generation based on ACTIVE PLAYER Perspective
+    // ── Report Generation ──────────────────────────────────────────────────────
+    // Regenerates on player switch or matchup change. Uses curated IntelligenceStore
+    // data when available, falling back to template-generated text for unknown players.
+    // The random headline selection is intentional — adds variety on repeated opens.
     const report = useMemo(() => {
         const isPrimaryView = activePlayerId === off.id;
         const subject = activePlayer;
@@ -134,7 +180,7 @@ export const ScoutingReportModal: React.FC<ScoutingReportModalProps> = ({ matchu
 
         const subjectIntel = getIntelForPlayer(subject.lastName);
 
-        // Headline Generation
+        // Headline randomly selected from 3 templates for variety on each open.
         const headlines = [
             `The ${subject.lastName} Protocol: Analyzing the matchup against ${opponent?.lastName || 'The Field'} `,
             `Scouting Report: Can ${subject.lastName} Exploit the ${metric.toLowerCase()} Mismatch ? `,
@@ -142,17 +188,20 @@ export const ScoutingReportModal: React.FC<ScoutingReportModalProps> = ({ matchu
         ];
         const headline = headlines[Math.floor(Math.random() * headlines.length)];
 
+        // Social sentiment: curated text from IntelligenceStore or generated fallback.
         // Social Sentiment
         const socialIntel = subjectIntel?.socialIntelligence ||
             `${subject.lastName} arrives with high expectations.The tape suggests a pivotal role in the ${metric.toLowerCase()} game script.`;
 
         const scoutSentiment = subjectIntel?.scoutSentiment || ['High Ceiling', 'Volume Dependent', 'Red Zone Target'];
 
+        // Tape Analysis: advantage string vs caution string based on isFavored flag.
         // Tape Analysis
         const dataBreakdown = isFavored
             ? `ADVANTAGE: ${subject.lastName}. The metrics suggest a dominant outing.${subject.lastName} 's physical profile creates a distinct leverage point against ${opponent?.lastName || 'the unit'}. Expect aggressive usage early.`
             : `CAUTION: ${subject.lastName} faces a stiff test. ${opponent?.lastName || 'The opposition'} has shown resilience in this phase. Efficiency will be key, as volume may be contested.`;
 
+        // Verdict: one-line START or CAUTION recommendation for the manager.
         // Verdict
         const conclusion = isFavored
             ? `VERDICT: Start with confidence. The ${metric} model projects a +${margin.toFixed(0)}% advantage.`
@@ -170,7 +219,8 @@ export const ScoutingReportModal: React.FC<ScoutingReportModalProps> = ({ matchu
 
     // YouTube Options - Removed as it is now handled inside UniversalPlayer
 
-    // Determine Active Video Props
+    // Determine which player's playlist/index/setter to pass to UniversalPlayer.
+    // The two index states remain independent so switching players doesn't reset position.
     const activePlaylist = activePlayerId === off.id ? playlists.off : playlists.def;
     const activeVideo = activePlaylist[activePlayerId === off.id ? offVideoIndex : defVideoIndex];
     const setActiveIndex = activePlayerId === off.id ? setOffVideoIndex : setDefVideoIndex;
@@ -281,7 +331,8 @@ export const ScoutingReportModal: React.FC<ScoutingReportModalProps> = ({ matchu
                                 ))}
                             </div>
 
-                            {/* Watermark */}
+                            {/* Watermark — opacity 0.06 barely visible on print;
+                                rotate(-15deg) tilts the watermark like an official stamp. */}
                             <div style={{
                                 position: 'absolute',
                                 top: '50%',
@@ -317,9 +368,11 @@ export const ScoutingReportModal: React.FC<ScoutingReportModalProps> = ({ matchu
                                         </h1>
                                     </div>
 
-                                    {/* Mini-Cards Container (Interactive) */}
+                                    {/* Mini-Cards Container (Interactive).
+                                        Clicking a card switches the active player for the report.
+                                        Scale + grayscale filter visually indicates the inactive card. */}
                                     <div style={{ display: 'flex', gap: '20px' }}> {/* Removed no-print class */}
-                                        {/* Primary Mini-Card */}
+                                        {/* Primary Mini-Card — scales to 60% of PlayerCard's natural size */}
                                         <div
                                             onClick={() => setActivePlayerId(off.id)}
                                             style={{

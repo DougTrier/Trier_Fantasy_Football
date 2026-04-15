@@ -1,10 +1,27 @@
+/**
+ * IntelligenceStore — Curated Scout Report Content
+ * ==================================================
+ * Provides hand-authored scouting intelligence for key players, surfaced in
+ * the ScoutingReportModal when the user drills into an H2H matchup.
+ *
+ * The store is keyed by player last name for fast O(1) lookups. Where no
+ * entry exists, the modal falls back to generated text using ScoutVocab
+ * templates combined with live performance data.
+ *
+ * To add a new player: add a matching entry to IntelligenceStore keyed by
+ * exact last name as it appears in the Player type.
+ */
 export interface ScoutIntel {
     playerLastName: string;
-    socialIntelligence: string;
-    trendingNews?: string;
-    scoutSentiment: string[];
+    socialIntelligence: string; // Summary of public perception / expert opinion
+    trendingNews?: string;      // Most relevant current-season context
+    scoutSentiment: string[];   // Array of quoted scout/analyst takes
 }
 
+/**
+ * ScoutVocab — Sentence templates for dynamically generated scouting prose.
+ * {player} is replaced at render time with the player's last name.
+ */
 export const ScoutVocab = {
     opening: [
         "The tape on #{player} doesn't lie: ",
@@ -21,6 +38,7 @@ export const ScoutVocab = {
     ]
 };
 
+/** Keyed by exact player last name. Extend this as the roster grows. */
 export const IntelligenceStore: Record<string, ScoutIntel> = {
     'Jefferson': {
         playerLastName: 'Jefferson',
@@ -45,6 +63,10 @@ export const IntelligenceStore: Record<string, ScoutIntel> = {
     // Add more intelligence as needed or dynamically fetch
 };
 
+/**
+ * Returns scouting intel for a player by last name, or null if not yet
+ * in the store. The modal handles the null case with generated content.
+ */
 export const getIntelForPlayer = (lastName: string): ScoutIntel | null => {
     return IntelligenceStore[lastName] || null;
 };

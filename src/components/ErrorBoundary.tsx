@@ -1,3 +1,13 @@
+/**
+ * ErrorBoundary — React Class-based Crash Shield
+ * ================================================
+ * Wraps the entire application tree to catch unhandled render-phase errors.
+ * When a child component throws, React unwinds to this boundary and renders
+ * a full-screen error panel instead of a blank white screen.
+ *
+ * Class component is required — hooks cannot implement componentDidCatch.
+ * The component stack in the error panel is capped to 3 lines to stay readable.
+ */
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { AlertTriangle, RefreshCcw } from 'lucide-react';
 
@@ -18,10 +28,12 @@ export class ErrorBoundary extends Component<Props, State> {
         errorInfo: null
     };
 
+    /** Synchronously updates state so the next render shows the fallback UI. */
     public static getDerivedStateFromError(error: Error): State {
         return { hasError: true, error, errorInfo: null };
     }
 
+    /** Logs the full error + component stack for debugging in the console. */
     public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
         console.error("Uncaught error:", error, errorInfo);
         this.setState({ errorInfo });
