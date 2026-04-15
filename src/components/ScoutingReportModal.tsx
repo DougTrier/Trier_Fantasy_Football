@@ -631,6 +631,7 @@ export const ScoutingReportModal: React.FC<ScoutingReportModalProps> = ({ matchu
                                                     maxWidth: '300px'
                                                 }}
                                             >
+                                                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                                                 {activePlaylist.map((vid: any, idx: number) => (
                                                     <option key={idx} value={idx}> {/* Use Index as Key to prevent duplicate ID errors */}
                                                         {idx + 1}. {vid.title}

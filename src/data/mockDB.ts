@@ -20,6 +20,7 @@ const generateNflProfileUrl = (firstName: string, lastName: string): string => {
     return `https://www.nfl.com/players/${cleanFirst}-${cleanLast}/`;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const processPlayers = (players: any[]): Player[] => {
     return players.map(p => {
         // Safe ID resolving
@@ -54,6 +55,7 @@ const processPlayers = (players: any[]): Player[] => {
                     rushingYards: liveEntry.rush_yd || 0,
                     rushingTDs: liveEntry.rush_td || 0,
                 };
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 history = history.filter((h: any) => h.year !== (liveStats.season || 2025));
                 history.push(normalized);
             }

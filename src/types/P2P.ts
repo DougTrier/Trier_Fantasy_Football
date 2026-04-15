@@ -99,7 +99,7 @@ export interface EventLogEntry {
     seq: number;        // Monotonically increasing per-node
     id: string;         // UUID of event
     type: EventType;
-    payload: any;       // JSON payload
+    payload: unknown;   // JSON payload
     ts: number;         // Wall clock time (ms)
     author: NodeId;     // Who created this
     signature: string;  // Base64: ECDSA P-256 signature of (seq|type|payload|ts|author)

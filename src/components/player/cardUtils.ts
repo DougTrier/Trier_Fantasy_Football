@@ -35,6 +35,7 @@ export const getSocialLink = (platform: string, handle: string) => {
     }
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const getTopSocials = (socials: any) => {
     if (!socials) return [];
     const priority = ['twitter', 'facebook', 'instagram', 'snapchat', 'youtube', 'rumble', 'tiktok'];

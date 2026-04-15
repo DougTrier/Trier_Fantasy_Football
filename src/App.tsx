@@ -84,6 +84,7 @@ const nextSeq = () => ++_localSeq;
 // applyRosterMoveEvent — canonical, pure state transformer
 // Used in BOTH the local and inbound peer paths. Same input = same output.
 // ─────────────────────────────────────────────────────────────────────────────
+// eslint-disable-next-line react-refresh/only-export-components
 export const applyRosterMoveEvent = (teams: FantasyTeam[], event: EventLogEntry): FantasyTeam[] => {
   const p = event.payload as RosterMovePayload;
   if (!p?.teamId || !p?.candidatePlayerId) {
@@ -94,7 +95,8 @@ export const applyRosterMoveEvent = (teams: FantasyTeam[], event: EventLogEntry)
   return teams.map(team => {
     if (team.id !== p.teamId) return team;
 
-    let newRoster = { ...team.roster } as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const newRoster = { ...team.roster } as any;
     let newBench = [...team.bench];
 
     const allPlayers = [...Object.values(team.roster).filter(Boolean), ...team.bench] as Player[];
@@ -117,6 +119,7 @@ export const applyRosterMoveEvent = (teams: FantasyTeam[], event: EventLogEntry)
 
     // 2. Place candidate at target, displace any existing player back to source
     if (targetPlayer && p.targetPlayerId) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const targetStarterSlot = Object.keys(team.roster).find(k => (team.roster as any)[k]?.id === p.targetPlayerId);
       if (targetStarterSlot) {
         newRoster[targetStarterSlot] = candidate;
@@ -267,6 +270,7 @@ export default function App() {
     });
 
     // Remote Control Handler
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const unsubControl = P2PService.onData(async (msg: any, peerId: string) => {
       if (msg.type === 'RESTART_REQUEST') {
         console.log("[App] Received Restart Request");
@@ -491,6 +495,7 @@ export default function App() {
 
     // Tauri: CLOSE_REQUESTED is emitted by main.rs (close is already prevented)
     let unlisten: (() => void) | null = null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const win = window as any;
     if (win.__TAURI__) {
       import('@tauri-apps/api/event').then(({ listen }) => {
@@ -708,6 +713,7 @@ export default function App() {
     localStorage.setItem('trier_fantasy_active_id', ''); // Log out for security
 
     // 2. TAURI EXIT (DESKTOP)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const win = window as any;
     if (win.__TAURI__) {
       try {
@@ -783,7 +789,7 @@ export default function App() {
         console.log(`[App] Triggering enrichment(stats: ${needsStats}, photo: ${needsPhoto}) for ${activePlayerCard.firstName} ${activePlayerCard.lastName} `);
         setIsScraping(activePlayerCard.id);
 
-        const promises: Promise<any>[] = [];
+        const promises: Promise<unknown>[] = [];
         if (needsStats) promises.push(scrapePlayerStats(`${activePlayerCard.firstName} ${activePlayerCard.lastName} `));
         else promises.push(Promise.resolve(activePlayerCard.historicalStats));
 
@@ -918,7 +924,7 @@ export default function App() {
 
     updateActiveTeam(prev => {
       const newRoster = { ...prev.roster };
-      let newBench = [...prev.bench];
+      const newBench = [...prev.bench];
       let added = false;
 
       if (targetSlot.startsWith('bench-')) {
@@ -989,9 +995,11 @@ export default function App() {
     setActivePlayerCard(null);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const isValidSwap = (candidate: Player, targetSlot: string, targetPlayer: Player | null, currentRoster: any): { valid: boolean; reason?: string } => {
     if (targetSlot.startsWith('bench')) return { valid: true };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const candidateCurrentSlot = Object.keys(currentRoster).find((k: string) => (currentRoster[k] as any)?.id === candidate.id);
 
     const checkPos = (p: Player, slot: string) => {
@@ -1050,6 +1058,7 @@ export default function App() {
     let capturedPayload: RosterMovePayload | null = null;
 
     updateActiveTeam(prev => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const effectiveTargetSlot = targetSlot || Object.keys(prev.roster).find(k => (prev.roster as any)[k]?.id === targetPlayer?.id) || 'bench';
       const validation = isValidSwap(swapCandidate, effectiveTargetSlot, targetPlayer, prev.roster);
 
@@ -1058,8 +1067,10 @@ export default function App() {
         return prev;
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const sourceStarterSlot = Object.keys(prev.roster).find(k => (prev.roster as any)[k]?.id === swapCandidate!.id) || null;
-      let newRoster = { ...prev.roster } as any;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const newRoster = { ...prev.roster } as any;
       let newBench = [...prev.bench];
 
       // 1. Remove source from where they were
@@ -1071,6 +1082,7 @@ export default function App() {
 
       // 2. Perform Swap
       if (targetPlayer) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const targetStarterSlot = Object.keys(prev.roster).find(k => (prev.roster as any)[k]?.id === targetPlayer.id);
 
         if (targetStarterSlot) {
@@ -1263,6 +1275,7 @@ export default function App() {
       points_escrowed: (offeringTeam.points_escrowed || 0) - (offer.amount || 0),
       points_spent: (offeringTeam.points_spent || 0) + (offer.amount || 0),
       bench: [...offeringTeam.bench, { ...playerToTrade, ownerId: offeringTeam.id }],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       transactions: (offeringTeam.transactions || []).map(t => t.id === offer.id ? { ...t, type: 'ADD' as any } : t).concat(buyerTx)
     };
 
@@ -1349,6 +1362,7 @@ export default function App() {
       points_spent: (buyerTeam.points_spent || 0) + (offer.amount || 0),
       bench: [...buyerTeam.bench, { ...playerToTrade, ownerId: buyerTeam.id }],
       transactions: (buyerTeam.transactions || [])
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         .map(t => t.id === offer.id ? { ...t, type: 'ADD' as any } : t)
         .concat(buyerTx)
     };

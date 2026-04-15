@@ -44,7 +44,7 @@ export const NodeIdentityPanel: React.FC<Props> = ({
 }) => {
     const { showAlert, showConfirm } = useDialog();
     const [uuidCopied, setUuidCopied] = useState(false);
-    const uuidCopyTimer = useRef<any>(null);
+    const uuidCopyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const [showAddFriend, setShowAddFriend] = useState(false);
     const [friendUuidInput, setFriendUuidInput] = useState('');
@@ -98,7 +98,7 @@ export const NodeIdentityPanel: React.FC<Props> = ({
             a.download = `trier_backup_${Date.now()}.json`;
             a.click();
             URL.revokeObjectURL(url);
-        } catch (e) {
+        } catch {
             showAlert('Export failed. Please try again.', 'Export Error');
         }
     };
@@ -111,7 +111,7 @@ export const NodeIdentityPanel: React.FC<Props> = ({
             const result = await BackupService.importProfile(text);
             showAlert(`Imported ${result.count} events. The app will now reload.`, 'Import Complete');
             window.location.reload();
-        } catch (err) {
+        } catch {
             showAlert('Import failed. The file may be corrupted or invalid.', 'Import Error');
         }
     };
@@ -420,7 +420,7 @@ export const NodeIdentityPanel: React.FC<Props> = ({
                         try {
                             await DiscoveryService.openFirewall();
                             showAlert("Firewall rules updated. Restart the app if connectivity issues persist.", "Firewall Updated");
-                        } catch (e) {
+                        } catch {
                             showAlert("Firewall update failed. You may need to run as administrator.", "Update Failed");
                         }
                     }}

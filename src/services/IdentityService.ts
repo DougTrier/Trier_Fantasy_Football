@@ -249,7 +249,7 @@ export const IdentityService = {
                 }
                 console.log('[Identity] Loaded existing identity:', this.identity?.nodeId);
                 return this.identity!;
-            } catch (e) {
+            } catch {
                 console.warn('[Identity] Corrupt identity found. Regenerating.');
             }
         }

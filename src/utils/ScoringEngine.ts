@@ -153,14 +153,17 @@ export class ScoringEngine {
         };
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     static calculateTeamTotal(team: any) {
         if (liveData.season_state === "FUTURE" || liveData.season_state === "PRESEASON" || liveData.data_status !== "VALIDATED") {
             return { total: 0, status: liveData.season_state === "PRESEASON" ? "PRESEASON" : "NO_DATA_AVAILABLE" };
         }
 
         let grandTotal = 0;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const audits: Record<string, any> = {};
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         Object.values(team.roster).forEach((player: any) => {
             if (player) {
                 const res = this.calculatePoints(player);

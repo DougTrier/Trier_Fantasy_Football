@@ -50,6 +50,7 @@ export class SecurityService {
      * Falls back to a well-known default key when no password is given —
      * this at least prevents casual plaintext editing of exported files.
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     static async encrypt(data: any, password?: string): Promise<string> {
         try {
             // Use a default system password if none provided, to at least prevent Notepad edits
@@ -82,6 +83,7 @@ export class SecurityService {
      * Throws "Invalid password or corrupted file integrity." on auth tag failure,
      * which the caller (SettingsPage) uses to prompt for a retry.
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     static async decrypt(base64Str: string, password?: string): Promise<any> {
         try {
             const pass = password || "TRIER_DEFAULT_SYSTEM_KEY_99";

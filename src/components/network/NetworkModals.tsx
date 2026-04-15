@@ -119,6 +119,7 @@ export const JoinModal: React.FC<JoinModalProps> = ({ show, joinCode, onJoinCode
 interface DiagnosticsModalProps {
     show: boolean;
     peers: DiscoveredPeer[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     getConnection: (id: string) => any;
     onClose: () => void;
 }
@@ -148,6 +149,7 @@ export const DiagnosticsModal: React.FC<DiagnosticsModalProps> = ({ show, peers,
                                 <div key={p.id} style={{ borderBottom: '1px solid #333', padding: '1rem 0' }}>
                                     <div style={{ fontWeight: 'bold' }}>{p.franchiseName || p.hostname} ({p.id})</div>
                                     <div>State: <span style={{ color: conn.state === 'VERIFIED' ? '#4ade80' : conn.state === 'VERIFYING' ? '#facc15' : '#aaa' }}>{conn.state}</span></div>
+                                    {/* eslint-disable-next-line react-hooks/purity */}
                                     {conn.startTime && <div>Duration: {((Date.now() - conn.startTime) / 1000).toFixed(1)}s</div>}
                                     {conn.iceStats && <div style={{ fontSize: '0.8rem', opacity: 0.6 }}>ICE — host: {conn.iceStats.host} srflx: {conn.iceStats.srflx} relay: {conn.iceStats.relay}</div>}
                                     {conn.lastError && <div style={{ color: '#ef4444' }}>Error: {conn.lastError}</div>}

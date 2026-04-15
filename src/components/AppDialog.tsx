@@ -39,6 +39,7 @@ interface DialogAPI {
 
 const DialogContext = createContext<DialogAPI>(null!);
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useDialog = (): DialogAPI => useContext(DialogContext);
 
 // ─── Provider ────────────────────────────────────────────────────────────────

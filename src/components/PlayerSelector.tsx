@@ -104,6 +104,7 @@ export const PlayerSelector: React.FC<PlayerSelectorProps> = ({
 
     // Reset visible count
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setVisibleCount(60);
     }, [teamFilter, posFilter, sortBy, isOpen]);
 
@@ -238,6 +239,7 @@ export const PlayerSelector: React.FC<PlayerSelectorProps> = ({
                                 'GAMES': 'GAMES'
                             };
 
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             const values: Record<string, any> = {
                                 'PROJ': p.projectedPoints,
                                 'PASS_YDS': p.totals.passYds,

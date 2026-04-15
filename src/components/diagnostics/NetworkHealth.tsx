@@ -22,6 +22,7 @@ import { P2PService } from '../../services/P2PService';
 
 export const NetworkHealth: React.FC = () => {
     const [events, setEvents] = useState<EventLogEntry[]>([]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [peers, setPeers] = useState<any[]>([]); // TODO: type with P2PConnection summary
 
     useEffect(() => {

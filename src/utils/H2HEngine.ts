@@ -64,7 +64,9 @@ export class H2HEngine {
 
         // Signal 2: Season PPG delta (normalize by actual games played, not a
         // hardcoded 17 — falls back to 17 only if games_played is missing)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const p1Games = (player1 as any).games_played || 17;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const p2Games = (player2 as any).games_played || 17;
         const p1PPG = (player1.total_actual_fantasy_points ?? 0) / p1Games;
         const p2PPG = (player2.total_actual_fantasy_points ?? 0) / p2Games;

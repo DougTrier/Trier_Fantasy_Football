@@ -70,7 +70,7 @@ export const scrapePlayerStats = async (playerName: string, options: ScraperOpti
                 const tables = Array.from(doc.querySelectorAll('table.wikitable'));
 
                 // Try to find the best table (Regular season + relevant stats)
-                let statsTable = tables.find(t =>
+                const statsTable = tables.find(t =>
                     t.textContent?.toLowerCase().includes('regular season') &&
                     (t.textContent?.toLowerCase().includes('passing') || t.textContent?.toLowerCase().includes('rushing'))
                 );
@@ -269,7 +269,7 @@ export const scrapePlayerPhoto = async (playerName: string, options: ScraperOpti
             } catch (e) { console.warn("Cache write error", e); }
             return url;
         }
-    } catch (e) {
+    } catch {
         console.warn("[scraper] ESPN photo lookup failed");
     }
 
@@ -289,7 +289,7 @@ export const scrapePlayerPhoto = async (playerName: string, options: ScraperOpti
             console.log(`[scraper] Found eBay card image: ${imgMatch[0]}`);
             return imgMatch[0];
         }
-    } catch (e) {
+    } catch {
         console.warn("[scraper] eBay card image lookup failed");
     }
 

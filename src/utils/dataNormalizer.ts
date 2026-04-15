@@ -31,6 +31,7 @@ import type { FantasyTeam } from '../types';
  * Creates safe fallback values for every required field if missing.
  * All load and sync paths should run team data through this before setState.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const normalizeTeam = (team: any): FantasyTeam => {
     if (!team || typeof team !== 'object') {
         console.warn('[Normalizer] Invalid team object encountered', team);

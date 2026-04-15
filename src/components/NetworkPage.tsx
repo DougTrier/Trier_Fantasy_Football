@@ -37,7 +37,7 @@ export const NetworkPage: React.FC = () => {
     const [turnUser, setTurnUser] = useState('');
     const [turnCred, setTurnCred] = useState('');
     const [turnSaved, setTurnSaved] = useState(false);
-    const turnSavedTimer = useRef<any>(null);
+    const turnSavedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Friends system
     const [myPeerUuid, setMyPeerUuid] = useState('');
@@ -73,6 +73,7 @@ export const NetworkPage: React.FC = () => {
         P2PService.onConnectionStatus(({ peerId, status, details }) => {
             setTick(t => t + 1);
             if (status === 'VERIFIED' && details?.peerUuid) {
+                // eslint-disable-next-line react-hooks/immutability
                 updateFriendNodeId(details.peerUuid, peerId);
             }
             if (status === 'DISCONNECTED' || status === 'TERMINATED') {
@@ -96,7 +97,7 @@ export const NetworkPage: React.FC = () => {
         try {
             const raw = localStorage.getItem('trier_friends');
             if (raw) { loaded = JSON.parse(raw); setFriends(loaded); }
-        } catch {}
+        } catch { /* intentionally empty — corrupted storage is silently ignored */ }
 
         // Start watching each known friend's room for internet discovery
         loaded.forEach(f => DHTService.watchFriend(f.uuid));
@@ -112,7 +113,7 @@ export const NetworkPage: React.FC = () => {
                 setTurnUser(cfg.username || '');
                 setTurnCred(cfg.credential || '');
             }
-        } catch {}
+        } catch { /* intentionally empty — missing TURN config is not an error */ }
         return () => { if (turnSavedTimer.current) clearTimeout(turnSavedTimer.current); };
     }, []);
 
@@ -205,7 +206,7 @@ export const NetworkPage: React.FC = () => {
             const code = await DiscoveryService.generateInvite();
             setInviteCode(code);
             setShowInviteModal(true);
-        } catch (e: any) {
+        } catch {
             showAlert("Failed to generate invite. Check your network connection.", "Invite Error");
         }
     };
@@ -216,7 +217,7 @@ export const NetworkPage: React.FC = () => {
             setShowJoinModal(false);
             setJoinCode('');
             showAlert("Peer added! They will appear as connectable once they come online.", "Peer Added");
-        } catch (e) {
+        } catch {
             showAlert("Invalid or expired invite code. Ask your opponent to generate a new one.", "Invalid Code");
         }
     };

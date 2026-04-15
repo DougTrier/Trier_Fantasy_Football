@@ -117,6 +117,7 @@ export const PlayersPage: React.FC<PlayersPageProps> = ({ players, onMakeOffer }
 
     // Reset visible count when filters change
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setVisibleCount(100);
     }, [teamFilter, search, sortBy]);
 
@@ -235,6 +236,7 @@ export const PlayersPage: React.FC<PlayersPageProps> = ({ players, onMakeOffer }
                                 'PERF_DIFF': 'PERF DIFF'
                             };
 
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             const values: Record<string, any> = {
                                 'PROJ': p.projectedPoints,
                                 'PASS_YDS': p.totals.passYds,

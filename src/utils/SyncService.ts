@@ -34,6 +34,7 @@ const SYNC_CHANNEL = 'trier_fantasy_sideband';
 export interface SidebandMessage {
     type: 'PING' | 'PONG' | 'SYNC_TEAMS' | 'CHAT';
     senderId: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     payload?: any;
     timestamp: number;
 }
@@ -63,6 +64,7 @@ class SidebandSyncService {
         };
 
         // P2P Network Sync (Incoming)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         P2PService.onData((msg: any) => {
             // Treat P2P messages same as local tab messages
             const sMsg = msg as SidebandMessage;

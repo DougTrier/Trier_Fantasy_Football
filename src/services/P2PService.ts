@@ -96,7 +96,7 @@ interface P2PConnection {
         srflx: number;
         relay: number;
     };
-    timeoutTimer?: any;
+    timeoutTimer?: ReturnType<typeof setTimeout>;
 
     // ── Handshake state ──────────────────────────────────────────────────────
     isInitiator?: boolean;      // true if WE initiated the connection
@@ -110,8 +110,8 @@ export interface SignalPayload {
     sender_id: string;
     type_: SignalType;
     sdp?: string;
-    candidate?: any;
-    fingerprint?: any;
+    candidate?: RTCIceCandidateInit;
+    fingerprint?: unknown;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -143,11 +143,14 @@ export const P2PService = {
     relayPeers: new Set<string>(),
     // Callback set by RelayService — called instead of HTTP fetch for relay peers.
     // Receives the full SignalPayload with a `to` field added.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     relaySender: null as ((payload: any) => void) | null,
 
     // Event listener arrays
     signalListeners: [] as ((payload: SignalPayload) => void)[],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     dataListeners: [] as ((data: any, peerId: string) => void)[],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     connectionListeners: [] as ((status: { peerId: string; status: ConnectionState; details?: any }) => void)[],
     portAssignmentListeners: [] as ((port: number) => void)[],
 
@@ -198,6 +201,7 @@ export const P2PService = {
     },
 
     /** Called by RelayService to hook into outbound signal routing. */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     setRelaySender(fn: ((payload: any) => void) | null) {
         this.relaySender = fn;
     },
@@ -259,7 +263,7 @@ export const P2PService = {
         if (conn) {
             console.log(`[P2P] Terminating ${notifyId}: ${reason}`);
             if (conn.peer) {
-                try { conn.peer.destroy(); } catch (e) { /* ignore */ }
+                try { conn.peer.destroy(); } catch { /* ignore */ }
             }
             if (conn.timeoutTimer) clearTimeout(conn.timeoutTimer);
             this.updateState(targetId, 'TERMINATED');
@@ -379,6 +383,7 @@ export const P2PService = {
 
         // ── WebRTC Events ────────────────────────────────────────────────────
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         p.on('signal', (data: any) => {
             if (data.candidate && data.candidate.candidate) {
                 this.logCandidateType(targetId, data.candidate.candidate);
@@ -408,12 +413,13 @@ export const P2PService = {
             }
         });
 
-        // @ts-ignore — 'iceStateChange' is a valid SimplePeer event relayed from the underlying
+        // @ts-expect-error — 'iceStateChange' is a valid SimplePeer event relayed from the underlying
         // RTCPeerConnection, but simple-peer's TypeScript definitions only declare the subset of
-        // events in their public API. Removing this ignore causes a compile error with no runtime
+        // events in their public API. Removing this comment causes a compile error with no runtime
         // impact; the event fires correctly at runtime.
-        p.on('iceStateChange', (_state: string) => { /* available for diagnostics */ });
+        p.on('iceStateChange', () => { /* available for diagnostics */ });
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         p.on('data', async (data: any) => {
             try {
                 const msg = JSON.parse(data.toString());
@@ -451,6 +457,7 @@ export const P2PService = {
             this.connections.delete(targetId);
         });
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         p.on('error', (err: any) => {
             console.error(`[P2P] Error ${targetId}:`, err);
             const c = this.connections.get(targetId);
@@ -717,6 +724,7 @@ export const P2PService = {
      * Sends a raw JSON message directly to a peer's data channel (WebRTC or DHT).
      * Bypasses the VERIFIED gate — used only for handshake messages.
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     sendRaw(targetId: string, msg: any) {
         const conn = this.connections.get(targetId);
         if (!conn) { console.warn(`[P2P] sendRaw: no connection for ${targetId}`); return; }
@@ -743,6 +751,7 @@ export const P2PService = {
         }, 20000);
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     updateState(targetId: string, state: ConnectionState, details?: any) {
         let conn = this.connections.get(targetId);
         if (!conn) {
@@ -783,6 +792,7 @@ export const P2PService = {
      * Supports both LAN (SimplePeer) and DHT (sendFn) transports.
      * Silently drops the message if the peer is not VERIFIED.
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     sendData(peerId: string, msg: any) {
         // Direct key lookup first; fall back to nodeId search for DHT peers (keyed by tempId)
         let conn = this.connections.get(peerId);
@@ -804,10 +814,11 @@ export const P2PService = {
      * Broadcast data to ALL verified peers (LAN + DHT).
      * Unverified peers are silently skipped.
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     broadcast(msg: any) {
         const payload = JSON.stringify(msg);
         let sent = 0;
-        this.connections.forEach((conn, _id) => {
+        this.connections.forEach((conn) => {
             if (conn.state === 'VERIFIED') {
                 if (conn.sendFn) { conn.sendFn(payload); sent++; }
                 else if (conn.peer) { conn.peer.send(payload); sent++; }
@@ -830,22 +841,27 @@ export const P2PService = {
         this.signalListeners.forEach(l => l(payload));
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onData(callback: (data: any, peerId: string) => void) {
         this.dataListeners.push(callback);
         return () => { this.dataListeners = this.dataListeners.filter(l => l !== callback); };
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     notifyDataListeners(data: any, peerId: string) {
         this.dataListeners.forEach(l => l(data, peerId));
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onConnectionStatus(callback: (status: { peerId: string; status: ConnectionState; details?: any }) => void) {
         this.connectionListeners.push(callback);
         return () => { this.connectionListeners = this.connectionListeners.filter(l => l !== callback); };
     },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     notifyConnectionListeners(peerId: string, status: ConnectionState, details?: any) {
         this.connectionListeners.forEach(l => l({ peerId, status, details }));
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     sendSignal(targetId: string, targetIp: string, port: number, type_: SignalType, sdp?: string, candidate?: any, fingerprint?: any) {
         const payload: SignalPayload & { to?: string } = {
             sender_id: this.myId,

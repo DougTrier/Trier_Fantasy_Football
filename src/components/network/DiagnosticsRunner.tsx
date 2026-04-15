@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 export const DiagnosticsRunner: React.FC = () => {
     const [status, setStatus] = useState<'IDLE' | 'RUNNING' | 'DONE' | 'ERROR'>('IDLE');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [result, setResult] = useState<any>(null);
 
     const run = async () => {
@@ -14,6 +15,7 @@ export const DiagnosticsRunner: React.FC = () => {
         setStatus('RUNNING');
         try {
             const { invoke } = await import('@tauri-apps/api/tauri');
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const res = await invoke<any>('run_network_diagnostics');
             setResult(res);
             setStatus('DONE');

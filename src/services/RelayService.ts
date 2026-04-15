@@ -219,6 +219,7 @@ export const RelayService = {
     // ── Inbound Message Handler ───────────────────────────────────────────────
 
     _handleMessage(raw: string) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let msg: any;
         try {
             msg = JSON.parse(raw);
@@ -294,6 +295,7 @@ export const RelayService = {
      * Send a WebRTC signal to a specific peer via the relay.
      * Called by P2PService's relaySender hook for relay peers.
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     _sendSignal(targetNodeId: string, payload: any) {
         this._send({ type: 'SIGNAL', to: targetNodeId, payload });
     },
@@ -372,6 +374,7 @@ export const RelayService = {
 
     // ── Internal Helpers ──────────────────────────────────────────────────────
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     _send(msg: any) {
         if (this.ws?.readyState === WebSocket.OPEN) {
             this.ws.send(JSON.stringify(msg));

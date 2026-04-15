@@ -116,6 +116,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             const encryptionPass = team.password ||
                 await showPrompt("Set a backup password (leave blank to skip):", "Backup Encryption", { placeholder: "Optional password..." }) ||
                 undefined;
+            // eslint-disable-next-line react-hooks/purity
             const securePayload = { version: 'v2', timestamp: Date.now(), teamData: team };
             const encryptedData = await SecurityService.encrypt(securePayload, encryptionPass);
             const finalPayload = { trier_secure_v2: true, payload: encryptedData };
@@ -125,7 +126,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             dl.setAttribute("href", dataStr);
             dl.setAttribute("download", `${team.name.replace(/\s+/g, '_')}_SECURE.tff`);
             dl.click();
-        } catch (e) { showAlert("Export failed. Please try again.", "Export Error"); }
+        } catch { showAlert("Export failed. Please try again.", "Export Error"); }
     };
 
     // handleImportFile — decrypts and imports a .tff backup into the league.
@@ -137,6 +138,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
         reader.onload = async (ev) => {
             try {
                 const json = JSON.parse(ev.target?.result as string);
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const tryDecrypt = async (data: string): Promise<any> => {
                     try { return await SecurityService.decrypt(data, undefined); }
                     catch {
@@ -151,7 +153,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     onImportTeam(decrypted.teamData);
                     showAlert(`Successfully imported "${decrypted.teamData.name}".`, "Import Complete");
                 }
-            } catch (err) { showAlert("Failed to import. The file may be corrupted or the password was wrong.", "Import Failed"); }
+            } catch { showAlert("Failed to import. The file may be corrupted or the password was wrong.", "Import Failed"); }
         };
         reader.readAsText(file);
     };
@@ -410,13 +412,15 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                                                                 const input = document.createElement('input');
                                                                 input.type = 'file';
                                                                 input.accept = '.tff,.json';
-                                                                input.onchange = (e: any) => {
+                                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                                input.onchange = (e: any) => {
                                                                     const file = e.target.files[0];
                                                                     const reader = new FileReader();
                                                                     reader.onload = async (ev) => {
                                                                         try {
                                                                             const json = JSON.parse(ev.target?.result as string);
                                                                             if (await showConfirm(`Overwrite "${t.name}" with data from this backup file?`, "Overwrite Franchise", "OVERWRITE")) {
+                                                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                                                 const tryDecrypt = async (data: string): Promise<any> => {
                                                                                     try { return await SecurityService.decrypt(data, undefined); }
                                                                                     catch {
@@ -428,7 +432,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                                                                                 const teamData = decrypted.teamData || decrypted;
                                                                                 onImportTeam({ ...teamData, id: t.id });
                                                                             }
-                                                                        } catch (err) { showAlert("Import failed. Check that the file is valid.", "Import Error"); }
+                                                                        } catch { showAlert("Import failed. Check that the file is valid.", "Import Error"); }
                                                                     };
                                                                     reader.readAsText(file);
                                                                 };

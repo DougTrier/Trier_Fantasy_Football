@@ -19,6 +19,7 @@ import { GlobalEventStore } from './EventStore';
 export const SyncService = {
     /** Wire up P2P data and connection listeners. Call once at app startup. */
     init() {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         P2PService.onData((msg: any, peerId: string) => {
             this.handleMessage(msg, peerId);
         });
@@ -45,6 +46,7 @@ export const SyncService = {
     },
 
     /** Dispatches incoming P2P messages to the appropriate handler. */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     handleMessage(msg: any, peerId: string) {
         if (!msg.type) return;
 

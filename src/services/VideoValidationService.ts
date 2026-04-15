@@ -75,7 +75,7 @@ export const VideoValidationService = {
                 return false;
             }
             return true;
-        } catch (e) {
+        } catch {
             return false;
         }
     },
@@ -95,7 +95,7 @@ export const VideoValidationService = {
                 return false;
             }
             return true;
-        } catch (e) {
+        } catch {
             return false;
         }
     }

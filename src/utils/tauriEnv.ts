@@ -38,6 +38,7 @@ export function isTauri(): boolean {
  * @param args - Optional arguments passed to the Rust handler
  * @returns The Rust return value, or null if not running in Tauri
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function safeInvoke<T>(command: string, args?: any): Promise<T | null> {
     if (!isTauri()) {
         console.warn(`[Tauri] Skipping invoke('${command}') - Not running in Tauri`);

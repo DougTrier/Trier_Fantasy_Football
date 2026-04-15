@@ -26,6 +26,7 @@ export interface CanonicalPlayer {
     isActive: boolean;
 
     // Analysis (To be calculated/fetched later)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     stats: Record<string, any>; // Flexible for now
     fantasyPoints: number;
 }

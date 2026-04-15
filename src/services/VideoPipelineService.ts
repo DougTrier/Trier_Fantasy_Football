@@ -41,6 +41,7 @@ export interface VideoCandidate {
     durationSec?: number;
     relevanceScore: number;
     embeddable: boolean;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     metadata?: any;
     sourceId?: string;
     tierFound?: string;
@@ -165,7 +166,9 @@ class SearchRunner {
             }
             const data = await res.json();
             return (data.items || [])
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 .filter((item: any) => item.id?.videoId)
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 .map((item: any) => ({
                     id: item.id.videoId,
                     provider: 'youtube' as VideoProviderType,

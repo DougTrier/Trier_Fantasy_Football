@@ -329,6 +329,7 @@ export const Roster: React.FC<RosterProps> = ({ team, onSelectSlot, onSelectPlay
     ] as const;
 
     // Compute header stats — both are derived so we memoize together to avoid double-rerender
+    // eslint-disable-next-line react-hooks/preserve-manual-memoization
     const { teamProjection, teamActual } = useMemo(() => {
         // Sum pre-season projected points across all 9 starting slots
         const proj = starters.reduce((acc, slot) => {

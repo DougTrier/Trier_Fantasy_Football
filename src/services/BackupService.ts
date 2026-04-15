@@ -52,6 +52,7 @@ export const BackupService = {
             // So we just ingest their events.
 
             let count = 0;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             backup.events.forEach((e: any) => {
                 if (GlobalEventStore.add(e)) count++;
             });
