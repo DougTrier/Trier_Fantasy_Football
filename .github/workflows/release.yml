@@ -5,6 +5,9 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write   # Required to create GitHub Releases and upload assets
+
 jobs:
   build-tauri:
     name: Build Tauri App
