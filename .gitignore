@@ -32,6 +32,7 @@ consult_args.json
 # Temp / scratch directories
 temp_*/
 output/
+release_assets/
 
 # Test artifacts
 test-results/
