@@ -9,7 +9,13 @@ import { getTeamTheme } from '../utils/teamThemes';
 const careerStats = careerStatsRaw as unknown as Record<string, Record<string, unknown>[]>;
 const combineStats = combineStatsRaw as unknown as Record<string, unknown>[];
 const socialHandles = socialHandlesRaw as unknown as Record<string, unknown>[];
-const liveStats = liveStatsRaw as unknown as Record<string, unknown>;
+interface LiveStatsFile {
+    season?: number;
+    season_state?: string;
+    data_status?: string;
+    stats?: Record<string, Record<string, number>>;
+}
+const liveStats = liveStatsRaw as unknown as LiveStatsFile;
 
 const generateNflProfileUrl = (firstName: string, lastName: string): string => {
     // Basic slugify: lowercase, remove non-alphanumeric (except splitters), replace spaces with dashes
@@ -63,7 +69,7 @@ const processPlayers = (players: any[]): Player[] => {
 
         // 2. Positional Sanity Check
         // If a non-QB has career passing yards matching a legend, it's a bug.
-        const totalPassYds = history.reduce((acc, h) => acc + (h.passingYards || 0), 0);
+        const totalPassYds = history.reduce((acc, h) => acc + ((h.passingYards as number) || 0), 0);
         if (p.position !== 'QB' && totalPassYds > 2000) {
             history = [];
         }
@@ -104,7 +110,7 @@ const processPlayers = (players: any[]): Player[] => {
         let mergedCombineStats = undefined;
         if (combineEntry) {
             mergedCombineStats = {
-                ...combineEntry.combine_results,
+                ...(combineEntry.combine_results as Record<string, unknown>),
                 measurements: combineEntry.measurements,
                 source_url: combineEntry.source_url,
                 combine_tab_visible: true,
@@ -138,9 +144,12 @@ const nflDefenses: Player[] = nflTeams.map(teamCode => {
     const nameParts = theme.fullName.split(' ');
     const nickname = nameParts.pop() || '';
     const city = nameParts.join(' ');
+    // Extract DST stats into a local so TypeScript can narrow the type in the ternary below
+    const dstKey = `dst-${teamCode.toLowerCase()}`;
+    const dstEntry = liveStats.data_status === "VALIDATED" ? liveStats.stats?.[dstKey] : undefined;
 
     return {
-        id: `dst-${teamCode.toLowerCase()}`,
+        id: dstKey,
         firstName: city,
         lastName: nickname,
         position: 'DST',
@@ -150,15 +159,11 @@ const nflDefenses: Player[] = nflTeams.map(teamCode => {
         adp: 150 + Math.random() * 50,
         ownership: '50%',
         isEnriched: true,
-        historicalStats: (liveStats.data_status === "VALIDATED" && liveStats.stats?.[`dst-${teamCode.toLowerCase()}`])
-            ? [{
-                ...liveStats.stats[`dst-${teamCode.toLowerCase()}`],
-                year: liveStats.season || 2025,
-                fantasyPoints: liveStats.stats[`dst-${teamCode.toLowerCase()}`].pts_ppr || liveStats.stats[`dst-${teamCode.toLowerCase()}`].pts_std || 0
-            }]
+        historicalStats: dstEntry
+            ? [{ ...dstEntry, year: liveStats.season || 2025, fantasyPoints: dstEntry.pts_ppr || dstEntry.pts_std || 0 }]
             : [],
         currentSeasonLogs: []
-    };
+    } as unknown as Player;
 });
 
 export const mockPlayers: Player[] = [...allProcessedPlayers, ...nflDefenses];

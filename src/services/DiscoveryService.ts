@@ -74,13 +74,13 @@ export const DiscoveryService = {
                 if (!peerRaw.id || !peerRaw.ip) return;
 
                 const peer: DiscoveredPeer = {
-                    id: peerRaw.id,
-                    ip: peerRaw.ip,
-                    port: peerRaw.port,
-                    hostname: peerRaw.hostname,
-                    franchiseId: peerRaw.franchise_id,
-                    franchiseName: peerRaw.franchise_name,
-                    transport: peerRaw.transport,
+                    id: peerRaw.id as string,
+                    ip: peerRaw.ip as string,
+                    port: peerRaw.port as number,
+                    hostname: peerRaw.hostname as string,
+                    franchiseId: peerRaw.franchise_id as string | undefined,
+                    franchiseName: peerRaw.franchise_name as string | undefined,
+                    transport: peerRaw.transport as string | undefined,
                     lastSeen: Date.now()
                 };
 

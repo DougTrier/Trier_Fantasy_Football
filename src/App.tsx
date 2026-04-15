@@ -789,7 +789,8 @@ export default function App() {
         console.log(`[App] Triggering enrichment(stats: ${needsStats}, photo: ${needsPhoto}) for ${activePlayerCard.firstName} ${activePlayerCard.lastName} `);
         setIsScraping(activePlayerCard.id);
 
-        const promises: Promise<unknown>[] = [];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const promises: Promise<any>[] = [];
         if (needsStats) promises.push(scrapePlayerStats(`${activePlayerCard.firstName} ${activePlayerCard.lastName} `));
         else promises.push(Promise.resolve(activePlayerCard.historicalStats));
 

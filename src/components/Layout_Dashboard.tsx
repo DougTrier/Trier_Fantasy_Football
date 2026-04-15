@@ -317,7 +317,7 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
                         letterSpacing: '0.05em',
                         textShadow: '0 1px 3px rgba(0,0,0,1)'
                     }}>
-                        {ScoringEngine.getOrchestrationStatus().season_state}: {ScoringEngine.getOrchestrationStatus().data_status}
+                        {String(ScoringEngine.getOrchestrationStatus().season_state ?? '')}: {String(ScoringEngine.getOrchestrationStatus().data_status ?? '')}
                     </span>
                 </div>
 

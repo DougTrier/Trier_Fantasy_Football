@@ -413,10 +413,8 @@ export const P2PService = {
             }
         });
 
-        // @ts-expect-error — 'iceStateChange' is a valid SimplePeer event relayed from the underlying
-        // RTCPeerConnection, but simple-peer's TypeScript definitions only declare the subset of
-        // events in their public API. Removing this comment causes a compile error with no runtime
-        // impact; the event fires correctly at runtime.
+        // 'iceStateChange' is a valid SimplePeer event relayed from the underlying RTCPeerConnection,
+        // but simple-peer types only declare their public API subset. The event fires correctly at runtime.
         p.on('iceStateChange', () => { /* available for diagnostics */ });
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
