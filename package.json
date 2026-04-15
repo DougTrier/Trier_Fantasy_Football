@@ -28,6 +28,7 @@
     "react-twitter-embed": "^4.0.4",
     "react-youtube": "^10.1.0",
     "simple-peer": "^9.11.1",
+    "trystero": "^0.23.0",
     "uuid": "^13.0.0"
   },
   "devDependencies": {
