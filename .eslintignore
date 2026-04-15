@@ -1,0 +1,16 @@
+# Build output
+dist/
+dist-ssr/
+node_modules/
+
+# Archived legacy scripts — not actively maintained, not linted
+scripts/archive/**
+
+# Tauri Rust build artifacts
+src-tauri/target/**
+
+# Test files — tested separately, not included in source lint
+tests/**
+
+# Generated files
+src/generated/**
