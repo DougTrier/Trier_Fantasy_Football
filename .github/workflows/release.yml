@@ -53,3 +53,4 @@ jobs:
           releaseBody: 'See CHANGELOG or commits for details.'
           releaseDraft: true
           prerelease: false
+          args: --bundles msi,nsis
