@@ -36,7 +36,6 @@ output/
 # Test artifacts
 test-results/
 playwright-report/
-docs/screenshots/
 
 # Claude Code session files
 .claude/
