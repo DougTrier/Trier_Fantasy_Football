@@ -126,6 +126,17 @@ export const P2PService = {
     isPortAssigned: false,
     ipResolver: null as ((id: string) => { ip: string; port: number } | undefined) | null,
 
+    // ── Peer public key registry ──────────────────────────────────────────────
+    // Populated when a peer reaches VERIFIED state (both sides of the handshake).
+    // Used to verify event signatures: knownPeerKeys.get(event.author) → Base64 SPKI.
+    // Only peers whose signatures we have cryptographically verified appear here.
+    knownPeerKeys: new Map<string, string>(), // nodeId → Base64 SPKI public key
+
+    /** Returns the ECDSA public key for a verified peer, or undefined if unknown. */
+    getPeerPublicKey(nodeId: string): string | undefined {
+        return this.knownPeerKeys.get(nodeId);
+    },
+
     // ── Relay support ─────────────────────────────────────────────────────────
     // Peers discovered via the relay server (not LAN). Their signals are routed
     // through RelayService's WebSocket instead of the Rust HTTP signal endpoint.
@@ -660,6 +671,9 @@ export const P2PService = {
 
         this.sendRaw(targetId, complete);
 
+        // Register the peer's verified public key — used to verify inbound event signatures
+        this.knownPeerKeys.set(conn.nodeId, msg.publicKey);
+
         conn.pendingNonce = undefined;
         this.updateState(targetId, 'VERIFIED', { peerUuid: conn.peerUuid });
         console.log(`[P2P] ✅ Peer ${targetId} VERIFIED (initiator side)`);
@@ -683,6 +697,9 @@ export const P2PService = {
             this.terminateConnection(targetId, 'Final handshake: signature invalid');
             return;
         }
+
+        // Register the peer's verified public key — used to verify inbound event signatures
+        this.knownPeerKeys.set(conn.nodeId, conn.peerPublicKey);
 
         conn.pendingNonce = undefined;
         this.updateState(targetId, 'VERIFIED', { peerUuid: conn.peerUuid });

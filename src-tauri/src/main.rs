@@ -332,6 +332,15 @@ fn main() {
     .setup(|app| {
         Ok(())
     })
+    // Intercept the OS window-close (X button / Alt-F4 / Cmd-Q).
+    // We prevent the immediate close and instead tell the frontend, which
+    // flushes state and logs out before calling process::exit().
+    .on_window_event(|event| {
+        if let tauri::WindowEvent::CloseRequested { api, .. } = event.event() {
+            api.prevent_close();
+            let _ = event.window().emit("CLOSE_REQUESTED", ());
+        }
+    })
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }

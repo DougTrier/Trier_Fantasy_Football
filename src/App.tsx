@@ -289,22 +289,62 @@ export default function App() {
 
       // ── Delta sync response: apply events the peer sent us ──────────────────
       if (msg.type === 'SYNC_RESPONSE') {
-        const events = (msg.events || []) as EventLogEntry[];
+        // Cap batch size to prevent flooding attacks from a malicious verified peer
+        const raw = (msg.events || []) as EventLogEntry[];
+        if (raw.length > 500) {
+          console.warn(`[App] SYNC_RESPONSE from ${peerId} contains ${raw.length} events — capping at 500`);
+        }
+        const events = raw.slice(0, 500);
         let applied = 0;
         for (const event of events) {
+          // Verify signature against the peer's registered public key.
+          // Events can be authored by any node (we may be relaying history), so we
+          // look up the author's key. If unknown, we skip — we can't verify it.
+          const authorKey = P2PService.getPeerPublicKey(event.author);
+          if (!authorKey) {
+            // Author not a directly connected verified peer — skip for now.
+            // Future: trust-on-first-use or a key gossip layer could handle this.
+            console.warn(`[App] SYNC_RESPONSE: no key for author "${event.author}" — skipping event ${event.id}`);
+            continue;
+          }
+          const signStr = `${event.seq}|${event.type}|${JSON.stringify(event.payload)}|${event.ts}|${event.author}`;
+          const valid = await IdentityService.verifySignature(authorKey, signStr, event.signature);
+          if (!valid) {
+            console.error(`[App] SYNC_RESPONSE: invalid signature for event ${event.id} from ${event.author} — dropping`);
+            continue;
+          }
           const accepted = GlobalEventStore.add(event);
           if (accepted && event.type === 'ROSTER_MOVE') {
             setUserTeams(prev => applyRosterMoveEvent(prev, event));
             applied++;
           }
         }
-        console.log(`[App] SYNC_RESPONSE from ${peerId} — ${events.length} events received, ${applied} ROSTER_MOVEs applied`);
+        console.log(`[App] SYNC_RESPONSE from ${peerId} — ${events.length} events checked, ${applied} ROSTER_MOVEs applied`);
       }
 
       // ── Inbound canonical event from a verified peer ────────────────────────
       if (msg.type === 'EVENT' && msg.event) {
         const event = msg.event as EventLogEntry;
         console.log(`[App] ← Inbound event from peer: ${event.type} seq=${event.seq} author=${event.author}`);
+
+        // Verify the event signature against the sender's registered public key.
+        // The sender must be the event's author — we don't accept events where a peer
+        // claims to forward another node's signed event via this path (use SYNC_RESPONSE for that).
+        const senderKey = P2PService.getPeerPublicKey(peerId);
+        if (!senderKey) {
+          console.error(`[App] EVENT from ${peerId}: no registered public key — dropping`);
+          return;
+        }
+        if (event.author !== peerId) {
+          console.error(`[App] EVENT author mismatch: sender=${peerId} author=${event.author} — dropping`);
+          return;
+        }
+        const signStr = `${event.seq}|${event.type}|${JSON.stringify(event.payload)}|${event.ts}|${event.author}`;
+        const valid = await IdentityService.verifySignature(senderKey, signStr, event.signature);
+        if (!valid) {
+          console.error(`[App] EVENT signature invalid from ${peerId} — dropping event ${event.id}`);
+          return;
+        }
 
         // Append to EventStore — deduplication and validation handled internally
         const accepted = GlobalEventStore.add(event);
@@ -418,13 +458,57 @@ export default function App() {
     }));
   }, []);
 
-  // Save on Change
+  // Save on Change — keep localStorage always current so close-from-X loses nothing
   useEffect(() => {
     localStorage.setItem('trier_fantasy_all_teams_v3', JSON.stringify(userTeams));
     sessionStorage.setItem('trier_fantasy_active_id', activeTeamId);
     // Also update localStorage as a fallback for the primary window
     localStorage.setItem('trier_fantasy_active_id', activeTeamId);
   }, [userTeams, activeTeamId]);
+
+  // Ref that always holds the latest userTeams — used in close handlers that are
+  // registered once and can't close over a changing state value.
+  const userTeamsRef = useRef(userTeams);
+  useEffect(() => { userTeamsRef.current = userTeams; }, [userTeams]);
+
+  // Handle window close via X button (Tauri) or tab close (browser).
+  // Data is already continuously saved above; this handler just does the logout
+  // (clears activeTeamId) so the next session starts on the team-select screen.
+  useEffect(() => {
+    const doLogout = () => {
+      localStorage.setItem('trier_fantasy_all_teams_v3', JSON.stringify(userTeamsRef.current));
+      localStorage.setItem('trier_fantasy_active_id', '');
+      sessionStorage.removeItem('trier_fantasy_active_id');
+    };
+
+    // Browser: beforeunload fires on tab/window close
+    const handleBeforeUnload = () => doLogout();
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    // Tauri: CLOSE_REQUESTED is emitted by main.rs (close is already prevented)
+    let unlisten: (() => void) | null = null;
+    const win = window as any;
+    if (win.__TAURI__) {
+      import('@tauri-apps/api/event').then(({ listen }) => {
+        listen<void>('CLOSE_REQUESTED', async () => {
+          doLogout();
+          try {
+            const { exit } = await import('@tauri-apps/api/process');
+            await exit(0);
+          } catch {
+            // Fallback if process API fails — close the window directly
+            const { appWindow } = await import('@tauri-apps/api/window');
+            await appWindow.close();
+          }
+        }).then(fn => { unlisten = fn; });
+      });
+    }
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      unlisten?.();
+    };
+  }, []); // Register once — reads latest state via userTeamsRef
 
   // Persist locked NFL teams across sessions
   useEffect(() => {
@@ -524,19 +608,47 @@ export default function App() {
   // Holds the SHA-256 hash of the admin password (never the plaintext).
   const adminPasswordHash = useRef<string>('');
 
-  // On mount: ensure the stored admin password is hashed. Migrates legacy plaintext.
+  // On mount: load the stored admin password hash.
+  // Migrates legacy plaintext and re-hashes any plain: entries from HTTP dev sessions.
   useEffect(() => {
     const migrateAdminPassword = async () => {
       const { IdentityService } = await import('./services/IdentityService');
-      const raw = localStorage.getItem('trier_admin_pass') || 'Elliot126d9u2';
-      if (raw.startsWith('sha256:') || raw.startsWith('plain:')) {
-        adminPasswordHash.current = raw; // already hashed
-      } else {
-        const hashed = await IdentityService.hashPassword(raw);
-        localStorage.setItem('trier_admin_pass', hashed);
-        adminPasswordHash.current = hashed;
-        console.log('[App] Admin password migrated to hashed format.');
+      const raw = localStorage.getItem('trier_admin_pass');
+
+      if (!raw) {
+        // No password set yet — first run. Leave adminPasswordHash empty;
+        // the admin login handler will guide the user through setup.
+        adminPasswordHash.current = '';
+        return;
       }
+
+      if (raw.startsWith('sha256:')) {
+        // Already properly hashed — just load it.
+        adminPasswordHash.current = raw;
+        return;
+      }
+
+      if (raw.startsWith('plain:')) {
+        // Stored in insecure plain: format (from an HTTP dev session). Re-hash immediately.
+        const plaintext = raw.slice(6);
+        const hashed = await IdentityService.hashPassword(plaintext);
+        if (!hashed.startsWith('plain:')) {
+          // crypto.subtle was available — persist the upgrade
+          localStorage.setItem('trier_admin_pass', hashed);
+          adminPasswordHash.current = hashed;
+          console.warn('[App] Admin password was stored in plain: format — upgraded to sha256:');
+        } else {
+          // Still no crypto.subtle — keep in memory only, don't persist
+          adminPasswordHash.current = raw;
+        }
+        return;
+      }
+
+      // Legacy raw plaintext (no prefix) — hash and upgrade
+      const hashed = await IdentityService.hashPassword(raw);
+      localStorage.setItem('trier_admin_pass', hashed);
+      adminPasswordHash.current = hashed;
+      console.log('[App] Admin password migrated to hashed format.');
     };
     migrateAdminPassword();
   }, []);
@@ -993,12 +1105,15 @@ export default function App() {
       const ts = Date.now();
 
       // Sign the event to prove authorship
-      let signature = 'unsigned';
+      const signStr = `${seq}|ROSTER_MOVE|${JSON.stringify(capturedPayload)}|${ts}|${identity.nodeId}`;
+      let signature: string;
       try {
-        const signStr = `${seq}|ROSTER_MOVE|${JSON.stringify(capturedPayload)}|${ts}|${identity.nodeId}`;
         signature = await IdentityService.sign(signStr);
       } catch (e) {
-        console.warn('[executeSwap] Event signing failed — broadcasting unsigned:', e);
+        // Signing threw unexpectedly — abort. Don't emit an unverifiable event.
+        console.error('[executeSwap] Event signing threw — aborting broadcast:', e);
+        setSwapCandidate(null);
+        return;
       }
 
       const event: EventLogEntry = {
@@ -1012,7 +1127,17 @@ export default function App() {
       };
 
       // Append locally (deduplication + validation in EventStore)
-      GlobalEventStore.add(event);
+      // Note: EventStore.validate() rejects signature === 'unsigned', so in HTTP dev mode
+      // (where crypto.subtle is absent) the event won't be stored or broadcast.
+      const accepted = GlobalEventStore.add(event);
+      if (!accepted) {
+        // Likely unsigned (crypto.subtle unavailable in HTTP dev mode) — roster move
+        // applied to local state above but not persisted or broadcast. This is expected
+        // when running over plain HTTP without a secure context.
+        console.warn('[executeSwap] Event rejected by EventStore (unsigned or invalid) — local-only move.');
+        setSwapCandidate(null);
+        return;
+      }
 
       // Broadcast to all verified peers — P2PService gates on VERIFIED internally
       P2PService.broadcast({ type: 'EVENT', event });
@@ -1576,9 +1701,31 @@ export default function App() {
           }}
           onToggleAdmin={async () => {
             if (isAdmin) { setIsAdmin(false); return; }
+            const { IdentityService } = await import('./services/IdentityService');
+
+            // First run — no password has ever been set. Guide commissioner through setup.
+            if (!adminPasswordHash.current) {
+              await showAlert(
+                "No Commissioner password is set. You'll create one now.",
+                "First-Time Setup"
+              );
+              const newPass = await showPrompt("Create a Commissioner password:", "Set Password", { placeholder: "Choose a strong password" });
+              if (!newPass || !newPass.trim()) return;
+              const confirm = await showPrompt("Confirm your password:", "Confirm Password", { placeholder: "Re-enter password" });
+              if (newPass !== confirm) {
+                showAlert("Passwords don't match. Try again.", "Mismatch");
+                return;
+              }
+              const hashed = await IdentityService.hashPassword(newPass);
+              localStorage.setItem('trier_admin_pass', hashed);
+              adminPasswordHash.current = hashed;
+              setIsAdmin(true);
+              showAlert("Commissioner password set. You are now logged in.", "Password Created");
+              return;
+            }
+
             const code = await showPrompt("Enter the Commissioner password:", "Commissioner Login", { placeholder: "Password" });
             if (!code) return;
-            const { IdentityService } = await import('./services/IdentityService');
             const ok = await IdentityService.verifyPassword(code, adminPasswordHash.current);
             if (ok) setIsAdmin(true);
             else showAlert("Incorrect password. Access denied.", "Wrong Password");

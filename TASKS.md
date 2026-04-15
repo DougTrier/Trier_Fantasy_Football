@@ -67,6 +67,20 @@
 
 ---
 
+## Security Hardening
+
+### P2P Event Integrity ✅
+- [x] Verify event signatures on ingest — `EventStore.validate()` currently only checks presence; wire in `IdentityService.verifySignature()` against a peer key registry
+- [x] Build `knownPeerKeys` registry in `P2PService` — populated at VERIFIED, keyed by `nodeId → publicKey`
+- [x] Reject `unsigned` events — abort `executeSwap` broadcast if signing fails; refuse events with `signature === 'unsigned'` in EventStore
+- [x] Cap inbound SYNC_RESPONSE batch at 500 events before processing
+
+### Admin / Credential Security ✅
+- [x] Remove hardcoded default admin password (`'Elliot126d9u2'`) — force first-run setup prompt if no password is set
+- [x] Warn and re-hash any `plain:` stored passwords on app start (can persist from HTTP dev sessions)
+
+---
+
 ## Architecture Notes
 
 ### Why the relay doesn't compromise local-first

@@ -142,6 +142,10 @@ export class EventStore {
 
     private validate(event: EventLogEntry): boolean {
         if (!event.id || !event.type || !event.author || !event.signature) return false;
+        // Reject explicitly unsigned events — signing should never be skipped in production.
+        // 'unsigned' is the sentinel returned by IdentityService.sign() when crypto.subtle
+        // is unavailable (HTTP dev mode). Such events must not propagate between peers.
+        if (event.signature === 'unsigned') return false;
         if (event.seq < 1) return false;
         if (event.ts > Date.now() + 60000) return false; // Future check 1min buffer
         return true;
