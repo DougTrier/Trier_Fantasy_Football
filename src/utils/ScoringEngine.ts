@@ -1,7 +1,20 @@
 import type { Player } from '../types';
 import liveStatsSource from '../data/live_stats_current.json';
 
-const liveData = liveStatsSource as Record<string, unknown>;
+interface LiveStatsData {
+    season?: number;
+    season_state?: string;
+    finality?: string;
+    last_updated?: string;
+    data_status?: string;
+    reason?: string;
+    stats?: Record<string, Record<string, number>>;
+}
+
+// Double-cast through unknown: TypeScript infers the exact JSON type (specific player ID keys),
+// which doesn't overlap cleanly with LiveStatsData's Record<string,...> interface.
+// The same pattern is used in mockDB.ts for the same reason.
+const liveData = liveStatsSource as unknown as LiveStatsData;
 
 /**
  * ScoringEngine (Protocol v2)
