@@ -1,4 +1,38 @@
-import { useState, useEffect, useMemo } from 'react';
+/**
+ * Trier Fantasy Football
+ * © 2026 Doug Trier
+ *
+ * Licensed under the MIT License.
+ * See LICENSE file for details.
+ *
+ * "Trier OS" and "Trier Fantasy Football" are trademarks of Doug Trier.
+ */
+
+/**
+ * App.tsx — Root Application Shell
+ * ==================================
+ * Top-level React component. Owns all runtime game state and orchestrates
+ * every service (P2P, Discovery, Sync, EventStore, Identity).
+ *
+ * STATE MODEL (Hybrid):
+ *   React useState is the active runtime truth for all team/roster data.
+ *   GlobalEventStore is the synchronization and audit layer.
+ *   Every roster mutation (executeSwap) writes a canonical EventLogEntry,
+ *   broadcasts it to verified peers, and also applies it to local React state.
+ *   Inbound events from peers are applied via applyRosterMoveEvent() — the same
+ *   pure function used locally, ensuring both paths produce identical state.
+ *
+ * P2P LIFECYCLE:
+ *   Discovery → Connect Request → Handshake (VERIFYING) → VERIFIED → Sync
+ *   Auto-sync fires only on VERIFIED — not on raw transport connect.
+ *   Game data is gated on VERIFIED throughout the stack.
+ *
+ * KEY EXPORTS (used by peers and tests):
+ *   applyRosterMoveEvent() — canonical pure state transformer for ROSTER_MOVE events.
+ *   RosterMovePayload     — the wire payload type for roster change events.
+ */
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { useDialog } from './components/AppDialog';
 import './index.css';
 import type { Player, FantasyTeam, Transaction, League } from './types';
 import { mockPlayers } from './data/mockDB';
@@ -16,7 +50,7 @@ import { TradeCenter } from './components/TradeCenter';
 import { scrapePlayerStats, scrapePlayerPhoto } from './utils/scraper';
 import stadiumBg from './assets/stadium_bg.png';
 import leatherTexture from './assets/leather_texture.png';
-import { isPlayerLocked, NFL_TEAMS } from './utils/gamedayLogic';
+import { isPlayerLocked, NFL_TEAMS, fetchLiveLockedTeams } from './utils/gamedayLogic';
 
 import { Lock } from 'lucide-react';
 import { SyncService } from './utils/SyncService';
@@ -25,6 +59,87 @@ import { DiscoveryService, type DiscoveredPeer } from './services/DiscoveryServi
 import { P2PService } from './services/P2PService';
 import { IdentityService } from './services/IdentityService';
 import { NetworkPage } from './components/NetworkPage';
+import { GlobalEventStore } from './services/EventStore';
+import type { EventLogEntry } from './types/P2P';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ROSTER_MOVE Event Payload
+// Self-describing: contains enough info for any peer to apply the exact
+// same transformation to their local state without additional context.
+// ─────────────────────────────────────────────────────────────────────────────
+export interface RosterMovePayload {
+  teamId: string;
+  candidatePlayerId: string;
+  targetPlayerId: string | null;
+  targetSlot: string;
+  sourceSlot: string | null; // null = was on bench
+}
+
+// Per-session monotonic sequence counter. Starts at 1 each session.
+let _localSeq = 0;
+const nextSeq = () => ++_localSeq;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// applyRosterMoveEvent — canonical, pure state transformer
+// Used in BOTH the local and inbound peer paths. Same input = same output.
+// ─────────────────────────────────────────────────────────────────────────────
+export const applyRosterMoveEvent = (teams: FantasyTeam[], event: EventLogEntry): FantasyTeam[] => {
+  const p = event.payload as RosterMovePayload;
+  if (!p?.teamId || !p?.candidatePlayerId) {
+    console.warn('[EventStore] applyRosterMoveEvent: invalid payload', event);
+    return teams;
+  }
+
+  return teams.map(team => {
+    if (team.id !== p.teamId) return team;
+
+    let newRoster = { ...team.roster } as any;
+    let newBench = [...team.bench];
+
+    const allPlayers = [...Object.values(team.roster).filter(Boolean), ...team.bench] as Player[];
+    const candidate = allPlayers.find(pl => pl.id === p.candidatePlayerId);
+    if (!candidate) {
+      console.warn(`[EventStore] applyRosterMoveEvent: candidate ${p.candidatePlayerId} not found in team ${p.teamId}`);
+      return team;
+    }
+
+    const targetPlayer = p.targetPlayerId
+      ? allPlayers.find(pl => pl.id === p.targetPlayerId) ?? null
+      : null;
+
+    // 1. Remove candidate from source position
+    if (p.sourceSlot) {
+      newRoster[p.sourceSlot] = null;
+    } else {
+      newBench = newBench.filter(pl => pl.id !== p.candidatePlayerId);
+    }
+
+    // 2. Place candidate at target, displace any existing player back to source
+    if (targetPlayer && p.targetPlayerId) {
+      const targetStarterSlot = Object.keys(team.roster).find(k => (team.roster as any)[k]?.id === p.targetPlayerId);
+      if (targetStarterSlot) {
+        newRoster[targetStarterSlot] = candidate;
+      } else {
+        newBench.push(candidate);
+      }
+      if (p.sourceSlot) {
+        newRoster[p.sourceSlot] = targetPlayer;
+      } else {
+        newBench = newBench.filter(pl => pl.id !== p.targetPlayerId);
+        newBench.push(targetPlayer);
+      }
+    } else {
+      if (p.targetSlot.startsWith('bench')) {
+        newBench.push(candidate);
+      } else {
+        newRoster[p.targetSlot] = candidate;
+      }
+    }
+
+    const uniqueBench = Array.from(new Map(newBench.map(pl => [pl.id, pl])).values());
+    return { ...team, roster: newRoster, bench: uniqueBench };
+  });
+};
 const formatInitialTeam = (): FantasyTeam => ({
   id: 'user-team',
   name: "Trier's Titans",
@@ -47,6 +162,8 @@ const formatInitialTeam = (): FantasyTeam => ({
 import { normalizeTeam } from './utils/dataNormalizer';
 
 export default function App() {
+  const { showAlert, showConfirm, showPrompt } = useDialog();
+
   const [userTeams, setUserTeams] = useState<FantasyTeam[]>(() => {
     const saved = localStorage.getItem('trier_fantasy_all_teams_v3');
     try {
@@ -65,7 +182,13 @@ export default function App() {
   });
 
   // Anti-Cheat: Game Day Locking Logic (Team-Specific)
-  const [lockedNFLTeams, setLockedNFLTeams] = useState<string[]>([]);
+  // Persisted across sessions so the commissioner's lock state survives a reload.
+  const [lockedNFLTeams, setLockedNFLTeams] = useState<string[]>(() => {
+    try {
+      const stored = localStorage.getItem('trier_locked_nfl_teams');
+      return stored ? JSON.parse(stored) : [];
+    } catch { return []; }
+  });
   const [peers, setPeers] = useState<DiscoveredPeer[]>([]);
   const [connectedPeers, setConnectedPeers] = useState<string[]>([]);
   const [hasNewOffers, setHasNewOffers] = useState(false);
@@ -103,10 +226,10 @@ export default function App() {
 
 
 
-    // Auto-Sync on Connect
+    // Auto-Sync on Verified Connect (fires only after mutual handshake completes)
     const unsubConn = P2PService.onConnectionStatus(({ status, peerId }) => {
-      if (status === 'CONNECTED') {
-        console.log(`[App] Auto-syncing with new peer ${peerId}`);
+      if (status === 'VERIFIED') {
+        console.log(`[App] Peer ${peerId} verified. Auto-syncing teams...`);
         SyncService.syncTeams(teamRef);
       }
     });
@@ -128,6 +251,25 @@ export default function App() {
           console.warn("[App] Restart denied. Invalid/No secret.");
         }
       }
+
+      // ── Inbound canonical event from a verified peer ────────────────────────
+      if (msg.type === 'EVENT' && msg.event) {
+        const event = msg.event as EventLogEntry;
+        console.log(`[App] ← Inbound event from peer: ${event.type} seq=${event.seq} author=${event.author}`);
+
+        // Append to EventStore — deduplication and validation handled internally
+        const accepted = GlobalEventStore.add(event);
+        if (!accepted) {
+          console.warn(`[App] Event ${event.id} rejected by EventStore (duplicate or invalid).`);
+          return;
+        }
+
+        // Apply to local React state using the canonical pure function
+        if (event.type === 'ROSTER_MOVE') {
+          setUserTeams(prev => applyRosterMoveEvent(prev, event));
+          console.log(`[App] ✅ ROSTER_MOVE applied from peer (seq: ${event.seq})`);
+        }
+      }
     });
 
     return () => {
@@ -145,11 +287,11 @@ export default function App() {
     return () => unsub();
   }, []);
 
-  // Track Connected Peers
+  // Track Verified Peers (app-level trust, not just transport)
   useEffect(() => {
     const updateConnected = () => {
       const active = Array.from(P2PService.connections.values())
-        .filter(c => c.state === 'CONNECTED')
+        .filter(c => c.state === 'VERIFIED')
         .map(c => c.nodeId);
       setConnectedPeers(active);
     };
@@ -234,6 +376,11 @@ export default function App() {
     // Also update localStorage as a fallback for the primary window
     localStorage.setItem('trier_fantasy_active_id', activeTeamId);
   }, [userTeams, activeTeamId]);
+
+  // Persist locked NFL teams across sessions
+  useEffect(() => {
+    localStorage.setItem('trier_locked_nfl_teams', JSON.stringify(lockedNFLTeams));
+  }, [lockedNFLTeams]);
 
   // Inactivity Logout Logic (5 Minutes)
   useEffect(() => {
@@ -325,7 +472,25 @@ export default function App() {
   };
 
   const [isAdmin, setIsAdmin] = useState(false); // Global Admin Mode
-  const [adminPassword] = useState(localStorage.getItem('trier_admin_pass') || 'Elliot126d9u2');
+  // Holds the SHA-256 hash of the admin password (never the plaintext).
+  const adminPasswordHash = useRef<string>('');
+
+  // On mount: ensure the stored admin password is hashed. Migrates legacy plaintext.
+  useEffect(() => {
+    const migrateAdminPassword = async () => {
+      const { IdentityService } = await import('./services/IdentityService');
+      const raw = localStorage.getItem('trier_admin_pass') || 'Elliot126d9u2';
+      if (raw.startsWith('sha256:') || raw.startsWith('plain:')) {
+        adminPasswordHash.current = raw; // already hashed
+      } else {
+        const hashed = await IdentityService.hashPassword(raw);
+        localStorage.setItem('trier_admin_pass', hashed);
+        adminPasswordHash.current = hashed;
+        console.log('[App] Admin password migrated to hashed format.');
+      }
+    };
+    migrateAdminPassword();
+  }, []);
 
   const createNewTeam = (name: string, ownerName: string, password?: string) => {
     const newTeam: FantasyTeam = {
@@ -341,9 +506,12 @@ export default function App() {
 
   const deleteTeam = (teamId: string) => {
     if (!isAdmin) return; // Safeguard
+    if (userTeams.length <= 1) {
+      showAlert("Cannot delete the only team in the league. Create another team first.", "Cannot Delete");
+      return;
+    }
     setUserTeams(prev => {
       if (prev.length <= 1) {
-        alert("Cannot delete the only team in the league. Create another team first.");
         return prev;
       }
       const remaining = prev.filter(t => t.id !== teamId);
@@ -384,7 +552,7 @@ export default function App() {
 
     // 4. FALLBACK (If browser blocks close)
     setTimeout(() => {
-      alert("Changes Saved. You are now logged out. Please close this tab manually.");
+      showAlert("Changes saved. You are now logged out. Please close this tab manually.", "Logged Out");
       setActiveTeamId(''); // Update UI state if still open
       setActiveView('dashboard');
     }, 500);
@@ -572,7 +740,7 @@ export default function App() {
       [...Object.values(t.roster), ...t.bench].some(p => p && p.id === player.id)
     );
     if (owner && owner.id !== activeTeamId) {
-      alert(`Player Already Selected by ${owner.ownerName} (${owner.name})`);
+      showAlert(`${player.firstName} ${player.lastName} is already on ${owner.name} (Coach ${owner.ownerName}).`, "Player Unavailable");
       return;
     }
 
@@ -641,7 +809,7 @@ export default function App() {
 
   const movePlayer = (player: Player) => {
     if (isPlayerLocked(player, lockedNFLTeams)) {
-      alert(`${player.firstName} ${player.lastName} is currently playing and is locked in the lineup.`);
+      showAlert(`${player.firstName} ${player.lastName} is currently playing and cannot be moved.`, "Player Locked");
       return;
     }
     setSwapCandidate(player);
@@ -678,33 +846,38 @@ export default function App() {
     return { valid: true };
   };
 
-  const executeSwap = (targetPlayer: Player | null, targetSlot?: string) => {
+  const executeSwap = async (targetPlayer: Player | null, targetSlot?: string) => {
     if (!swapCandidate) return;
 
     // Check if swapCandidate is locked
     if (isPlayerLocked(swapCandidate, lockedNFLTeams)) {
-      alert(`${swapCandidate.firstName} ${swapCandidate.lastName} is locked.`);
+      showAlert(`${swapCandidate.firstName} ${swapCandidate.lastName} is locked — their game is in progress.`, "Player Locked");
       setSwapCandidate(null);
       return;
     }
 
     // Check if targetPlayer is locked (if we are swapping with another player)
     if (targetPlayer && isPlayerLocked(targetPlayer, lockedNFLTeams)) {
-      alert(`${targetPlayer.firstName} ${targetPlayer.lastName} is locked.`);
+      showAlert(`${targetPlayer.firstName} ${targetPlayer.lastName} is locked — their game is in progress.`, "Player Locked");
       setSwapCandidate(null);
       return;
     }
+
+    // ── Capture the event payload during the state update ────────────────────
+    // We compute it inside the setter so we have access to the current roster
+    // snapshot (prev). Captured synchronously before React batches the update.
+    let capturedPayload: RosterMovePayload | null = null;
 
     updateActiveTeam(prev => {
       const effectiveTargetSlot = targetSlot || Object.keys(prev.roster).find(k => (prev.roster as any)[k]?.id === targetPlayer?.id) || 'bench';
       const validation = isValidSwap(swapCandidate, effectiveTargetSlot, targetPlayer, prev.roster);
 
       if (!validation.valid) {
-        alert(validation.reason);
+        showAlert(validation.reason ?? 'Invalid move.', "Invalid Move");
         return prev;
       }
 
-      const sourceStarterSlot = Object.keys(prev.roster).find(k => (prev.roster as any)[k]?.id === swapCandidate.id);
+      const sourceStarterSlot = Object.keys(prev.roster).find(k => (prev.roster as any)[k]?.id === swapCandidate!.id) || null;
       let newRoster = { ...prev.roster } as any;
       let newBench = [...prev.bench];
 
@@ -712,7 +885,7 @@ export default function App() {
       if (sourceStarterSlot) {
         newRoster[sourceStarterSlot] = null;
       } else {
-        newBench = newBench.filter(p => p.id !== swapCandidate.id);
+        newBench = newBench.filter(p => p.id !== swapCandidate!.id);
       }
 
       // 2. Perform Swap
@@ -722,7 +895,7 @@ export default function App() {
         if (targetStarterSlot) {
           newRoster[targetStarterSlot] = swapCandidate;
         } else {
-          newBench.push(swapCandidate);
+          newBench.push(swapCandidate!);
         }
 
         if (sourceStarterSlot) {
@@ -733,7 +906,7 @@ export default function App() {
         }
       } else if (targetSlot) {
         if (targetSlot.startsWith('bench')) {
-          newBench.push(swapCandidate);
+          newBench.push(swapCandidate!);
         } else {
           newRoster[targetSlot] = swapCandidate;
         }
@@ -742,27 +915,75 @@ export default function App() {
       // FINAL DEDUPLICATION
       const uniqueBench = Array.from(new Map(newBench.map(p => [p.id, p])).values());
 
-      // RECORD SWAP
+      // RECORD SWAP (existing transaction log — unchanged)
       const desc = targetPlayer
-        ? `Swapped ${swapCandidate.lastName} with ${targetPlayer.lastName} `
-        : `Moved ${swapCandidate.lastName} to ${effectiveTargetSlot.toUpperCase()} `;
+        ? `Swapped ${swapCandidate!.lastName} with ${targetPlayer.lastName} `
+        : `Moved ${swapCandidate!.lastName} to ${effectiveTargetSlot.toUpperCase()} `;
+      recordTransaction('SWAP', desc, swapCandidate!.lastName);
 
-      recordTransaction('SWAP', desc, swapCandidate.lastName);
+      // ── Capture canonical event payload (sync — happens before React batches) ──
+      capturedPayload = {
+        teamId: prev.id,
+        candidatePlayerId: swapCandidate!.id,
+        targetPlayerId: targetPlayer?.id ?? null,
+        targetSlot: effectiveTargetSlot,
+        sourceSlot: sourceStarterSlot,
+      };
 
       return { ...prev, roster: newRoster, bench: uniqueBench };
     });
 
+    // ── Emit canonical ROSTER_MOVE event ─────────────────────────────────────
+    // Runs after the synchronous setter callback completes.
+    if (capturedPayload) {
+      const identity = IdentityService.get();
+      const seq = nextSeq();
+      const ts = Date.now();
+
+      // Sign the event to prove authorship
+      let signature = 'unsigned';
+      try {
+        const signStr = `${seq}|ROSTER_MOVE|${JSON.stringify(capturedPayload)}|${ts}|${identity.nodeId}`;
+        signature = await IdentityService.sign(signStr);
+      } catch (e) {
+        console.warn('[executeSwap] Event signing failed — broadcasting unsigned:', e);
+      }
+
+      const event: EventLogEntry = {
+        seq,
+        id: crypto.randomUUID(),
+        type: 'ROSTER_MOVE',
+        payload: capturedPayload,
+        ts,
+        author: identity.nodeId,
+        signature,
+      };
+
+      // Append locally (deduplication + validation in EventStore)
+      GlobalEventStore.add(event);
+
+      // Broadcast to all verified peers — P2PService gates on VERIFIED internally
+      P2PService.broadcast({ type: 'EVENT', event });
+
+      console.log(`[App] → ROSTER_MOVE event emitted: seq=${seq} id=${event.id}`);
+    }
+
     setSwapCandidate(null);
   };
 
-  const handleImport = (importedTeam: FantasyTeam) => {
+  const handleImport = async (importedTeam: FantasyTeam) => {
+    const exists = userTeams.find(t => t.id === importedTeam.id);
+    if (exists) {
+      const ok = await showConfirm(
+        `"${importedTeam.name}" already exists in this league. Overwrite it with the imported data?`,
+        "Overwrite Team",
+        "OVERWRITE"
+      );
+      if (!ok) return;
+    }
     setUserTeams(prev => {
-      const exists = prev.find(t => t.id === importedTeam.id);
-      if (exists) {
-        if (confirm(`Team "${importedTeam.name}"(ID: ${importedTeam.id}) already exists.Overwrite ? `)) {
-          return prev.map(t => t.id === importedTeam.id ? importedTeam : t);
-        }
-        return prev;
+      if (prev.some(t => t.id === importedTeam.id)) {
+        return prev.map(t => t.id === importedTeam.id ? importedTeam : t);
       }
       return [...prev, importedTeam];
     });
@@ -859,7 +1080,7 @@ export default function App() {
     }));
 
     setAvailablePlayers(prev => prev.filter(p => p.id !== playerToTrade.id));
-    alert(`${playerToTrade.lastName} has been traded to ${offeringTeam.name}!`);
+    showAlert(`${playerToTrade.lastName} has been traded to ${offeringTeam.name}.`, "Trade Complete");
   };
 
   const handleDeclineOffer = (offer: Transaction, offeringTeam: FantasyTeam) => {
@@ -873,7 +1094,7 @@ export default function App() {
     };
 
     setUserTeams(prev => prev.map(t => t.id === updatedBuyer.id ? updatedBuyer : t));
-    alert("Trade offer declined and points returned to coach.");
+    showAlert("Trade offer declined. Escrowed points have been returned to the buyer.", "Offer Declined");
   };
 
   const handleCancelMyOffer = (offerId: string) => {
@@ -888,6 +1109,75 @@ export default function App() {
     };
 
     setUserTeams(prev => prev.map(t => t.id === updatedTeam.id ? updatedTeam : t));
+  };
+
+  // ── Commissioner overrides ─────────────────────────────────────────────────
+
+  const handleAdminForceAccept = (offer: Transaction, buyerTeam: FantasyTeam, sellerTeam: FantasyTeam) => {
+    const playerToTrade = [...Object.values(sellerTeam.roster), ...sellerTeam.bench].find(p => p?.id === offer.targetPlayerId);
+    if (!playerToTrade) { showAlert("Player not found on the seller's roster.", "Error"); return; }
+
+    // Remove from seller
+    const sellerRoster = { ...sellerTeam.roster };
+    for (const key in sellerRoster) {
+      if (sellerRoster[key as keyof typeof sellerRoster]?.id === playerToTrade.id) {
+        sellerRoster[key as keyof typeof sellerRoster] = null;
+      }
+    }
+    const sellerBench = sellerTeam.bench.filter(p => p && p.id !== playerToTrade.id);
+    const sellerTx: Transaction = {
+      id: `trade-accepted-${Date.now()}`,
+      type: 'TRADE_ACCEPT',
+      timestamp: Date.now(),
+      description: `[Commissioner] Sold ${playerToTrade.lastName} for ${offer.amount} pts`,
+      amount: offer.amount,
+      playerName: playerToTrade.lastName
+    };
+    const updatedSeller = {
+      ...sellerTeam,
+      roster: sellerRoster,
+      bench: sellerBench,
+      total_production_pts: (sellerTeam.total_production_pts || 0) + (offer.amount || 0),
+      transactions: [sellerTx, ...(sellerTeam.transactions || [])]
+    };
+
+    // Move player to buyer
+    const buyerTx: Transaction = {
+      id: `trade-complete-${Date.now()}`,
+      type: 'ADD',
+      timestamp: Date.now(),
+      description: `[Commissioner] Acquired ${playerToTrade.lastName} via Trade`,
+      playerName: playerToTrade.lastName
+    };
+    const updatedBuyer = {
+      ...buyerTeam,
+      points_escrowed: (buyerTeam.points_escrowed || 0) - (offer.amount || 0),
+      points_spent: (buyerTeam.points_spent || 0) + (offer.amount || 0),
+      bench: [...buyerTeam.bench, { ...playerToTrade, ownerId: buyerTeam.id }],
+      transactions: (buyerTeam.transactions || [])
+        .map(t => t.id === offer.id ? { ...t, type: 'ADD' as any } : t)
+        .concat(buyerTx)
+    };
+
+    setUserTeams(prev => prev.map(t => {
+      if (t.id === updatedSeller.id) return updatedSeller;
+      if (t.id === updatedBuyer.id) return updatedBuyer;
+      return t;
+    }));
+    setAvailablePlayers(prev => prev.filter(p => p.id !== playerToTrade.id));
+  };
+
+  const handleAdminForceCancel = (offerId: string, offeringTeamId: string) => {
+    setUserTeams(prev => prev.map(t => {
+      if (t.id !== offeringTeamId) return t;
+      const offer = (t.transactions || []).find(tx => tx.id === offerId);
+      if (!offer) return t;
+      return {
+        ...t,
+        points_escrowed: (t.points_escrowed || 0) - (offer.amount || 0),
+        transactions: (t.transactions || []).filter(tx => tx.id !== offerId)
+      };
+    }));
   };
 
   return (
@@ -905,18 +1195,19 @@ export default function App() {
           /* PUBLIC WELCOME / SELECT TEAM SCREEN */
           <div style={{ textAlign: 'center', paddingTop: 'clamp(5px, 2vh, 10px)', color: 'white', minHeight: '100vh', backgroundImage: `linear - gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.9)), url(${stadiumBg})`, backgroundSize: 'cover', backgroundPosition: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 20px' }}>
             <h1 style={{ fontSize: 'clamp(2rem, 6vh, 3.5rem)', fontWeight: 900, marginBottom: 'clamp(5px, 1.5vh, 10px)', textShadow: '0 4px 15px rgba(0,0,0,0.8)' }}>TFL STRATEGY ROOM</h1>
-            <p style={{ fontSize: 'clamp(0.9rem, 2vh, 1.2rem)', color: '#d1d5db', maxWidth: '700px', margin: '0 auto clamp(20px, 4vh, 40px)', lineHeight: '1.6' }}>
-              Welcome to the official **Trier Fantasy League** management suite.
+            <p className="text-outline" style={{ fontSize: 'clamp(0.9rem, 2vh, 1.2rem)', color: '#e5e7eb', maxWidth: '700px', margin: '0 auto clamp(20px, 4vh, 40px)', lineHeight: '1.6', fontWeight: 600 }}>
+              Welcome to the official Trier Fantasy League management suite.
               Scout players, check league standings, or create your elite franchise to start competing.
             </p>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', maxWidth: '900px', margin: '0 auto' }}>
               {userTeams.filter(t => t.id !== 'guest').map(t => (
-                <div key={t.id} onClick={() => {
+                <div key={t.id} onClick={async () => {
                   if (t.password && !isAdmin) {
-                    const p = prompt(`Enter password for ${t.name}: `);
+                    const p = await showPrompt(`Enter the password for ${t.name}:`, t.name);
+                    if (p === null) return; // cancelled
                     if (p === t.password) setActiveTeamId(t.id);
-                    else alert("Incorrect Password");
+                    else showAlert("Incorrect password. Access denied.", "Wrong Password");
                   } else {
                     setActiveTeamId(t.id);
                   }
@@ -1148,7 +1439,7 @@ export default function App() {
       )}
 
       {activeView === 'league' && (
-        <LeagueTable league={displayLeague} />
+        <LeagueTable league={displayLeague} myTeamName={myTeam?.name} />
       )}
 
       {activeView === 'rules' && <RulesPage />}
@@ -1176,9 +1467,12 @@ export default function App() {
         <TradeCenter
           userTeam={myTeam}
           allTeams={userTeams}
+          isAdmin={isAdmin}
           onAccept={handleAcceptOffer}
           onDecline={handleDeclineOffer}
           onCancel={handleCancelMyOffer}
+          onAdminForceAccept={handleAdminForceAccept}
+          onAdminForceCancel={handleAdminForceCancel}
         />
       )}
 
@@ -1190,17 +1484,14 @@ export default function App() {
           onResetOwnerPassword={(teamId: string, newPassword?: string) => {
             setUserTeams(prev => prev.map(t => t.id === teamId ? { ...t, password: newPassword || '' } : t));
           }}
-          onToggleAdmin={() => {
-            if (!adminPassword) {
-              alert("Please set an Admin Password in Settings first!");
-              return;
-            }
-            if (isAdmin) setIsAdmin(false);
-            else {
-              const code = prompt("Enter Admin Password:");
-              if (code === adminPassword) setIsAdmin(true);
-              else alert("Incorrect Password");
-            }
+          onToggleAdmin={async () => {
+            if (isAdmin) { setIsAdmin(false); return; }
+            const code = await showPrompt("Enter the Commissioner password:", "Commissioner Login", { placeholder: "Password" });
+            if (!code) return;
+            const { IdentityService } = await import('./services/IdentityService');
+            const ok = await IdentityService.verifyPassword(code, adminPasswordHash.current);
+            if (ok) setIsAdmin(true);
+            else showAlert("Incorrect password. Access denied.", "Wrong Password");
           }}
           onSwitchTeam={(teamId: string, password?: string) => {
             if (teamId === activeTeamId) return;
@@ -1209,7 +1500,7 @@ export default function App() {
               setActiveTeamId(teamId);
               setActiveView('dashboard');
             } else {
-              alert("Incorrect Password!");
+              showAlert("Incorrect password. Access denied.", "Wrong Password");
             }
           }}
           onDeleteTeam={deleteTeam}
@@ -1218,6 +1509,20 @@ export default function App() {
           peers={peers.map(p => p.id)} // Pass ID strings as expected by SettingsPage
           connectedPeers={connectedPeers}
           onImportTeam={handleImport}
+          lockedNFLTeams={lockedNFLTeams}
+          onToggleLock={(team) => setLockedNFLTeams(prev => prev.includes(team) ? prev.filter(t => t !== team) : [...prev, team])}
+          onLockAll={() => setLockedNFLTeams([...NFL_TEAMS])}
+          onUnlockAll={() => setLockedNFLTeams([])}
+          onFetchSchedule={async () => {
+            const locked = await fetchLiveLockedTeams();
+            setLockedNFLTeams(locked);
+            showAlert(
+              locked.length > 0
+                ? `${locked.length} teams are currently in active games: ${locked.join(', ')}`
+                : 'No NFL games are in progress right now. All rosters are open.',
+              locked.length > 0 ? 'Teams Locked' : 'No Active Games'
+            );
+          }}
         />
       )}
 
@@ -1237,13 +1542,13 @@ export default function App() {
               player={activePlayerCard}
               owningTeam={userTeams.find(t => [...Object.values(t.roster), ...t.bench].some(p => p && p.id === activePlayerCard.id))}
               onClose={() => setActivePlayerCard(null)}
-              onDraft={() => {
+              onDraft={async () => {
                 if (activePlayerCard.ownerId && activePlayerCard.ownerId !== myTeam?.id) {
-                  alert("This player is owned by another coach. Use 'Make Trade Offer' instead.");
+                  await showAlert("This player is owned by another coach. Use 'Make Trade Offer' instead.", "Player Owned");
                   return;
                 }
                 if (isPlayerLocked(activePlayerCard, lockedNFLTeams)) {
-                  alert("Cannot modify roster for players in active games.");
+                  await showAlert("Cannot modify roster — this player's game is in progress.", "Player Locked");
                   return;
                 }
                 const isOwnedByMe = Object.values(myTeam?.roster || {}).concat(myTeam?.bench || []).some(p => p && p.id === activePlayerCard.id);

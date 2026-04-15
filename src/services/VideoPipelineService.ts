@@ -91,52 +91,100 @@ export const RelevanceEngine = {
     }
 };
 
-// --- Mock Search Runner ---
+// --- Search Runner ---
+// Uses the real YouTube Data API v3 when a key is configured in localStorage.
+// Falls back to mock data for dev/demo when no key is present.
 
-class MockSearchRunner {
+class SearchRunner {
+    private getYtApiKey(): string | null {
+        return localStorage.getItem('trier_yt_api_key') || null;
+    }
+
     async runSearch(source: VideoSource, query: string): Promise<VideoCandidate[]> {
-        const results: VideoCandidate[] = [];
         const normPlatform = normalizePlatform(source.platform);
+        const apiKey = this.getYtApiKey();
 
-        // MOCK DATA
+        if (normPlatform === 'youtube') {
+            if (apiKey) return this.searchYouTube(query, source, apiKey);
+            return this.mockYouTube(source, query);
+        }
+
+        if (normPlatform === 'x') {
+            // X API v2 requires a paid tier Bearer token — use embed-from-URL approach.
+            return this.mockX(source, query);
+        }
+
+        return [];
+    }
+
+    /** Real YouTube Data API v3 search. */
+    private async searchYouTube(query: string, source: VideoSource, apiKey: string): Promise<VideoCandidate[]> {
+        const params = new URLSearchParams({
+            part: 'snippet',
+            q: query,
+            type: 'video',
+            maxResults: '5',
+            key: apiKey,
+            videoEmbeddable: 'true',
+        });
+        // Restrict to allowlisted channel when specified
+        if (source.allowlist.channels?.length === 1) {
+            params.set('channelId', source.allowlist.channels[0]);
+        }
+
+        try {
+            const res = await fetch(`https://www.googleapis.com/youtube/v3/search?${params}`);
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                console.warn(`[YT API] ${res.status}: ${err.error?.message ?? 'unknown error'}`);
+                return [];
+            }
+            const data = await res.json();
+            return (data.items || [])
+                .filter((item: any) => item.id?.videoId)
+                .map((item: any) => ({
+                    id: item.id.videoId,
+                    provider: 'youtube' as VideoProviderType,
+                    url: `https://www.youtube.com/watch?v=${item.id.videoId}`,
+                    title: item.snippet.title,
+                    channelName: item.snippet.channelTitle,
+                    publishedAt: item.snippet.publishedAt,
+                    relevanceScore: 0,
+                    embeddable: true,
+                    sourceId: source.id,
+                    metadata: { description: item.snippet.description }
+                }));
+        } catch (e) {
+            console.error('[YT API] Network error:', e);
+            return [];
+        }
+    }
+
+    /** Mock YouTube results used when no API key is configured. */
+    private mockYouTube(source: VideoSource, query: string): VideoCandidate[] {
+        const results: VideoCandidate[] = [];
         if (source.id === 'yt_nfl_official') {
             results.push({
                 id: '0-7IcnZqgq0',
                 provider: 'youtube',
                 url: 'https://www.youtube.com/watch?v=0-7IcnZqgq0',
-                title: `Josh Allen - Top Plays 2024 Season | NFL Highlights`,
+                title: 'Josh Allen - Top Plays 2024 Season | NFL Highlights',
                 channelName: 'NFL',
                 relevanceScore: 0,
                 embeddable: true,
                 sourceId: source.id
             });
-            // Add a 2nd mock to verify iteration
             results.push({
                 id: 'mock_yt_2',
                 provider: 'youtube',
                 url: 'https://www.youtube.com/watch?v=mock_yt_2',
-                title: `Josh Allen vs Chiefs 2024`,
+                title: 'Josh Allen vs Chiefs 2024',
                 channelName: 'NFL',
                 relevanceScore: 0,
                 embeddable: true,
                 sourceId: source.id
             });
         }
-
-        if (normPlatform === 'x' && query.includes('from:')) {
-            results.push({
-                id: `x_${Math.random().toString(36).substring(7)}`,
-                provider: 'x',
-                url: 'https://twitter.com/NFL/status/123456789',
-                title: `Josh Allen TD Pass`,
-                channelName: 'NFL',
-                relevanceScore: 0,
-                embeddable: true,
-                sourceId: source.id,
-                metadata: { tweetText: "Josh Allen throws a massive TD! #Bills (from:NFL)" }
-            });
-        }
-
         if (query.includes('Rick Roll')) {
             results.push({
                 id: 'dQw4w9WgXcQ',
@@ -148,8 +196,23 @@ class MockSearchRunner {
                 sourceId: source.id
             });
         }
-
         return results;
+    }
+
+    /** X / Twitter: returns embed-ready mock result. Real X API requires paid access. */
+    private mockX(source: VideoSource, query: string): VideoCandidate[] {
+        if (!query.includes('from:')) return [];
+        return [{
+            id: `x_${Math.random().toString(36).substring(7)}`,
+            provider: 'x',
+            url: 'https://twitter.com/NFL/status/123456789',
+            title: `${query.replace(/\(from:[^)]+\)/g, '').trim()} (NFL)`,
+            channelName: 'NFL',
+            relevanceScore: 0,
+            embeddable: true,
+            sourceId: source.id,
+            metadata: { tweetText: query }
+        }];
     }
 }
 
@@ -172,7 +235,7 @@ export const VideoPipelineService = {
 
         const allCandidates: VideoCandidate[] = [];
         const seenCanonicalIds = new Set<string>(); // GLOBAL Dedupe (across all tiers)
-        const runner = new MockSearchRunner();
+        const runner = new SearchRunner();
         const diagnostics: PipelineDiagnostics[] = [];
 
         const TIERS = [

@@ -1,11 +1,13 @@
 import React, { useRef, useState } from 'react';
+import { useDialog } from './AppDialog';
 import {
     Settings, Shield, Users, Lock, Download, Upload,
-    Trash2, RefreshCw, Globe, HardDrive, Plus, Edit2
+    Trash2, RefreshCw, Globe, HardDrive, Plus, Edit2, Youtube, Radio
 } from 'lucide-react';
 import type { FantasyTeam } from '../types';
 import { SecurityService } from '../utils/SecurityService';
 import { NetworkHealth } from './diagnostics/NetworkHealth';
+import { NFL_TEAMS } from '../utils/gamedayLogic';
 import leatherTexture from '../assets/leather_texture.png';
 
 interface SettingsPageProps {
@@ -21,6 +23,11 @@ interface SettingsPageProps {
     peers: string[]; // Discovered Peers
     connectedPeers: string[]; // ACTIVE WebRTC Connections
     onImportTeam: (team: FantasyTeam) => void;
+    lockedNFLTeams: string[];
+    onToggleLock: (team: string) => void;
+    onLockAll: () => void;
+    onUnlockAll: () => void;
+    onFetchSchedule: () => Promise<void>;
 }
 
 export const SettingsPage: React.FC<SettingsPageProps> = ({
@@ -35,12 +42,17 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     onCreateTeam,
     peers,
     connectedPeers,
-    onImportTeam
+    onImportTeam,
+    lockedNFLTeams,
+    onToggleLock,
+    onLockAll,
+    onUnlockAll,
+    onFetchSchedule,
 }) => {
-    // ... (refs and state validation logic remains same, skipping for brevity in replacement)
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [isCreating, setIsCreating] = useState(false);
+    const [fetchingSchedule, setFetchingSchedule] = useState(false);
 
     // Edit Form States
     const [editName, setEditName] = useState('');
@@ -52,9 +64,15 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     const [newOwner, setNewOwner] = useState('');
     const [newPass, setNewPass] = useState('');
 
+    // YouTube API key (admin-only; stored in localStorage)
+    const [ytApiKey, setYtApiKey] = useState(() => localStorage.getItem('trier_yt_api_key') || '');
+    const { showAlert, showConfirm, showPrompt } = useDialog();
+
     const handleExport = async (team: FantasyTeam) => {
         try {
-            const encryptionPass = team.password || prompt("Set a backup password (Optional):") || undefined;
+            const encryptionPass = team.password ||
+                await showPrompt("Set a backup password (leave blank to skip):", "Backup Encryption", { placeholder: "Optional password..." }) ||
+                undefined;
             const securePayload = { version: 'v2', timestamp: Date.now(), teamData: team };
             const encryptedData = await SecurityService.encrypt(securePayload, encryptionPass);
             const finalPayload = { trier_secure_v2: true, payload: encryptedData };
@@ -64,7 +82,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             dl.setAttribute("href", dataStr);
             dl.setAttribute("download", `${team.name.replace(/\s+/g, '_')}_SECURE.tff`);
             dl.click();
-        } catch (e) { alert("Export failed"); }
+        } catch (e) { showAlert("Export failed. Please try again.", "Export Error"); }
     };
 
     const handleImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -77,7 +95,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 const tryDecrypt = async (data: string): Promise<any> => {
                     try { return await SecurityService.decrypt(data, undefined); }
                     catch {
-                        const pass = prompt("Enter file password:");
+                        const pass = await showPrompt("This file is password-protected. Enter the password:", "Protected File");
                         if (!pass) throw new Error("Cancelled");
                         return await SecurityService.decrypt(data, pass);
                     }
@@ -86,9 +104,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 if (json.trier_secure_v2) {
                     const decrypted = await tryDecrypt(json.payload);
                     onImportTeam(decrypted.teamData);
-                    alert(`Imported ${decrypted.teamData.name}`);
+                    showAlert(`Successfully imported "${decrypted.teamData.name}".`, "Import Complete");
                 }
-            } catch (err) { alert("Failed to import"); }
+            } catch (err) { showAlert("Failed to import. The file may be corrupted or the password was wrong.", "Import Failed"); }
         };
         reader.readAsText(file);
     };
@@ -150,6 +168,92 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                             </button>
                         )}
 
+                        {/* ── NFL Game Day Locks ─────────────────────────────────── */}
+                        {isAdmin && (
+                            <div style={{ background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '12px', padding: '18px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                                    <Radio size={16} color="#ef4444" />
+                                    <span style={{ fontWeight: 800, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '1px', color: '#ef4444' }}>Game Day Locks</span>
+                                    {lockedNFLTeams.length > 0 && (
+                                        <span style={{ fontSize: '0.7rem', background: 'rgba(239,68,68,0.15)', color: '#ef4444', padding: '1px 6px', borderRadius: '3px', fontWeight: 700 }}>
+                                            {lockedNFLTeams.length} LOCKED
+                                        </span>
+                                    )}
+                                </div>
+                                <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', flexWrap: 'wrap' }}>
+                                    <button
+                                        onClick={async () => {
+                                            setFetchingSchedule(true);
+                                            await onFetchSchedule();
+                                            setFetchingSchedule(false);
+                                        }}
+                                        disabled={fetchingSchedule}
+                                        title="Fetch live game status from ESPN — auto-locks teams currently playing."
+                                        style={{ ...btnStyle, fontSize: '0.75rem', padding: '6px 12px', background: '#3b82f6', color: '#fff', display: 'flex', alignItems: 'center', gap: '6px', opacity: fetchingSchedule ? 0.6 : 1 }}
+                                    >
+                                        <RefreshCw size={12} /> {fetchingSchedule ? 'FETCHING...' : 'LIVE SCHEDULE'}
+                                    </button>
+                                    <button onClick={onLockAll} title="Lock all 32 NFL teams (simulate full Sunday)." style={{ ...btnStyle, fontSize: '0.75rem', padding: '6px 12px', background: 'rgba(239,68,68,0.2)', border: '1px solid #ef4444', color: '#ef4444' }}>
+                                        LOCK ALL
+                                    </button>
+                                    <button onClick={onUnlockAll} title="Unlock all teams — open season mode." style={{ ...btnStyle, fontSize: '0.75rem', padding: '6px 12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', color: '#9ca3af' }}>
+                                        UNLOCK ALL
+                                    </button>
+                                </div>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
+                                    {NFL_TEAMS.map(team => (
+                                        <button
+                                            key={team}
+                                            onClick={() => onToggleLock(team)}
+                                            title={lockedNFLTeams.includes(team) ? `Unlock ${team}` : `Lock ${team}`}
+                                            style={{
+                                                padding: '4px 8px', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 900,
+                                                cursor: 'pointer', border: '1px solid', transition: 'all 0.1s',
+                                                background: lockedNFLTeams.includes(team) ? '#ef4444' : 'transparent',
+                                                color: lockedNFLTeams.includes(team) ? '#fff' : '#6b7280',
+                                                borderColor: lockedNFLTeams.includes(team) ? '#ef4444' : 'rgba(255,255,255,0.15)'
+                                            }}
+                                        >
+                                            {team}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ── YouTube API Key ───────────────────────────────────── */}
+                        {isAdmin && (
+                            <div style={{ background: 'rgba(255,0,0,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '18px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                                    <Youtube size={16} color="#ef4444" />
+                                    <span style={{ fontWeight: 800, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '1px' }}>YouTube API Key</span>
+                                    <span style={{ fontSize: '0.65rem', color: ytApiKey ? '#10b981' : '#6b7280', fontWeight: 700 }}>
+                                        {ytApiKey ? '● CONFIGURED' : '○ MOCK MODE'}
+                                    </span>
+                                </div>
+                                <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '10px' }}>
+                                    Paste a YouTube Data API v3 key to enable real video search. Without a key, the video pipeline uses demo data.
+                                </div>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <input
+                                        type="password"
+                                        placeholder="AIza..."
+                                        value={ytApiKey}
+                                        onChange={e => setYtApiKey(e.target.value)}
+                                        style={{ ...inputStyle, flex: 1, fontSize: '0.85rem' }}
+                                    />
+                                    <button
+                                        onClick={() => {
+                                            localStorage.setItem('trier_yt_api_key', ytApiKey.trim());
+                                            showAlert(ytApiKey.trim() ? 'YouTube API key saved. Real video search is now active.' : 'API key cleared. Pipeline will use demo data.', 'Saved');
+                                        }}
+                                        style={{ ...btnStyle, padding: '8px 14px', background: '#10b981', color: '#000', fontSize: '0.8rem' }}
+                                    >
+                                        SAVE
+                                    </button>
+                                </div>
+                            </div>
+                        )}
 
                     </div>
                 </section>
@@ -228,8 +332,11 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                                             <input value={editOwner} onChange={e => setEditOwner(e.target.value)} placeholder="Owner Name" style={inputStyle} />
                                             <input type="password" value={editPass} onChange={e => setEditPass(e.target.value)} placeholder="Franchise Password" style={inputStyle} />
                                             <div style={{ display: 'flex', gap: '10px' }}>
-                                                <button onClick={() => {
-                                                    if (!editName || !editOwner || !editPass) return alert("All fields including Password are required for league integrity.");
+                                                <button onClick={async () => {
+                                                    if (!editName || !editOwner || !editPass) {
+                                                        await showAlert("Team Name, Coach Name, and Password are all required.", "Required Fields");
+                                                        return;
+                                                    }
                                                     onUpdateDetails(t.id, editName, editOwner, editPass);
                                                     setEditingId(null);
                                                 }} style={{ ...btnStyle, flex: 1, background: '#10b981' }}>SAVE</button>
@@ -260,11 +367,11 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                                                                     reader.onload = async (ev) => {
                                                                         try {
                                                                             const json = JSON.parse(ev.target?.result as string);
-                                                                            if (confirm(`Overwrite ${t.name} with data from backup file?`)) {
+                                                                            if (await showConfirm(`Overwrite "${t.name}" with data from this backup file?`, "Overwrite Franchise", "OVERWRITE")) {
                                                                                 const tryDecrypt = async (data: string): Promise<any> => {
                                                                                     try { return await SecurityService.decrypt(data, undefined); }
                                                                                     catch {
-                                                                                        const pass = prompt("Enter file password:");
+                                                                                        const pass = await showPrompt("This file is password-protected:", "Enter Password");
                                                                                         return await SecurityService.decrypt(data, pass || '');
                                                                                     }
                                                                                 };
@@ -272,7 +379,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                                                                                 const teamData = decrypted.teamData || decrypted;
                                                                                 onImportTeam({ ...teamData, id: t.id });
                                                                             }
-                                                                        } catch (err) { alert("Import failed"); }
+                                                                        } catch (err) { showAlert("Import failed. Check that the file is valid.", "Import Error"); }
                                                                     };
                                                                     reader.readAsText(file);
                                                                 };
@@ -288,8 +395,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 
                                                     {isAdmin && t.password && (
                                                         <button
-                                                            onClick={() => {
-                                                                const p = prompt(`Set new password for ${t.name} (leave empty to remove):`);
+                                                            onClick={async () => {
+                                                                const p = await showPrompt(`Set new password for "${t.name}" (leave blank to remove password):`, "Reset Password", { placeholder: "New password..." });
                                                                 if (p !== null) onResetOwnerPassword(t.id, p);
                                                             }}
                                                             style={{ ...actionBtnStyle, color: '#eab308' }}
@@ -301,13 +408,18 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                                                 </div>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                                     {!active && (
-                                                        <button onClick={() => {
-                                                            const p = t.password ? prompt("Enter password:") : undefined;
+                                                        <button onClick={async () => {
+                                                            const p = t.password ? await showPrompt(`Enter the password for "${t.name}":`, t.name, { placeholder: "Password..." }) : undefined;
+                                                            if (t.password && p === null) return; // cancelled
                                                             onSwitchTeam(t.id, p || undefined);
                                                         }} title="Log in as this coach to manage roster and trades." style={{ ...btnStyle, fontSize: '0.8rem', padding: '6px 12px' }}>SWITCH</button>
                                                     )}
                                                     {isAdmin && (
-                                                        <button onClick={() => confirm(`Delete ${t.name}?`) && onDeleteTeam(t.id)} title="Permanently remove this franchise from the league." style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', padding: '5px' }}><Trash2 size={16} /></button>
+                                                        <button onClick={async () => {
+                                                            if (await showConfirm(`Permanently delete "${t.name}"? This cannot be undone.`, "Delete Franchise", "DELETE")) {
+                                                                onDeleteTeam(t.id);
+                                                            }
+                                                        }} title="Permanently remove this franchise from the league." style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', padding: '5px' }}><Trash2 size={16} /></button>
                                                     )}
                                                 </div>
                                             </div>
@@ -337,8 +449,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                             <Upload size={18} /> IMPORT DATA FROM FILE (.TFF)
                         </button>
                         {isAdmin && (
-                            <button onClick={() => {
-                                if (confirm("WARNING: This will clear all data and reset the app. Continue?")) {
+                            <button onClick={async () => {
+                                if (await showConfirm("WARNING: This will permanently erase all teams, rosters, and settings. This cannot be undone.", "Factory Reset", "ERASE EVERYTHING")) {
                                     localStorage.clear();
                                     window.location.reload();
                                 }
@@ -377,8 +489,11 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 
                                 <div style={{ display: 'flex', gap: '15px', marginTop: '10px' }}>
                                     <button
-                                        onClick={() => {
-                                            if (!newName || !newOwner || !newPass) return alert("Team Name, Coach Name, and Password are all REQUIRED!");
+                                        onClick={async () => {
+                                            if (!newName || !newOwner || !newPass) {
+                                                await showAlert("Team Name, Coach Name, and Password are all required.", "Required Fields");
+                                                return;
+                                            }
                                             onCreateTeam(newName, newOwner, newPass);
                                             setIsCreating(false);
                                             setNewName(''); setNewOwner(''); setNewPass('');

@@ -74,7 +74,40 @@ button:focus-visible {
   font-weight: bold;
 }
 
+/*
+ * Text legibility helpers
+ * Use .text-outline on any small white text that sits on a busy/textured background.
+ * Creates a thin dark halo that lifts the text without the harshness of a hard border.
+ */
+.text-outline {
+  text-shadow:
+    0 0 4px rgba(0,0,0,0.95),
+    0 0 8px rgba(0,0,0,0.7),
+    1px  1px 0 rgba(0,0,0,0.8),
+   -1px -1px 0 rgba(0,0,0,0.8),
+    1px -1px 0 rgba(0,0,0,0.8),
+   -1px  1px 0 rgba(0,0,0,0.8);
+}
+
+/* Heavier version for very small or low-contrast text */
+.text-outline-heavy {
+  text-shadow:
+    0 0 3px #000,
+    0 0 6px #000,
+    0 0 10px rgba(0,0,0,0.8),
+    1px  1px 2px #000,
+   -1px -1px 2px #000,
+    1px -1px 2px #000,
+   -1px  1px 2px #000;
+}
+
 /* Rotation Animation */
+/* Themed dialog slide-in */
+@keyframes dialogIn {
+  from { opacity: 0; transform: scale(0.95) translateY(-8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
 /* Sprite Sheet Animation */
 @keyframes sprite-spin {
   from {

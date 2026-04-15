@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useDialog } from './AppDialog';
 import type { Player, Transaction, FantasyTeam } from '../types';
 import { ScoringEngine } from '../utils/ScoringEngine';
 import { getTeamTheme } from '../utils/teamThemes';
@@ -31,6 +32,7 @@ export const PlayerTradingCard: React.FC<PlayerTradingCardProps> = ({
     teamTransactions = [],
     onMakeOffer
 }) => {
+    const { showAlert } = useDialog();
     const theme = getTeamTheme(player.team);
     const [tilt, setTilt] = useState({ x: 0, y: 0 });
     const [isFlipped, setIsFlipped] = useState(false);
@@ -46,9 +48,12 @@ export const PlayerTradingCard: React.FC<PlayerTradingCardProps> = ({
 
         try {
             // 1. Capture Back first because it dictates the height (it expands for stats)
+            // skipFonts: true — Google Fonts are cross-origin and cannot be inlined (CORS).
+            // The fonts are already applied to the DOM so the captured image is unaffected.
             const backData = await toPng(backRef.current!, {
                 pixelRatio: 2,
                 quality: 1,
+                skipFonts: true,
                 backgroundColor: theme.primary,
                 style: {
                     transform: 'none',
@@ -70,6 +75,7 @@ export const PlayerTradingCard: React.FC<PlayerTradingCardProps> = ({
             const frontData = await toPng(frontRef.current!, {
                 pixelRatio: 2,
                 quality: 1,
+                skipFonts: true,
                 backgroundColor: theme.primary,
                 style: {
                     transform: 'none',
@@ -143,7 +149,7 @@ export const PlayerTradingCard: React.FC<PlayerTradingCardProps> = ({
             }
         } catch (err) {
             console.error("Export failed", err);
-            alert("Export failed. Please try again.");
+            showAlert("Export failed. Please try again.", "Export Error");
         } finally {
             // Re-render occurs here, snapping back to normal
             setIsExporting(false);

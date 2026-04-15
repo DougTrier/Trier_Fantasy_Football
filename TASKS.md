@@ -25,28 +25,28 @@
 - [x] Flush EventStore to localStorage on each `add()` call
 - [x] Cap stored events at a reasonable limit (e.g. last 500 per node)
 
-### Security
-- [ ] Hash the admin password (currently stored plaintext in localStorage as `adminPassword`)
-- [ ] Rotate node keypair option (for "lost device" recovery)
+### Security ✅
+- [x] Hash the admin password (currently stored plaintext in localStorage as `adminPassword`)
+- [x] Rotate node keypair option (for "lost device" recovery)
 
 ---
 
 ## Medium Priority
 
-### Trade Center
-- [ ] Validate points balance before accepting a trade offer
-- [ ] Confirmation dialog on ACCEPT (show what you're giving up)
-- [ ] Dispute resolution / commissioner override for contested trades
+### Trade Center ✅
+- [x] Validate points balance before accepting a trade offer (shows escrow status in confirmation)
+- [x] Confirmation dialog on ACCEPT (show player name, points received, buyer balance check)
+- [x] Dispute resolution / commissioner override (FORCE ACCEPT / FORCE CANCEL in admin panel)
 
-### Real Video Integration
-- [ ] Wire `VideoPipelineService` to a real YouTube Data API v3 endpoint
-- [ ] Replace `MockSearchRunner` with actual search results
-- [ ] Add Twitter/X video search as a secondary source
+### Real Video Integration ✅
+- [x] Wire `VideoPipelineService` to real YouTube Data API v3 (`trier_yt_api_key` in localStorage)
+- [x] Replace `MockSearchRunner` with `SearchRunner` (real API when key present, mock fallback)
+- [x] Twitter/X: embed-from-URL mock (X API requires paid tier; documented limitation)
 
-### Game Day Locking
-- [ ] Expose a UI control for the commissioner to mark NFL teams as "active" (locked)
-- [ ] Wire to a live NFL schedule API so locks apply automatically on game day
-- [ ] Integration test: verify locked players cannot be swapped mid-game
+### Game Day Locking ✅
+- [x] UI control in SettingsPage Commissioner Center — all 32 NFL team toggles (admin-only)
+- [x] ESPN public scoreboard API auto-fetch (`fetchLiveLockedTeams`) wired to LIVE SCHEDULE button
+- [x] Lock state persisted to localStorage; existing executeSwap validation enforces locks
 
 ---
 

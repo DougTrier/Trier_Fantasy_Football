@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutDashboard, Users, Trophy, User, Settings, LogOut, BookOpen, Swords, Wallet, Zap, ArrowRightLeft } from 'lucide-react';
+import { LayoutDashboard, Users, Trophy, User, Settings, LogOut, BookOpen, Swords, Wallet, Zap, ArrowRightLeft, Wifi } from 'lucide-react';
 import { ScoringEngine } from '../utils/ScoringEngine';
 import type { FantasyTeam } from '../types';
 import turfBg from '../assets/turf1.jpg';
@@ -36,7 +36,8 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ icon, label, isActive, onClic
             backgroundPosition: 'center',
             color: isActive ? '#fff' : 'white', // White text for contrast on dark leather
             fontWeight: isActive ? 800 : 600,
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            transition: 'transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease',
+            willChange: 'transform',
             // 3D PLACARD SHADOWS
             boxShadow: isActive
                 ? '0 10px 25px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.4), inset 0 -1px 0 rgba(0,0,0,0.5)'
@@ -48,7 +49,7 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ icon, label, isActive, onClic
             overflow: 'hidden'
         }}
         onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
+            e.currentTarget.style.transform = 'translateY(-2px)';
             if (!isActive) {
                 e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)';
                 e.currentTarget.style.borderColor = 'rgba(234, 179, 8, 0.4)';
@@ -57,7 +58,7 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ icon, label, isActive, onClic
             }
         }}
         onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'translateY(0) scale(1)';
+            e.currentTarget.style.transform = 'translateY(0)';
             if (!isActive) {
                 e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.3)';
                 e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)';
@@ -88,11 +89,11 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ icon, label, isActive, onClic
                 {icon}
             </div>
             <span style={{
-                textShadow: '0 2px 4px rgba(0,0,0,0.8)',
+                textShadow: '0 1px 4px rgba(0,0,0,1), 0 0 8px rgba(0,0,0,0.7)',
                 letterSpacing: '0.02em',
                 fontSize: '0.95rem',
                 fontFamily: "'Inter', sans-serif",
-                color: isActive ? '#fff' : '#d1d5db'
+                color: isActive ? '#fff' : '#e5e7eb'
             }}>{label}</span>
         </div>
     </div>
@@ -250,7 +251,8 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
                         fontWeight: 900,
                         color: '#fff',
                         textTransform: 'uppercase',
-                        letterSpacing: '0.05em'
+                        letterSpacing: '0.05em',
+                        textShadow: '0 1px 3px rgba(0,0,0,1)'
                     }}>
                         {ScoringEngine.getOrchestrationStatus().season_state}: {ScoringEngine.getOrchestrationStatus().data_status}
                     </span>
@@ -298,6 +300,7 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
                         title="Propose and review trade offers with other teams."
                     />
                     <SidebarItem icon={<div style={{ width: 20 }}><BookOpen size={20} /></div>} label="Rules & Info" isActive={activeView === 'rules'} onClick={() => onNavigate('rules')} title="View league constitution, scoring rules, and version info." />
+                    <SidebarItem icon={<div style={{ width: 20 }}><Wifi size={20} /></div>} label="Network" isActive={activeView === 'network'} onClick={() => onNavigate('network')} title="Find and connect to other Trier Fantasy managers. Configure P2P and TURN settings." />
                 </nav>
 
                 {/* LOGO WAS HERE - Moved Up */}
@@ -330,7 +333,8 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
                         letterSpacing: '1px',
                         boxShadow: '0 8px 15px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3)',
                         border: '2px solid #ef4444',
-                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                        transition: 'transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease',
+                        willChange: 'transform',
                         position: 'relative',
                         zIndex: 10,
                         overflow: 'hidden'
@@ -361,18 +365,6 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
 
                 {/* CREATOR BRANDING */}
                 <div
-                    onMouseEnter={(e) => {
-                        const target = e.currentTarget;
-                        target.style.transform = 'scale(1.1)';
-                        target.style.background = 'rgba(0,0,0,0.85)';
-                        target.style.boxShadow = '0 0 20px rgba(234, 179, 8, 0.4)';
-                    }}
-                    onMouseLeave={(e) => {
-                        const target = e.currentTarget;
-                        target.style.transform = 'scale(1)';
-                        target.style.background = 'rgba(0,0,0,0.6)';
-                        target.style.boxShadow = 'none';
-                    }}
                     style={{
                         marginTop: 'auto',
                         padding: 'clamp(6px, 1vh, 12px) 10px',
@@ -381,7 +373,6 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
                         background: 'rgba(0,0,0,0.6)',
                         borderRadius: '12px',
                         margin: 'clamp(10px, 1.5vh, 20px) 0 10px 0',
-                        cursor: 'default',
                         transition: 'all 0.3s ease',
                         zIndex: 10
                     }}
@@ -398,9 +389,70 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
                         CREATED BY: DOUG TRIER
                     </div>
                     <div style={{
+                        fontSize: '0.6rem',
+                        color: '#eab308',
+                        marginTop: '3px',
+                        fontWeight: 700,
+                        letterSpacing: '1.5px',
+                        opacity: 0.85,
+                        textTransform: 'uppercase',
+                        fontFamily: "'Graduate', sans-serif"
+                    }}>
+                        a Trier OS product
+                    </div>
+
+                    {/* DONATE BUTTON */}
+                    <a
+                        href="https://buymeacoffee.com/dougtrier"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            import('@tauri-apps/api/shell').then(({ open }) =>
+                                open('https://buymeacoffee.com/dougtrier')
+                            ).catch(() =>
+                                window.open('https://buymeacoffee.com/dougtrier', '_blank')
+                            );
+                        }}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px',
+                            marginTop: '8px',
+                            padding: '7px 14px',
+                            background: 'linear-gradient(135deg, #FFDD00 0%, #FF9500 100%)',
+                            borderRadius: '50px',
+                            color: '#1a0800',
+                            fontWeight: 900,
+                            fontSize: '0.72rem',
+                            textDecoration: 'none',
+                            letterSpacing: '0.06em',
+                            textTransform: 'uppercase',
+                            fontFamily: "'Graduate', sans-serif",
+                            boxShadow: '0 4px 12px rgba(255,149,0,0.55), inset 0 1px 0 rgba(255,255,255,0.45)',
+                            border: '1px solid rgba(255,255,255,0.25)',
+                            transition: 'all 0.2s ease',
+                            cursor: 'pointer',
+                            userSelect: 'none',
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translateY(-2px) scale(1.04)';
+                            e.currentTarget.style.boxShadow = '0 8px 20px rgba(255,149,0,0.75), inset 0 1px 0 rgba(255,255,255,0.5)';
+                            e.currentTarget.style.filter = 'brightness(1.08)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(255,149,0,0.55), inset 0 1px 0 rgba(255,255,255,0.45)';
+                            e.currentTarget.style.filter = 'brightness(1)';
+                        }}
+                    >
+                        <span style={{ fontSize: '0.9rem', lineHeight: 1 }}>☕</span>
+                        BUY ME A COFFEE
+                    </a>
+
+                    <div style={{
                         fontSize: '0.65rem',
                         color: '#ffffff',
-                        marginTop: '4px',
+                        marginTop: '6px',
                         fontWeight: 800,
                         letterSpacing: '2px',
                         opacity: 1
@@ -432,14 +484,15 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '40px' }}>
                             {/* Total Production Points */}
                             <div style={{
-                                background: 'rgba(255,255,255,0.05)',
+                                background: 'rgba(0,0,0,0.6)',
                                 padding: '24px',
                                 borderRadius: '16px',
-                                border: '1px solid rgba(16, 185, 129, 0.3)',
-                                backdropFilter: 'blur(10px)',
+                                border: '1px solid rgba(16, 185, 129, 0.4)',
+                                backdropFilter: 'blur(16px)',
                                 display: 'flex',
                                 flexDirection: 'column',
-                                gap: '10px'
+                                gap: '10px',
+                                boxShadow: '0 8px 24px rgba(0,0,0,0.5)'
                             }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#10b981' }}>
                                     <Trophy size={20} />
@@ -448,7 +501,7 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
                                         fontWeight: 900,
                                         textTransform: 'uppercase',
                                         letterSpacing: '1.5px',
-                                        textShadow: '0 2px 4px rgba(0,0,0,0.5)'
+                                        textShadow: '0 1px 3px rgba(0,0,0,1), 0 0 8px rgba(0,0,0,0.8)'
                                     }}>Total Team Production</span>
                                 </div>
                                 <div style={{
@@ -456,24 +509,25 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
                                     fontWeight: 900,
                                     fontFamily: "'Orbitron', sans-serif",
                                     color: '#10b981',
-                                    textShadow: '0 0 20px rgba(16, 185, 129, 0.4)',
+                                    textShadow: '0 0 20px rgba(16,185,129,0.5), 0 2px 4px rgba(0,0,0,0.9)',
                                     letterSpacing: '2px',
                                     lineHeight: '1.2'
                                 }}>
-                                    {(displayTeam.total_production_pts || 0).toLocaleString()} <span style={{ fontSize: '1.2rem', color: '#9ca3af', fontWeight: 600 }}>PTS</span>
+                                    {(displayTeam.total_production_pts || 0).toLocaleString()} <span style={{ fontSize: '1.2rem', color: '#d1d5db', fontWeight: 600, textShadow: '0 1px 3px rgba(0,0,0,1)' }}>PTS</span>
                                 </div>
                             </div>
 
                             {/* Trade Points Used */}
                             <div style={{
-                                background: 'rgba(255,255,255,0.05)',
+                                background: 'rgba(0,0,0,0.6)',
                                 padding: '24px',
                                 borderRadius: '16px',
-                                border: '1px solid rgba(239, 68, 68, 0.3)',
-                                backdropFilter: 'blur(10px)',
+                                border: '1px solid rgba(239, 68, 68, 0.4)',
+                                backdropFilter: 'blur(16px)',
                                 display: 'flex',
                                 flexDirection: 'column',
-                                gap: '10px'
+                                gap: '10px',
+                                boxShadow: '0 8px 24px rgba(0,0,0,0.5)'
                             }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#ef4444' }}>
                                     <Wallet size={20} />
@@ -482,7 +536,7 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
                                         fontWeight: 900,
                                         textTransform: 'uppercase',
                                         letterSpacing: '1.5px',
-                                        textShadow: '0 2px 4px rgba(0,0,0,0.5)'
+                                        textShadow: '0 1px 3px rgba(0,0,0,1), 0 0 8px rgba(0,0,0,0.8)'
                                     }}>Trade Points Used</span>
                                 </div>
                                 <div style={{
@@ -490,25 +544,25 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
                                     fontWeight: 900,
                                     fontFamily: "'Orbitron', sans-serif",
                                     color: '#ef4444',
-                                    textShadow: '0 0 20px rgba(239, 68, 68, 0.4)',
+                                    textShadow: '0 0 20px rgba(239,68,68,0.5), 0 2px 4px rgba(0,0,0,0.9)',
                                     letterSpacing: '2px',
                                     lineHeight: '1.2'
                                 }}>
-                                    {((displayTeam.points_escrowed || 0) + (displayTeam.points_spent || 0)).toLocaleString()} <span style={{ fontSize: '1.2rem', color: '#9ca3af', fontWeight: 600 }}>PTS</span>
+                                    {((displayTeam.points_escrowed || 0) + (displayTeam.points_spent || 0)).toLocaleString()} <span style={{ fontSize: '1.2rem', color: '#d1d5db', fontWeight: 600, textShadow: '0 1px 3px rgba(0,0,0,1)' }}>PTS</span>
                                 </div>
                             </div>
 
                             {/* Actual League Balance */}
                             <div style={{
-                                background: 'rgba(0,0,0,0.4)',
+                                background: 'rgba(0,0,0,0.65)',
                                 padding: '24px',
                                 borderRadius: '16px',
                                 border: '2px solid #eab308',
-                                backdropFilter: 'blur(10px)',
+                                backdropFilter: 'blur(16px)',
                                 display: 'flex',
                                 flexDirection: 'column',
                                 gap: '10px',
-                                boxShadow: '0 0 20px rgba(234, 179, 8, 0.2)'
+                                boxShadow: '0 0 25px rgba(234,179,8,0.2), 0 8px 24px rgba(0,0,0,0.6)'
                             }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#eab308' }}>
                                     <Zap size={20} />
@@ -517,7 +571,7 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
                                         fontWeight: 900,
                                         textTransform: 'uppercase',
                                         letterSpacing: '1.5px',
-                                        textShadow: '0 2px 4px rgba(0,0,0,0.8)'
+                                        textShadow: '0 1px 3px rgba(0,0,0,1), 0 0 8px rgba(0,0,0,0.8)'
                                     }}>Actual League Balance</span>
                                 </div>
                                 <div style={{
@@ -525,11 +579,11 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
                                     fontWeight: 900,
                                     fontFamily: "'Orbitron', sans-serif",
                                     color: '#eab308',
-                                    textShadow: '0 0 25px rgba(234, 179, 8, 0.5)',
+                                    textShadow: '0 0 25px rgba(234,179,8,0.6), 0 2px 4px rgba(0,0,0,0.9)',
                                     letterSpacing: '2px',
                                     lineHeight: '1.2'
                                 }}>
-                                    {((displayTeam.total_production_pts || 0) - (displayTeam.points_spent || 0)).toLocaleString()} <span style={{ fontSize: '1.2rem', color: '#9ca3af', fontWeight: 600 }}>PTS</span>
+                                    {((displayTeam.total_production_pts || 0) - (displayTeam.points_spent || 0)).toLocaleString()} <span style={{ fontSize: '1.2rem', color: '#d1d5db', fontWeight: 600, textShadow: '0 1px 3px rgba(0,0,0,1)' }}>PTS</span>
                                 </div>
                             </div>
                         </div>

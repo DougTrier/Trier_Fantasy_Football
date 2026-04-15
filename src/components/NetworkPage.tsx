@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Shield, Server, Activity, X, Trash2, Wifi, Check, Users, UserPlus, Copy, Download, Upload, Globe, Radio, ChevronDown, ChevronUp, Star } from 'lucide-react';
+import { useDialog } from './AppDialog';
+import { Shield, Server, Activity, X, Trash2, Wifi, Check, Users, UserPlus, Copy, Download, Upload, Globe, Radio, ChevronDown, ChevronUp, Star, RotateCcw } from 'lucide-react';
 import { IdentityService } from '../services/IdentityService';
 import leatherTexture from '../assets/leather_texture.png';
 import { DiscoveryService, type DiscoveredPeer } from '../services/DiscoveryService';
@@ -11,6 +12,7 @@ import { RelayService, type RelayStatus, type RelayLobby } from '../services/Rel
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const NetworkPage: React.FC = () => {
+    const { showAlert, showConfirm } = useDialog();
     const [peers, setPeers] = useState<DiscoveredPeer[]>([]);
     const [eventCount, setEventCount] = useState<number>(0);
     const [myId, setMyId] = useState('');
@@ -167,8 +169,8 @@ export const NetworkPage: React.FC = () => {
         setIncomingRequest(null);
     };
 
-    const handleTerminate = (id: string) => {
-        if (confirm(`Terminate connection with ${id}?`)) {
+    const handleTerminate = async (id: string) => {
+        if (await showConfirm(`Terminate connection with peer ${id.slice(0, 16)}...?`, "Terminate Connection", "DISCONNECT")) {
             P2PService.terminateConnection(id, 'User Terminated');
         }
     };
@@ -189,7 +191,7 @@ export const NetworkPage: React.FC = () => {
             a.click();
             URL.revokeObjectURL(url);
         } catch (e) {
-            alert('Export Failed');
+            showAlert('Export failed. Please try again.', 'Export Error');
         }
     };
 
@@ -199,10 +201,10 @@ export const NetworkPage: React.FC = () => {
         const text = await file.text();
         try {
             const result = await BackupService.importProfile(text);
-            alert(`Imported ${result.count} events.`);
+            showAlert(`Imported ${result.count} events. The app will now reload.`, 'Import Complete');
             window.location.reload();
         } catch (err) {
-            alert('Import Failed');
+            showAlert('Import failed. The file may be corrupted or invalid.', 'Import Error');
         }
     };
 
@@ -214,8 +216,8 @@ export const NetworkPage: React.FC = () => {
     const handleAddFriend = () => {
         const uuid = friendUuidInput.trim().toLowerCase();
         if (!uuid) return;
-        if (uuid === myPeerUuid.toLowerCase()) { alert("That's your own ID!"); return; }
-        if (friends.some(f => f.uuid === uuid)) { alert("Already in your friends list."); return; }
+        if (uuid === myPeerUuid.toLowerCase()) { showAlert("That's your own Peer ID!", "Can't Add Yourself"); return; }
+        if (friends.some(f => f.uuid === uuid)) { showAlert("This coach is already in your friends list.", "Already Added"); return; }
         saveFriends([...friends, {
             uuid,
             nickname: friendNicknameInput.trim() || 'Unknown Coach',
@@ -279,7 +281,7 @@ export const NetworkPage: React.FC = () => {
             setInviteCode(code);
             setShowInviteModal(true);
         } catch (e: any) {
-            alert("Failed to generate invite: " + e.toString());
+            showAlert("Failed to generate invite. Check your network connection.", "Invite Error");
         }
     };
 
@@ -288,9 +290,9 @@ export const NetworkPage: React.FC = () => {
             DiscoveryService.redeemInvite(joinCode);
             setShowJoinModal(false);
             setJoinCode('');
-            alert("Peer added to list! You can now connect to them.");
+            showAlert("Peer added! They will appear as connectable once they come online.", "Peer Added");
         } catch (e) {
-            alert("Invalid Code");
+            showAlert("Invalid or expired invite code. Ask your opponent to generate a new one.", "Invalid Code");
         }
     };
 
@@ -357,6 +359,23 @@ export const NetworkPage: React.FC = () => {
                         <span><Activity size={12} style={{ display: 'inline', marginRight: 4 }} />{eventCount} events</span>
                         <span style={{ opacity: 0.5 }}>|</span>
                         <span style={{ fontFamily: 'monospace', fontSize: '0.7rem' }}>{myId}</span>
+                        <span style={{ opacity: 0.5 }}>|</span>
+                        <button
+                            onClick={async () => {
+                                if (!await showConfirm('Rotate your cryptographic keypair? This generates a new identity key — all peers will need to re-verify. This cannot be undone.', 'Rotate Keypair', 'ROTATE')) return;
+                                const { IdentityService } = await import('../services/IdentityService');
+                                await IdentityService.rotateKeys();
+                                showAlert('Keypair rotated. Reconnect to peers to re-establish trust.', 'Keys Rotated');
+                            }}
+                            title="Generate a new ECDSA keypair (lost device / key compromise recovery)"
+                            style={{
+                                background: 'none', border: 'none', color: '#6b7280',
+                                cursor: 'pointer', display: 'flex', alignItems: 'center',
+                                gap: '0.3rem', fontSize: '0.7rem', padding: 0,
+                            }}
+                        >
+                            <RotateCcw size={11} /> Rotate Keys
+                        </button>
                     </div>
                 </div>
 
@@ -582,9 +601,9 @@ export const NetworkPage: React.FC = () => {
                         onClick={async () => {
                             try {
                                 await DiscoveryService.openFirewall();
-                                alert("Firewall rules updated! Restart app if issues persist.");
+                                showAlert("Firewall rules updated. Restart the app if connectivity issues persist.", "Firewall Updated");
                             } catch (e) {
-                                alert("Firewall Update Failed: " + e);
+                                showAlert("Firewall update failed. You may need to run as administrator.", "Update Failed");
                             }
                         }}
                         style={{
@@ -1273,6 +1292,12 @@ const DiagnosticsRunner: React.FC = () => {
     const [result, setResult] = useState<any>(null);
 
     const run = async () => {
+        const { isTauri } = await import('../utils/tauriEnv');
+        if (!isTauri()) {
+            setStatus('ERROR');
+            setResult({ _browserMode: true });
+            return;
+        }
         setStatus('RUNNING');
         try {
             const { invoke } = await import('@tauri-apps/api/tauri');
@@ -1298,9 +1323,10 @@ const DiagnosticsRunner: React.FC = () => {
                 <button onClick={run} style={{ cursor: 'pointer', background: '#333', color: '#fff', border: 'none', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>RERUN</button>
             </div>
 
+            {result?._browserMode && <div style={{ color: '#facc15' }}>Diagnostics unavailable in browser mode — run the Tauri app.</div>}
             {status === 'RUNNING' && <div>Running Connectivity Checks (Gateway, DNS, Internet)...</div>}
 
-            {result && (
+            {result && !result._browserMode && (
                 <div>
                     <div>Gateway Ping: {result.gatewayPing ? <span style={{ color: '#4ade80' }}>PASS ({result.gatewayLatency}ms)</span> : <span style={{ color: '#ef4444' }}>FAIL</span>}</div>
                     <div>DNS Ping (8.8.8.8): {result.dnsPing ? <span style={{ color: '#4ade80' }}>PASS</span> : <span style={{ color: '#ef4444' }}>FAIL</span>}</div>
