@@ -151,3 +151,21 @@ button:focus-visible {
   background: rgba(0, 0, 0, 0.2);
   box-shadow: 0 0 10px rgba(75, 155, 75, 0.4);
 }
+
+/* Player card shake — triggered when a locked player click is attempted */
+@keyframes playerShake {
+  0%   { transform: translateX(0); }
+  15%  { transform: translateX(-8px) rotate(-1deg); }
+  30%  { transform: translateX(8px) rotate(1deg); }
+  45%  { transform: translateX(-6px) rotate(-0.5deg); }
+  60%  { transform: translateX(6px) rotate(0.5deg); }
+  75%  { transform: translateX(-4px); }
+  90%  { transform: translateX(4px); }
+  100% { transform: translateX(0); }
+}
+
+.player-shake {
+  animation: playerShake 0.55s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  border-color: rgba(239, 68, 68, 0.8) !important;
+  box-shadow: 0 0 18px rgba(239, 68, 68, 0.5) !important;
+}

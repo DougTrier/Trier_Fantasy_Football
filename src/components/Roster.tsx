@@ -12,6 +12,7 @@ interface RosterProps {
     onSelectSlot?: (slotId: string) => void;
     onSelectPlayer?: (player: Player) => void;
     swapCandidate?: Player | null;
+    shakingPlayerId?: string | null;
 }
 
 import { getTeamTheme } from '../utils/teamThemes';
@@ -22,18 +23,21 @@ const RosterSlot = ({
     player,
     onClick,
     isLocked,
-    isSwapTarget
+    isSwapTarget,
+    isShaking
 }: {
     label: string;
     player: Player | null;
     onClick: () => void;
     isLocked?: boolean;
     isSwapTarget?: boolean;
+    isShaking?: boolean;
 }) => {
     const theme = player ? getTeamTheme(player.team) : null;
     return (
         <div
             onClick={onClick}
+            className={isShaking ? 'player-shake' : undefined}
             title={player ? `View details for ${player.firstName} ${player.lastName}` : `Select a player for the ${label} slot`}
             style={{
                 display: 'flex',
@@ -272,7 +276,7 @@ const RosterSlot = ({
     );
 };
 
-export const Roster: React.FC<RosterProps> = ({ team, onSelectSlot, onSelectPlayer, lockedTeams, swapCandidate }) => {
+export const Roster: React.FC<RosterProps> = ({ team, onSelectSlot, onSelectPlayer, lockedTeams, swapCandidate, shakingPlayerId }) => {
     // Explicit list of slots to verify type safety and order
     const starters = [
         { key: 'qb', label: 'QB' },
@@ -438,6 +442,7 @@ export const Roster: React.FC<RosterProps> = ({ team, onSelectSlot, onSelectPlay
                                     label={slot.label}
                                     player={player}
                                     isLocked={isLocked}
+                                    isShaking={!!player && player.id === shakingPlayerId}
                                     isSwapTarget={!!swapCandidate && !isLocked && checkPos(swapCandidate, slot.label) && player?.id !== swapCandidate.id}
                                     onClick={() => {
                                         if (isLocked) return;
@@ -469,6 +474,7 @@ export const Roster: React.FC<RosterProps> = ({ team, onSelectSlot, onSelectPlay
                                 return (
                                     <div
                                         key={player.id}
+                                        className={player.id === shakingPlayerId ? 'player-shake' : undefined}
                                         onClick={() => onSelectPlayer?.(player)}
                                         style={{
                                             background: 'rgba(255, 255, 255, 0.05)',

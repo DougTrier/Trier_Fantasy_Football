@@ -193,6 +193,21 @@ export default function App() {
   const [connectedPeers, setConnectedPeers] = useState<string[]>([]);
   const [hasNewOffers, setHasNewOffers] = useState(false);
   const [activeView, setActiveView] = useState('dashboard');
+  const activeViewRef = useRef(activeView);
+  useEffect(() => { activeViewRef.current = activeView; }, [activeView]);
+
+  // Chat toast — shown when a chat arrives while not on the League page
+  const [chatToast, setChatToast] = useState<{ id: string; sender: string; text: string } | null>(null);
+  const chatToastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Shake animation — set to player ID briefly when a locked player click is attempted
+  const [shakingPlayerId, setShakingPlayerId] = useState<string | null>(null);
+  const shakeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const triggerShake = (playerId: string) => {
+    if (shakeTimer.current) clearTimeout(shakeTimer.current);
+    setShakingPlayerId(playerId);
+    shakeTimer.current = setTimeout(() => setShakingPlayerId(null), 600);
+  };
 
   const teamRef = useMemo(() => userTeams, [userTeams]); // Keep ref for closure
 
@@ -215,6 +230,14 @@ export default function App() {
           console.log("[Sideband] Received sync from peer", msg.senderId);
           setUserTeams(incomingTeams);
         }
+      } else if (msg.type === 'CHAT' && activeViewRef.current !== 'league') {
+        // Show toast for incoming chat messages when not on the League page
+        const p = msg.payload as { sender: string; text: string };
+        if (p?.text?.trim()) {
+          if (chatToastTimer.current) clearTimeout(chatToastTimer.current);
+          setChatToast({ id: `${msg.senderId}-${msg.timestamp}`, sender: p.sender || 'Coach', text: p.text });
+          chatToastTimer.current = setTimeout(() => setChatToast(null), 5000);
+        }
       }
     };
 
@@ -229,13 +252,18 @@ export default function App() {
     // Auto-Sync on Verified Connect (fires only after mutual handshake completes)
     const unsubConn = P2PService.onConnectionStatus(({ status, peerId }) => {
       if (status === 'VERIFIED') {
-        console.log(`[App] Peer ${peerId} verified. Auto-syncing teams...`);
+        console.log(`[App] Peer ${peerId} verified. Auto-syncing teams + requesting delta events...`);
         SyncService.syncTeams(teamRef);
+        // Delta sync: send our vector so the peer can fill in any events we missed
+        P2PService.sendData(peerId, {
+          type: 'SYNC_REQUEST',
+          vector: GlobalEventStore.getVector()
+        });
       }
     });
 
     // Remote Control Handler
-    const unsubControl = P2PService.onData(async (msg: any) => {
+    const unsubControl = P2PService.onData(async (msg: any, peerId: string) => {
       if (msg.type === 'RESTART_REQUEST') {
         console.log("[App] Received Restart Request");
         const secret = localStorage.getItem('trier_p2p_secret');
@@ -250,6 +278,27 @@ export default function App() {
         } else {
           console.warn("[App] Restart denied. Invalid/No secret.");
         }
+      }
+
+      // ── Delta sync request: peer wants events we have that they don't ────────
+      if (msg.type === 'SYNC_REQUEST') {
+        const missing = GlobalEventStore.getEventsSince(msg.vector || {});
+        console.log(`[App] SYNC_REQUEST from ${peerId} — sending ${missing.length} missing events`);
+        P2PService.sendData(peerId, { type: 'SYNC_RESPONSE', events: missing });
+      }
+
+      // ── Delta sync response: apply events the peer sent us ──────────────────
+      if (msg.type === 'SYNC_RESPONSE') {
+        const events = (msg.events || []) as EventLogEntry[];
+        let applied = 0;
+        for (const event of events) {
+          const accepted = GlobalEventStore.add(event);
+          if (accepted && event.type === 'ROSTER_MOVE') {
+            setUserTeams(prev => applyRosterMoveEvent(prev, event));
+            applied++;
+          }
+        }
+        console.log(`[App] SYNC_RESPONSE from ${peerId} — ${events.length} events received, ${applied} ROSTER_MOVEs applied`);
       }
 
       // ── Inbound canonical event from a verified peer ────────────────────────
@@ -809,6 +858,7 @@ export default function App() {
 
   const movePlayer = (player: Player) => {
     if (isPlayerLocked(player, lockedNFLTeams)) {
+      triggerShake(player.id);
       showAlert(`${player.firstName} ${player.lastName} is currently playing and cannot be moved.`, "Player Locked");
       return;
     }
@@ -851,6 +901,7 @@ export default function App() {
 
     // Check if swapCandidate is locked
     if (isPlayerLocked(swapCandidate, lockedNFLTeams)) {
+      triggerShake(swapCandidate.id);
       showAlert(`${swapCandidate.firstName} ${swapCandidate.lastName} is locked — their game is in progress.`, "Player Locked");
       setSwapCandidate(null);
       return;
@@ -858,6 +909,7 @@ export default function App() {
 
     // Check if targetPlayer is locked (if we are swapping with another player)
     if (targetPlayer && isPlayerLocked(targetPlayer, lockedNFLTeams)) {
+      triggerShake(targetPlayer.id);
       showAlert(`${targetPlayer.firstName} ${targetPlayer.lastName} is locked — their game is in progress.`, "Player Locked");
       setSwapCandidate(null);
       return;
@@ -1181,6 +1233,43 @@ export default function App() {
   };
 
   return (
+    <>
+    {/* Chat toast — appears when a chat message arrives while not on League page */}
+    {chatToast && (
+      <div
+        key={chatToast.id}
+        onClick={() => { setChatToast(null); setActiveView('league'); }}
+        style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: '24px',
+          zIndex: 9999,
+          background: 'linear-gradient(135deg, rgba(10,15,30,0.97) 0%, rgba(17,24,39,0.97) 100%)',
+          border: '1px solid rgba(234,179,8,0.4)',
+          borderRadius: '14px',
+          padding: '12px 16px',
+          maxWidth: '320px',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.7), 0 0 0 1px rgba(234,179,8,0.15)',
+          backdropFilter: 'blur(16px)',
+          cursor: 'pointer',
+          animation: 'dialogIn 0.2s ease-out',
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: '10px'
+        }}
+      >
+        <span style={{ fontSize: '1.2rem', flexShrink: 0, marginTop: '1px' }}>💬</span>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: '0.6rem', fontWeight: 900, color: '#eab308', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '3px' }}>
+            {chatToast.sender} · League Chat
+          </div>
+          <div style={{ fontSize: '0.82rem', color: '#e5e7eb', lineHeight: 1.4, wordBreak: 'break-word', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+            {chatToast.text}
+          </div>
+          <div style={{ fontSize: '0.58rem', color: '#6b7280', marginTop: '5px', fontWeight: 600 }}>Click to open League Chat</div>
+        </div>
+      </div>
+    )}
     <Layout_Dashboard
       activeView={activeView}
       onNavigate={setActiveView}
@@ -1415,6 +1504,7 @@ export default function App() {
               team={myTeam}
               lockedTeams={lockedNFLTeams}
               swapCandidate={swapCandidate}
+              shakingPlayerId={shakingPlayerId}
               onSelectSlot={(slotId) => {
                 if (swapCandidate) executeSwap(null, slotId);
                 else setRecruitingSlot(slotId);
@@ -1584,5 +1674,6 @@ export default function App() {
       )}
 
     </Layout_Dashboard>
+    </>
   );
 }

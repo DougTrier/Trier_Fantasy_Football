@@ -1,15 +1,79 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import type { League } from '../types';
-import { Trophy } from 'lucide-react';
+import { Trophy, Send } from 'lucide-react';
 import { ScoringEngine } from '../utils/ScoringEngine';
 import leatherTexture from '../assets/leather_texture.png';
+import { SyncService, type SidebandMessage, type ChatPayload } from '../utils/SyncService';
+import { AnimatePresence, motion } from 'framer-motion';
+
+interface ChatMessage {
+    id: string;
+    sender: string;
+    text: string;
+    ts: number;
+    isMe: boolean;
+}
 
 interface LeagueTableProps {
     league: League;
+    myTeamName?: string;
 }
 
-export const LeagueTable: React.FC<LeagueTableProps> = ({ league }) => {
+export const LeagueTable: React.FC<LeagueTableProps> = ({ league, myTeamName }) => {
     const status = ScoringEngine.getOrchestrationStatus();
+
+    // ── League Chat ───────────────────────────────────────────────────────────
+    const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+    const [chatInput, setChatInput] = useState('');
+    const chatBottomRef = useRef<HTMLDivElement>(null);
+    const myInstanceId = SyncService.getInstanceId();
+
+    useEffect(() => {
+        const handleMsg = (msg: SidebandMessage) => {
+            if (msg.type !== 'CHAT') return;
+            const p = msg.payload as ChatPayload;
+            if (!p?.text?.trim()) return;
+            setChatMessages(prev => {
+                const next = [...prev, {
+                    id: `${msg.senderId}-${msg.timestamp}`,
+                    sender: p.sender || 'Unknown Coach',
+                    text: p.text,
+                    ts: msg.timestamp,
+                    isMe: msg.senderId === myInstanceId
+                }];
+                return next.slice(-100); // cap at 100 messages
+            });
+        };
+        SyncService.addListener(handleMsg);
+        return () => SyncService.removeListener(handleMsg);
+    }, [myInstanceId]);
+
+    // Auto-scroll to bottom on new messages
+    useEffect(() => {
+        chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [chatMessages]);
+
+    const sendChat = () => {
+        const text = chatInput.trim();
+        if (!text) return;
+        SyncService.sendChat(myTeamName || 'Anonymous', text);
+        // Add own message optimistically (won't arrive back via BroadcastChannel on same instance)
+        setChatMessages(prev => [...prev, {
+            id: `me-${Date.now()}`,
+            sender: myTeamName || 'You',
+            text,
+            ts: Date.now(),
+            isMe: true
+        }].slice(-100));
+        setChatInput('');
+    };
+
+    const handleChatKey = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendChat();
+        }
+    };
 
     // DATA PROCESSING
     const sortedTeams = useMemo(() => {
@@ -72,7 +136,7 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({ league }) => {
                 alignItems: 'center',
                 justifyContent: 'flex-start',
                 position: 'relative',
-                height: 'auto'
+                height: '85%'   // matches the standings panel height exactly
             }}>
                 <div style={{
                     position: 'relative',
@@ -92,6 +156,166 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({ league }) => {
                             zIndex: 10
                         }}
                     />
+                </div>
+
+                {/* ── League Chat ─────────────────────────────────────────── */}
+                <div style={{
+                    width: 'clamp(320px, 22vw, 450px)',
+                    marginTop: '12px',
+                    flex: 1,        // fill all remaining height below the trophy
+                    minHeight: 0,   // required for flex children to shrink/scroll correctly
+                    background: 'rgba(0,0,0,0.72)',
+                    border: '1px solid rgba(234,179,8,0.25)',
+                    borderRadius: '16px',
+                    boxShadow: '0 8px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06)',
+                    backdropFilter: 'blur(10px)',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    flexDirection: 'column'
+                }}>
+                    {/* Header */}
+                    <div style={{
+                        padding: '8px 14px',
+                        borderBottom: '1px solid rgba(234,179,8,0.2)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                    }}>
+                        <span style={{ fontSize: '0.95rem' }}>💬</span>
+                        <span style={{
+                            fontSize: '0.65rem',
+                            fontWeight: 900,
+                            fontFamily: "'Graduate', sans-serif",
+                            color: '#eab308',
+                            letterSpacing: '2px',
+                            textTransform: 'uppercase'
+                        }}>League Chat</span>
+                        <span style={{ marginLeft: 'auto', fontSize: '0.55rem', color: '#6b7280', fontWeight: 700, textTransform: 'uppercase' }}>Trash Talk Zone</span>
+                    </div>
+
+                    {/* Message list — flex: 1 so it fills all space and scrolls when full */}
+                    <div style={{
+                        flex: 1,
+                        minHeight: 0,
+                        overflowY: 'auto',
+                        padding: '10px 12px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '6px',
+                        scrollbarWidth: 'thin',
+                        scrollbarColor: '#eab308 rgba(0,0,0,0.2)'
+                    }}>
+                        {chatMessages.length === 0 ? (
+                            <div style={{
+                                flex: 1,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: '#4b5563',
+                                fontSize: '0.7rem',
+                                fontStyle: 'italic',
+                                textAlign: 'center',
+                                lineHeight: 1.6
+                            }}>
+                                No messages yet.<br />Start the trash talk.
+                            </div>
+                        ) : (
+                            <AnimatePresence initial={false}>
+                            {chatMessages.map(msg => (
+                                <motion.div
+                                    key={msg.id}
+                                    initial={{ opacity: 0, y: 12, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.15 } }}
+                                    transition={{ type: 'spring', stiffness: 380, damping: 28 }}
+                                    style={{
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: msg.isMe ? 'flex-end' : 'flex-start'
+                                    }}
+                                >
+                                    <div style={{
+                                        fontSize: '0.55rem',
+                                        color: '#6b7280',
+                                        fontWeight: 700,
+                                        textTransform: 'uppercase',
+                                        marginBottom: '2px',
+                                        letterSpacing: '0.5px'
+                                    }}>
+                                        {msg.isMe ? 'You' : msg.sender}
+                                    </div>
+                                    <div style={{
+                                        maxWidth: '85%',
+                                        padding: '6px 10px',
+                                        borderRadius: msg.isMe ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
+                                        background: msg.isMe
+                                            ? 'linear-gradient(135deg, rgba(234,179,8,0.25), rgba(234,179,8,0.12))'
+                                            : 'rgba(255,255,255,0.07)',
+                                        border: msg.isMe
+                                            ? '1px solid rgba(234,179,8,0.35)'
+                                            : '1px solid rgba(255,255,255,0.1)',
+                                        color: msg.isMe ? '#fde68a' : '#e5e7eb',
+                                        fontSize: '0.78rem',
+                                        lineHeight: 1.4,
+                                        wordBreak: 'break-word'
+                                    }}>
+                                        {msg.text}
+                                    </div>
+                                </motion.div>
+                            ))}
+                            </AnimatePresence>
+                        )}
+                        <div ref={chatBottomRef} />
+                    </div>
+
+                    {/* Input row */}
+                    <div style={{
+                        display: 'flex',
+                        gap: '8px',
+                        padding: '8px 10px',
+                        borderTop: '1px solid rgba(255,255,255,0.07)',
+                        background: 'rgba(0,0,0,0.3)'
+                    }}>
+                        <input
+                            type="text"
+                            value={chatInput}
+                            onChange={e => setChatInput(e.target.value)}
+                            onKeyDown={handleChatKey}
+                            placeholder="Talk your smack..."
+                            maxLength={200}
+                            style={{
+                                flex: 1,
+                                background: 'rgba(255,255,255,0.06)',
+                                border: '1px solid rgba(234,179,8,0.2)',
+                                borderRadius: '8px',
+                                color: '#fff',
+                                fontSize: '0.78rem',
+                                padding: '7px 10px',
+                                outline: 'none',
+                                fontFamily: 'inherit'
+                            }}
+                        />
+                        <button
+                            onClick={sendChat}
+                            disabled={!chatInput.trim()}
+                            style={{
+                                background: chatInput.trim()
+                                    ? 'linear-gradient(135deg, #eab308, #ca8a04)'
+                                    : 'rgba(255,255,255,0.08)',
+                                border: 'none',
+                                borderRadius: '8px',
+                                color: chatInput.trim() ? '#000' : '#4b5563',
+                                cursor: chatInput.trim() ? 'pointer' : 'default',
+                                padding: '7px 12px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transition: 'all 0.15s ease'
+                            }}
+                        >
+                            <Send size={14} />
+                        </button>
+                    </div>
                 </div>
             </div>
 

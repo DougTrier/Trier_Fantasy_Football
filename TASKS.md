@@ -52,18 +52,18 @@
 
 ## Low Priority / Future
 
-### Delta Sync via EventStore
-- [ ] Implement `getEventsSince(vector)` for efficient peer sync (send only missing events)
-- [ ] `SYNC_REQ` / `SYNC_RESP` message flow on VERIFIED connect
+### Delta Sync via EventStore ✅
+- [x] Implement `getEventsSince(vector)` for efficient peer sync (send only missing events)
+- [x] `SYNC_REQ` / `SYNC_RESP` message flow on VERIFIED connect
 
-### UI Polish
-- [ ] Animate new chat messages sliding in (Framer Motion)
-- [ ] Toast notifications for incoming chat messages when not on League page
-- [ ] Player card shake/bounce animation on game day lock attempt
+### UI Polish ✅
+- [x] Animate new chat messages sliding in (Framer Motion)
+- [x] Toast notifications for incoming chat messages when not on League page
+- [x] Player card shake/bounce animation on game day lock attempt
 
-### Infrastructure
-- [ ] CI pipeline (GitHub Actions: typecheck + lint on PR)
-- [ ] Auto-build release with `tauri build` on tag push
+### Infrastructure ✅
+- [x] CI pipeline (GitHub Actions: typecheck + lint on PR)
+- [x] Auto-build release with `tauri build` on tag push
 
 ---
 
