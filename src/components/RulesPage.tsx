@@ -1,5 +1,5 @@
 import React from 'react';
-import { Target, Users, Zap, Shield, HelpCircle, BookOpen, Lock } from 'lucide-react';
+import { Target, Users, Zap, Shield, HelpCircle, BookOpen, Lock, Wifi, ArrowLeftRight } from 'lucide-react';
 import leatherTexture from '../assets/leather_texture.png';
 
 export const RulesPage: React.FC = () => {
@@ -16,13 +16,12 @@ export const RulesPage: React.FC = () => {
                     fontSize: '4.5rem',
                     fontWeight: 900,
                     margin: 0,
-                    color: 'transparent', // Restored to show texture
+                    color: 'transparent',
                     backgroundImage: `url(${leatherTexture})`,
                     backgroundSize: '150px',
                     WebkitBackgroundClip: 'text',
                     backgroundClip: 'text',
                     fontFamily: "'Russo One', sans-serif",
-                    // Double Stroke Effect: White inner (simulated by text color) + Heavy Black outer
                     WebkitTextStroke: '2px #000',
                     textShadow: '0 8px 30px rgba(0,0,0,0.9), 0 -1px 0 rgba(255,255,255,0.2)',
                     textTransform: 'uppercase',
@@ -69,13 +68,14 @@ export const RulesPage: React.FC = () => {
                 {/* Team Security */}
                 <RuleCard
                     icon={<Lock size={32} color="#eab308" />}
-                    title="Proprietary Security"
+                    title="Team Security"
                     content={[
-                        "Franchise passwords are MANDATORY",
-                        "Secures team data & roster integrity",
-                        "Owners verify identity for all moves",
-                        "Admin-only password reset bypass",
-                        "Encrypted local-first storage"
+                        "Optional franchise password protects team access",
+                        "Commissioner password gates all admin functions",
+                        "ECDSA P-256 cryptographic peer identity",
+                        "Admin-only password reset for locked-out owners",
+                        "Local-first storage — all data stays on your device",
+                        "Auto-saves on every change; logout on close"
                     ]}
                 />
 
@@ -88,53 +88,39 @@ export const RulesPage: React.FC = () => {
                         "2 Running Backs (RB)",
                         "2 Wide Receivers (WR)",
                         "1 Tight End (TE)",
-                        "1 FLEX (RB/WR/TE)",
+                        "1 FLEX (RB / WR / TE)",
                         "1 Kicker (K)",
-                        "1 Defense/Special Teams (D/ST)",
-                        "7 Bench Slots (Strategic Utility)"
-                    ]}
-                />
-
-                {/* System Display Requirements */}
-                <RuleCard
-                    icon={<BookOpen size={32} color="#eab308" />}
-                    title="Display Optimization"
-                    content={[
-                        "Optimal resolution: 1024x768+",
-                        "Designed for 13\"+ laptop displays",
-                        "High-fidelity holographic rendering",
-                        "Scaled for standard desktop usage",
-                        "Mobile view: Optimized for tablet+"
+                        "1 Defense / Special Teams (D/ST)",
+                        "7 Bench Slots"
                     ]}
                 />
 
                 {/* Scoring System */}
                 <RuleCard
                     icon={<Zap size={32} color="#eab308" />}
-                    title="Scoring System (PPR)"
+                    title="Scoring System (Full PPR)"
                     content={[
                         "Passing TD: 4 pts",
-                        "Rushing/Receiving TD: 6 pts",
-                        "Reception: 1.0 pt (Full PPR)",
-                        "Passing Yds: 1 pt per 25 yds",
-                        "Rush/Rec Yds: 1 pt per 10 yds",
-                        "Interceptions: -2 pts",
-                        "Fumbles Lost: -2 pts"
+                        "Rushing / Receiving TD: 6 pts",
+                        "Reception: 1 pt (Full PPR)",
+                        "Passing Yards: 1 pt per 25 yds",
+                        "Rush / Rec Yards: 1 pt per 10 yds",
+                        "Interception thrown: -2 pts",
+                        "Fumble lost: -2 pts"
                     ]}
                 />
 
                 {/* D/ST Scoring */}
                 <RuleCard
                     icon={<Shield size={32} color="#eab308" />}
-                    title="Defense/ST Scoring"
+                    title="Defense / ST Scoring"
                     content={[
-                        "Sacks: 1 pt",
-                        "Interceptions/Fumbles: 2 pts",
-                        "Safeties: 2 pts",
-                        "Defensive/Return TD: 6 pts",
-                        "0 Pts Allowed: 10 pts",
-                        "1-6 Pts Allowed: 7 pts",
-                        "7-13 Pts Allowed: 4 pts"
+                        "Sack: 1 pt",
+                        "Interception: 2 pts",
+                        "Safety: 2 pts",
+                        "Defensive / Return TD: 6 pts",
+                        "Note: Points-allowed brackets and fumble",
+                        "recoveries are not yet in the scoring engine"
                     ]}
                 />
 
@@ -143,36 +129,67 @@ export const RulesPage: React.FC = () => {
                     icon={<Target size={32} color="#eab308" />}
                     title="Kicker Scoring"
                     content={[
-                        "Field Goal (0-39 yds): 3 pts",
-                        "Field Goal (40-49 yds): 4 pts",
-                        "Field Goal (50+ yds): 5 pts",
-                        "Extra Point: 1 pt"
+                        "FG 0–39 yds: 3 pts (planned)",
+                        "FG 40–49 yds: 4 pts (planned)",
+                        "FG 50+ yds: 5 pts (planned)",
+                        "Extra Point: 1 pt (planned)",
+                        "Note: Kicker scoring is not yet automated",
+                        "in the scoring engine — kickers score 0"
                     ]}
                 />
 
-                {/* Bench Mechanics */}
+                {/* Game Day Locking */}
+                <RuleCard
+                    icon={<Lock size={32} color="#eab308" />}
+                    title="Game Day Locking"
+                    content={[
+                        "Commissioner locks NFL teams during live games",
+                        "Locked players cannot be swapped or dropped",
+                        "Live Schedule button fetches ESPN scoreboard",
+                        "Lock state persists across sessions",
+                        "Individual team toggles in Commissioner Center",
+                        "Prevents lineup changes after kickoff"
+                    ]}
+                />
+
+                {/* Trade Center */}
+                <RuleCard
+                    icon={<ArrowLeftRight size={32} color="#eab308" />}
+                    title="Trade Center"
+                    content={[
+                        "Points-based trade system (no salary cap)",
+                        "Buyer escrows points before offer is sent",
+                        "Seller confirms player + points received",
+                        "Escrow returned if offer is declined",
+                        "Commissioner can force accept or cancel any trade",
+                        "All trades logged in transaction history"
+                    ]}
+                />
+
+                {/* P2P Networking */}
+                <RuleCard
+                    icon={<Wifi size={32} color="#eab308" />}
+                    title="P2P League Sync"
+                    content={[
+                        "LAN discovery via mDNS (same network)",
+                        "Internet peers via WebRTC relay signaling",
+                        "ECDSA mutual auth before any data flows",
+                        "All game data is peer-to-peer — relay sees nothing",
+                        "Event signatures verified on every inbound move",
+                        "Delta sync on reconnect (no full re-download)"
+                    ]}
+                />
+
+                {/* Season Protocol */}
                 <RuleCard
                     icon={<BookOpen size={32} color="#eab308" />}
-                    title="Bench Mechanics"
+                    title="Season State Protocol"
                     content={[
-                        "7 Bench Slots in total",
-                        "No points for bench players",
-                        "Swap bench with starters anytime",
-                        "Recruit players to bench slots",
-                        "Drop players from card view"
-                    ]}
-                />
-
-                {/* Season Protocols */}
-                <RuleCard
-                    icon={<Zap size={32} color="#eab308" />}
-                    title="Season Protocol"
-                    content={[
-                        "FUTURE: Season not yet started",
-                        "ACTIVE_UNOFFICIAL: Livescoring",
-                        "COMPLETED_OFFICIAL: All final",
-                        "SCANNED: Raw play-by-play data",
-                        "VALIDATED: Official box verified"
+                        "FUTURE: Season not yet started — scores blocked",
+                        "ACTIVE_UNOFFICIAL: Live provisional scoring",
+                        "COMPLETED_OFFICIAL: All scores final & frozen",
+                        "SCANNED: Raw play-by-play data ingested",
+                        "VALIDATED: Official box scores verified"
                     ]}
                 />
             </div>
@@ -198,36 +215,39 @@ export const RulesPage: React.FC = () => {
                             <Zap size={22} /> Managing Your Team
                         </h3>
                         <ul style={{ paddingLeft: '20px', marginBottom: '24px' }}>
-                            <li><strong>Create Franchise:</strong> Click the <strong>"Settings / Create Team"</strong> button in the sidebar and launch the "ESTABLISH FRANCHISE" modal. A personalized team name, coach ID, and security password are required.</li>
-                            <li><strong>Strategic Lock:</strong> The "Dashboard" and "My Team" portals remain tactically locked until you've established or logged into a franchise.</li>
+                            <li><strong>Create Franchise:</strong> Open <strong>Settings</strong> in the sidebar and use the "ESTABLISH FRANCHISE" section. Team name and coach name are required; a password is optional but recommended.</li>
+                            <li><strong>Access Lock:</strong> The Dashboard and My Team views are locked until you select or create a franchise.</li>
+                            <li><strong>Roster Moves:</strong> Click any starter or bench slot to select a player, then click a target slot to swap. Locked players (game in progress) cannot be moved.</li>
+                            <li><strong>Player Cards:</strong> Click any player name to open their full trading card with stats, projections, and social links.</li>
                         </ul>
 
                         <h3 style={{ color: '#eab308', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.4rem', fontWeight: 800, fontFamily: "'Teko', sans-serif", textTransform: 'uppercase' }}>
                             <Shield size={22} /> Season State Protocol
                         </h3>
                         <ul style={{ paddingLeft: '20px', marginBottom: '24px' }}>
-                            <li><strong>FUTURE:</strong> Access is blocked; "Season has not started" warning is enforced until API orchestration begins.</li>
-                            <li><strong>ACTIVE_UNOFFICIAL:</strong> Real-time "Provisional" scoring is active. Point totals are live but pending final league validation.</li>
-                            <li><strong>COMPLETED_OFFICIAL:</strong> Data is frozen. "Golden Final" badges are issued, and results are archived as official league records.</li>
+                            <li><strong>FUTURE:</strong> Scoring blocked — "Season has not started" enforced until the data pipeline is activated.</li>
+                            <li><strong>ACTIVE_UNOFFICIAL:</strong> Live "Provisional" scoring active. Totals update in real time but are not yet finalized.</li>
+                            <li><strong>COMPLETED_OFFICIAL:</strong> Data is frozen. Final badges issued; results archived as official league records.</li>
                         </ul>
                     </div>
 
                     <div style={{ color: '#d1d5db', lineHeight: '1.6', fontSize: '1.1rem' }}>
                         <h3 style={{ color: '#eab308', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.4rem', fontWeight: 800, fontFamily: "'Teko', sans-serif", textTransform: 'uppercase' }}>
-                            <Lock size={22} /> Doug Trier Provenance
+                            <ArrowLeftRight size={22} /> Trades & Points
                         </h3>
                         <ul style={{ paddingLeft: '20px', marginBottom: '24px' }}>
-                            <li><strong>Deterministic Engine:</strong> Scoring is calculated using a strict deterministic sum of official NFL box score data (No inferred or sample stats).</li>
-                            <li><strong>2026 Copyright:</strong> This platform is a Doug Trier original project. All logic, UI design, and orchestration protocols are © 2026.</li>
-                            <li><strong>Audit Trace:</strong> Every point total can be audited back to the raw JSON payload in the "Fantasy Ledger" view.</li>
+                            <li><strong>Making an Offer:</strong> Open Trade Center, select a player from another team, set your points offer, and submit. Points are escrowed immediately.</li>
+                            <li><strong>Accepting / Declining:</strong> The receiving team sees the offer in Trade Center. Accepting completes the trade; declining refunds the escrowed points.</li>
+                            <li><strong>Commissioner Override:</strong> Admins can force-accept or force-cancel any trade from the Commissioner panel.</li>
                         </ul>
 
                         <h3 style={{ color: '#eab308', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '1.4rem', fontWeight: 800, fontFamily: "'Teko', sans-serif", textTransform: 'uppercase' }}>
-                            <Users size={22} /> Roster Moves
+                            <Wifi size={22} /> P2P Networking
                         </h3>
                         <ul style={{ paddingLeft: '20px' }}>
-                            <li><strong>Swapping:</strong> Drag and drop (or click-to-swap) players between Starters and Bench.</li>
-                            <li><strong>Player View:</strong> Click any name to open the detailed "Trading Card" holographic view.</li>
+                            <li><strong>LAN:</strong> Peers on the same network are discovered automatically via mDNS. No configuration needed.</li>
+                            <li><strong>Internet:</strong> Use the Network page to connect via the global relay. WebRTC handles the actual data channel — the relay never sees your game data.</li>
+                            <li><strong>Trust:</strong> Every peer must complete a 3-message ECDSA handshake before any game data is exchanged. Roster move events are cryptographically signed and verified.</li>
                         </ul>
                     </div>
                 </div>
@@ -241,7 +261,7 @@ export const RulesPage: React.FC = () => {
                     fontSize: '1.1rem',
                     fontWeight: 600
                 }}>
-                    <strong>Protocol Tip:</strong> The app uses a Local-First architecture. All franchise data is encrypted in-browser, while roster performance is verified in real-time against official NFL endpoints.
+                    <strong>Protocol Note:</strong> This app uses a local-first architecture. All franchise data is stored on your device in browser local storage — nothing is sent to a central server. Roster move events are signed with your node's private key and verified by peers before being accepted.
                 </p>
             </div>
         </div>
@@ -267,10 +287,11 @@ const RuleCard: React.FC<{ icon: React.ReactNode, title: string, content: string
                 <li key={i} style={{
                     padding: '8px 0',
                     borderBottom: i === content.length - 1 ? 'none' : '1px solid rgba(255,255,255,0.05)',
-                    color: '#e5e7eb',
-                    fontSize: '0.95rem'
+                    color: item.startsWith('Note:') ? '#9ca3af' : '#e5e7eb',
+                    fontSize: item.startsWith('Note:') ? '0.82rem' : '0.95rem',
+                    fontStyle: item.startsWith('Note:') ? 'italic' : 'normal'
                 }}>
-                    • {item}
+                    {item.startsWith('Note:') ? item : `• ${item}`}
                 </li>
             ))}
         </ul>
