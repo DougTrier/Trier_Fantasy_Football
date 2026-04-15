@@ -43,3 +43,7 @@ docs/screenshots/
 
 # Tauri build artifacts
 src-tauri/target/
+
+# Bundled WebView2 runtime — large binaries, not tracked in git
+# These are downloaded/bundled during the Tauri release build process
+src-tauri/FixedWebView2/
