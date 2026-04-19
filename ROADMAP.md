@@ -52,6 +52,15 @@ AFC/NFC team columns flanking the League Standings page. Live records, scores, a
 **Remaining:**
 - "Last scoring play" ticker
 
+### 2.1.1 Sidebar Responsive Scaling
+The sidebar currently uses fixed padding/font sizes and does not scale proportionally
+when the window is resized. Apply the same `zoom: scale` approach used on the League page,
+or switch all sidebar sizing to viewport-relative units so nav items, icons, and text
+shrink/grow cleanly at any window size.
+- Scale nav item font, icon size, padding, and logo proportionally with window height
+- Minimum readable size: ~720px tall window
+- Do this before or alongside any view that introduces new sidebar items
+
 ### 2.2 Draft Simulator
 The player pool, ADP data, and roster structure are all already modeled — no new data needed.
 - Snake draft with configurable number of teams (2–16)

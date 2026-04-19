@@ -47,6 +47,7 @@ import { SettingsPage } from './components/SettingsPage';
 import { H2HPage } from './components/H2HPage';
 import { TradeOfferModal } from './components/TradeOfferModal';
 import { TradeCenter } from './components/TradeCenter';
+import { DraftSimulator } from './components/DraftSimulator';
 import { scrapePlayerStats, scrapePlayerPhoto } from './utils/scraper';
 import stadiumBg from './assets/stadium_bg.png';
 import leatherTexture from './assets/leather_texture.png';
@@ -1812,6 +1813,15 @@ export default function App() {
           onCancel={handleCancelMyOffer}
           onAdminForceAccept={handleAdminForceAccept}
           onAdminForceCancel={handleAdminForceCancel}
+        />
+      )}
+
+      {activeView === 'draft' && (
+        <DraftSimulator
+          allPlayers={availablePlayers}
+          myTeam={myTeam}
+          onSaveTeam={(team) => setUserTeams(prev => [...prev, team])}
+          onExit={() => setActiveView('league')}
         />
       )}
 
