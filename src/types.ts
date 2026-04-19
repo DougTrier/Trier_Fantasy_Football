@@ -234,6 +234,10 @@ export interface FantasyTeam {
         flex: Player | null; // RB/WR/TE eligible
         k: Player | null;
         dst: Player | null;
+        // IDP slots — optional so existing leagues without IDP don't break
+        lb?: Player | null;
+        dl?: Player | null;
+        db?: Player | null;
     };
     bench: Player[];
     budget?: number; // Optional legacy budget field (pre-ledger)

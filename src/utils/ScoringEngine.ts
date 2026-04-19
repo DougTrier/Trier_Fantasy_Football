@@ -158,6 +158,32 @@ export class ScoringEngine {
             }
         }
 
+        // IDP — Individual Defensive Players (LB, DL, DB)
+        // Standard IDP weights: tackles earn least, big plays earn most.
+        if (['LB', 'DL', 'DB'].includes(player.position)) {
+            const soloTkl  = stats.idp_tkl_solo || 0;
+            const astTkl   = stats.idp_tkl_ast  || 0;
+            const sacks    = stats.idp_sack      || 0;
+            const tklLoss  = stats.idp_tkl_loss  || 0;
+            const passDef  = stats.idp_pass_def  || 0;
+            const qbHits   = stats.idp_qb_hit    || 0;
+            const ff       = stats.idp_ff        || 0;
+            const blkKick  = stats.idp_blk_kick  || 0;
+
+            const idpPts =
+                (soloTkl * 1)   +
+                (astTkl  * 0.5) +
+                (sacks   * 2)   +
+                (tklLoss * 1)   +
+                (passDef * 1)   +
+                (qbHits  * 0.5) +
+                (ff      * 2)   +
+                (blkKick * 3);
+
+            breakdown.idp = parseFloat(idpPts.toFixed(2));
+            total += idpPts;
+        }
+
         return {
             total: parseFloat(total.toFixed(2)),
             breakdown,

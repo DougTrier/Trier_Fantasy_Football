@@ -41,8 +41,16 @@ type SortOption = 'PROJ' | 'ADP' | 'PASS_YDS' | 'RUSH_YDS' | 'REC_YDS' | 'GAMES'
  * PlayersPage — scouting and research browser.
  * Read-only display; onMakeOffer is the only mutation pathway (opens TradeOfferModal).
  */
+// Offensive + IDP position groups for the filter bar
+const POSITION_GROUPS = ['ALL', 'QB', 'RB', 'WR', 'TE', 'K', 'DST', 'LB', 'DL', 'DB'] as const;
+const POS_COLORS: Record<string, string> = {
+    QB: '#eab308', RB: '#10b981', WR: '#3b82f6', TE: '#a855f7',
+    K: '#6b7280', DST: '#ef4444', LB: '#f97316', DL: '#ec4899', DB: '#06b6d4',
+};
+
 export const PlayersPage: React.FC<PlayersPageProps> = ({ players, onMakeOffer }) => {
     const [teamFilter, setTeamFilter] = useState('ALL');
+    const [posFilter, setPosFilter] = useState('ALL');
     // viewingPlayer: when set, opens PlayerTradingCard full-screen overlay.
     const [viewingPlayer, setViewingPlayer] = useState<Player | null>(null);
     const [search, setSearch] = useState('');
@@ -69,6 +77,10 @@ export const PlayersPage: React.FC<PlayersPageProps> = ({ players, onMakeOffer }
 
         if (teamFilter !== 'ALL') {
             base = base.filter(p => p.team === teamFilter);
+        }
+
+        if (posFilter !== 'ALL') {
+            base = base.filter(p => p.position === posFilter);
         }
 
         if (search) {
@@ -99,7 +111,7 @@ export const PlayersPage: React.FC<PlayersPageProps> = ({ players, onMakeOffer }
                 default: return 0;
             }
         });
-    }, [playersWithTotals, teamFilter, search, sortBy]);
+    }, [playersWithTotals, teamFilter, posFilter, search, sortBy]);
 
     // Infinite Scroll Implementation
     useEffect(() => {
@@ -169,6 +181,20 @@ export const PlayersPage: React.FC<PlayersPageProps> = ({ players, onMakeOffer }
                             <Filter size={16} color="#9ca3af" style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)' }} />
                         </div>
                     </div>
+                </div>
+
+                {/* Position filter tabs — includes IDP positions */}
+                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    {POSITION_GROUPS.map(pos => (
+                        <button key={pos} onClick={() => { setPosFilter(pos); setVisibleCount(100); }} style={{
+                            padding: '5px 13px', borderRadius: '20px', cursor: 'pointer', border: 'none',
+                            fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.5px',
+                            background: posFilter === pos ? (POS_COLORS[pos] || '#eab308') : 'rgba(255,255,255,0.08)',
+                            color: posFilter === pos ? '#fff' : '#9ca3af',
+                            outline: posFilter === pos ? 'none' : 'none',
+                            transition: 'all 0.12s',
+                        }}>{pos}</button>
+                    ))}
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '15px', borderRadius: '12px' }}>

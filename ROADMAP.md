@@ -124,12 +124,11 @@ Deeper data features that make Trier stand out as a research platform.
 - ✅ Trending Now — free agents ranked by platform ownership % with inline bar
 - ⏭ Injury report integration — requires Sleeper API pipeline extension (deferred)
 
-### 3.3 IDP Full Mode
-The data models support LB/DL/DB — just the scoring UI and roster slots need extending.
-- Add IDP roster slots to FantasyTeam (LB, DL, DB starters)
-- IDP scoring: tackles, sacks, INTs, forced fumbles
-- IDP-specific filtering in the player pool browser
-- H2H matchup analysis for defensive players
+### 3.3 IDP Full Mode ✅
+- ✅ Optional lb/dl/db roster slots added to FantasyTeam (backward-compatible)
+- ✅ ScoringEngine IDP branch: solo tkl×1, ast×0.5, sack×2, TFL×1, passDef×1, QBhit×0.5, FF×2, blkKick×3
+- ✅ PlayersPage position filter tabs: ALL QB RB WR TE K DST LB DL DB
+- ✅ Roster.tsx IDP slot rendering + checkPos eligibility for LB/DL/DB
 
 ### 3.4 Season Archive Browser
 - Browse all past seasons stored in the League history array

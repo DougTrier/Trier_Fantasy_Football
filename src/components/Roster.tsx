@@ -329,6 +329,10 @@ export const Roster: React.FC<RosterProps> = ({ team, onSelectSlot, onSelectPlay
         { key: 'flex', label: 'FLEX' },
         { key: 'k', label: 'K' },
         { key: 'dst', label: 'DEF' },
+        // IDP slots — only shown when the team has these keys defined
+        ...(('lb' in team.roster) ? [{ key: 'lb', label: 'LB' }] : []),
+        ...(('dl' in team.roster) ? [{ key: 'dl', label: 'DL' }] : []),
+        ...(('db' in team.roster) ? [{ key: 'db', label: 'DB' }] : []),
     ] as const;
 
     // Compute header stats — both are derived so we memoize together to avoid double-rerender
@@ -360,6 +364,9 @@ export const Roster: React.FC<RosterProps> = ({ team, onSelectSlot, onSelectPlay
         if (s.startsWith('K')) return p.position === 'K';
         if (s.startsWith('DEF') || s.startsWith('DST')) return p.position === 'DST';
         if (s.startsWith('FLEX')) return ['RB', 'WR', 'TE'].includes(p.position);
+        if (s === 'LB') return p.position === 'LB';
+        if (s === 'DL') return p.position === 'DL';
+        if (s === 'DB') return p.position === 'DB';
         return true; // Bench accepts any position
     };
 
