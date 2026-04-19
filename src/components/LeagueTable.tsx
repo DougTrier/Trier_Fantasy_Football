@@ -288,7 +288,7 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({ league, myTeamName, is
                 alignItems: 'center',
                 justifyContent: 'flex-start',
                 position: 'relative',
-                height: '85%'   // matches the standings panel height exactly
+                height: '95%'   // matches the standings panel height exactly
             }}>
                 <div style={{
                     position: 'relative',
@@ -487,7 +487,7 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({ league, myTeamName, is
                 alignItems: 'center',
                 justifyContent: 'center',
                 position: 'relative',
-                height: '85%',
+                height: '95%',
                 overflow: 'hidden'
             }}>
                 <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(2px)', zIndex: 0 }} />
@@ -623,8 +623,8 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({ league, myTeamName, is
                     </div>
                 )}
             </div>
-            {/* Ticker — row 2, spans trophy+divider+standings columns, pulled up 135px */}
-            <div style={{ gridColumn: '2 / 5', gridRow: 2, marginTop: '-125px' }}>
+            {/* Ticker — row 2, spans trophy+divider+standings columns, pulled up ~65px */}
+            <div style={{ gridColumn: '2 / 5', gridRow: 2, marginTop: '-55px' }}>
                 <ScoringTicker
                     games={ScoreboardService.getLiveGames()}
                     events={ScoreboardService.getTickerItems()}
@@ -632,7 +632,7 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({ league, myTeamName, is
             </div>
 
             {/* Mini-game — row 3, spans all 5 columns, below the ticker */}
-            <div style={{ gridColumn: '1 / 6', gridRow: 3, paddingTop: '32px', paddingBottom: '32px' }}>
+            <div style={{ gridColumn: '1 / 6', gridRow: 3, marginTop: '-28px', paddingBottom: '32px' }}>
                 <FieldGoalKicker
                     isGameday={isGameday}
                     myTeamName={myTeamName ?? ''}
