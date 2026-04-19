@@ -59,33 +59,77 @@ export const getAutomaticLockedTeams = (date: Date): string[] => {
 };
 
 /**
- * Fetches live game status from ESPN's public scoreboard API.
- * Returns the abbreviations of NFL teams currently in an in-progress game.
- * No API key required.
+ * Returns true if today is a typical NFL gameday (Sun / Mon / Thu).
+ * Used to gate the auto-poll interval — no need to hit the API on off-days.
  */
-export const fetchLiveLockedTeams = async (): Promise<string[]> => {
+export const isGameday = (date: Date = new Date()): boolean => {
+    const day = date.getDay();
+    return day === 0 || day === 1 || day === 4; // Sun, Mon, Thu
+};
+
+/**
+ * Result type returned by fetchLiveGameData.
+ * statuses maps each locked team abbreviation to a human-readable status string
+ * like "Q3 7:42" or "Halftime" so the UI can show more than just "LOCKED".
+ */
+export interface LiveGameData {
+    lockedTeams: string[];
+    statuses: Record<string, string>; // team abbr → display string e.g. "Q3 7:42"
+}
+
+/**
+ * Fetches live game data from ESPN's public scoreboard API.
+ * Returns locked teams + per-team status strings. No API key required.
+ */
+export const fetchLiveGameData = async (): Promise<LiveGameData> => {
     try {
         const res = await fetch(
             'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard'
         );
         if (!res.ok) throw new Error(`ESPN API returned ${res.status}`);
         const data = await res.json();
-        const locked: string[] = [];
+        const lockedTeams: string[] = [];
+        const statuses: Record<string, string> = {};
+
         for (const event of (data.events || [])) {
             const competition = event.competitions?.[0];
             if (!competition) continue;
-            // status.type.state: 'pre' | 'in' | 'post'
-            if (competition.status?.type?.state === 'in') {
-                for (const competitor of (competition.competitors || [])) {
-                    const abbr = competitor.team?.abbreviation?.toUpperCase();
-                    if (abbr && NFL_TEAMS.includes(abbr)) locked.push(abbr);
+            const state = competition.status?.type?.state;
+            if (state !== 'in') continue;
+
+            // Build a readable status string: "Q3 7:42" or "Halftime"
+            const detail: string = competition.status?.type?.detail ?? '';
+            const period: number = competition.status?.period ?? 0;
+            const clockSecs: number = competition.status?.clock ?? 0;
+            const mm = String(Math.floor(clockSecs / 60)).padStart(2, '0');
+            const ss = String(clockSecs % 60).padStart(2, '0');
+            const statusStr = detail.toLowerCase().includes('halftime')
+                ? 'Halftime'
+                : period > 4
+                    ? `OT ${mm}:${ss}`
+                    : `Q${period} ${mm}:${ss}`;
+
+            for (const competitor of (competition.competitors || [])) {
+                const abbr = competitor.team?.abbreviation?.toUpperCase();
+                if (abbr && NFL_TEAMS.includes(abbr)) {
+                    lockedTeams.push(abbr);
+                    statuses[abbr] = statusStr;
                 }
             }
         }
-        console.log(`[GamedayLogic] Live locked teams: ${locked.join(', ') || 'none (no games in progress)'}`);
-        return locked;
+        console.log(`[GamedayLogic] Live locked teams: ${lockedTeams.join(', ') || 'none'}`);
+        return { lockedTeams, statuses };
     } catch (e) {
         console.warn('[GamedayLogic] Failed to fetch live NFL schedule:', e);
-        return [];
+        return { lockedTeams: [], statuses: {} };
     }
+};
+
+/**
+ * Convenience wrapper — returns only the locked team abbreviations.
+ * Kept for call sites that don't need game status strings.
+ */
+export const fetchLiveLockedTeams = async (): Promise<string[]> => {
+    const { lockedTeams } = await fetchLiveGameData();
+    return lockedTeams;
 };

@@ -50,7 +50,7 @@ import { TradeCenter } from './components/TradeCenter';
 import { scrapePlayerStats, scrapePlayerPhoto } from './utils/scraper';
 import stadiumBg from './assets/stadium_bg.png';
 import leatherTexture from './assets/leather_texture.png';
-import { isPlayerLocked, NFL_TEAMS, fetchLiveLockedTeams } from './utils/gamedayLogic';
+import { isPlayerLocked, NFL_TEAMS, fetchLiveGameData, isGameday } from './utils/gamedayLogic';
 
 import { Lock } from 'lucide-react';
 import { SyncService } from './utils/SyncService';
@@ -196,6 +196,8 @@ export default function App() {
       return stored ? JSON.parse(stored) : [];
     } catch { return []; }
   });
+  // Per-team game status strings shown on locked roster slots (e.g. "Q3 7:42")
+  const [gameStatuses, setGameStatuses] = useState<Record<string, string>>({});
   const [peers, setPeers] = useState<DiscoveredPeer[]>([]);
   const [connectedPeers, setConnectedPeers] = useState<string[]>([]);
   const [hasNewOffers, setHasNewOffers] = useState(false);
@@ -523,6 +525,21 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('trier_locked_nfl_teams', JSON.stringify(lockedNFLTeams));
   }, [lockedNFLTeams]);
+
+  // Auto-poll live NFL game data on gamedays (Sun / Mon / Thu).
+  // Fires once on startup when it's a gameday, then every 60 minutes.
+  // Keeps lockedNFLTeams and gameStatuses fresh without commissioner action.
+  useEffect(() => {
+    if (!isGameday()) return; // no-op on off-days
+    const poll = async () => {
+      const { lockedTeams, statuses } = await fetchLiveGameData();
+      setLockedNFLTeams(lockedTeams);
+      setGameStatuses(statuses);
+    };
+    poll(); // immediate fetch on mount
+    const id = setInterval(poll, 60 * 60 * 1000); // re-poll every hour
+    return () => clearInterval(id);
+  }, []);
 
   // Inactivity Logout Logic (5 Minutes)
   useEffect(() => {
@@ -1687,6 +1704,7 @@ export default function App() {
             <Roster
               team={myTeam}
               lockedTeams={lockedNFLTeams}
+              gameStatuses={gameStatuses}
               swapCandidate={swapCandidate}
               shakingPlayerId={shakingPlayerId}
               onSelectSlot={(slotId) => {
@@ -1859,13 +1877,14 @@ export default function App() {
           onLockAll={() => setLockedNFLTeams([...NFL_TEAMS])}
           onUnlockAll={() => setLockedNFLTeams([])}
           onFetchSchedule={async () => {
-            const locked = await fetchLiveLockedTeams();
-            setLockedNFLTeams(locked);
+            const { lockedTeams, statuses } = await fetchLiveGameData();
+            setLockedNFLTeams(lockedTeams);
+            setGameStatuses(statuses);
             showAlert(
-              locked.length > 0
-                ? `${locked.length} teams are currently in active games: ${locked.join(', ')}`
+              lockedTeams.length > 0
+                ? `${lockedTeams.length} teams are currently in active games: ${lockedTeams.join(', ')}`
                 : 'No NFL games are in progress right now. All rosters are open.',
-              locked.length > 0 ? 'Teams Locked' : 'No Active Games'
+              lockedTeams.length > 0 ? 'Teams Locked' : 'No Active Games'
             );
           }}
         />

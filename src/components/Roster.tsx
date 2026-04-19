@@ -32,11 +32,12 @@ import { ScoringEngine } from '../utils/ScoringEngine';
 
 interface RosterProps {
     team: FantasyTeam;
-    lockedTeams: string[];     // NFL team abbreviations with active game locks
+    lockedTeams: string[];                  // NFL team abbreviations with active game locks
+    gameStatuses?: Record<string, string>;  // team abbr → status string e.g. "Q3 7:42"
     onSelectSlot?: (slotId: string) => void;
     onSelectPlayer?: (player: Player) => void;
-    swapCandidate?: Player | null;   // Player staged for a swap — highlights eligible targets
-    shakingPlayerId?: string | null; // Player ID to animate when a locked slot is clicked
+    swapCandidate?: Player | null;          // Player staged for a swap — highlights eligible targets
+    shakingPlayerId?: string | null;        // Player ID to animate when a locked slot is clicked
 }
 
 // getTeamTheme supplies the primary/secondary color pair used for the slot gradient.
@@ -54,6 +55,7 @@ const RosterSlot = ({
     player,
     onClick,
     isLocked,
+    gameStatus,
     isSwapTarget,
     isShaking
 }: {
@@ -61,6 +63,7 @@ const RosterSlot = ({
     player: Player | null;
     onClick: () => void;
     isLocked?: boolean;
+    gameStatus?: string;  // e.g. "Q3 7:42" — shown inside the LOCKED badge
     isSwapTarget?: boolean;
     isShaking?: boolean;
 }) => {
@@ -129,7 +132,7 @@ const RosterSlot = ({
                 }
             }}
         >
-            {/* Lock Indicator */}
+            {/* Lock indicator — shows game status if available (e.g. "Q3 7:42") */}
             {isLocked && (
                 <div style={{
                     position: 'absolute',
@@ -149,7 +152,7 @@ const RosterSlot = ({
                     letterSpacing: '1px'
                 }}>
                     <Lock size={12} />
-                    LOCKED
+                    {gameStatus ? `LOCKED · ${gameStatus}` : 'LOCKED'}
                 </div>
             )}
             {isSwapTarget && (
@@ -313,7 +316,7 @@ const RosterSlot = ({
  * The component is read-only for display; all mutations go through
  * onSelectSlot / onSelectPlayer callbacks back up to App.tsx.
  */
-export const Roster: React.FC<RosterProps> = ({ team, onSelectSlot, onSelectPlayer, lockedTeams, swapCandidate, shakingPlayerId }) => {
+export const Roster: React.FC<RosterProps> = ({ team, onSelectSlot, onSelectPlayer, lockedTeams, gameStatuses = {}, swapCandidate, shakingPlayerId }) => {
     // Explicit ordered list — determines the visual slot order in the lineup card.
     // Using 'as const' lets TypeScript narrow slot.key to the exact union type.
     const starters = [
@@ -498,6 +501,7 @@ export const Roster: React.FC<RosterProps> = ({ team, onSelectSlot, onSelectPlay
                                     label={slot.label}
                                     player={player}
                                     isLocked={isLocked}
+                                    gameStatus={player ? gameStatuses[player.team.toUpperCase()] : undefined}
                                     isShaking={!!player && player.id === shakingPlayerId}
                                     // Highlight as swap target only if position-eligible and not the candidate itself
                                                     // Highlight as swap target: candidate exists, slot is unlocked,
