@@ -22,7 +22,7 @@
  */
 // External imports — lucide-react icons are tree-shaken at build time so only
 // the imported names contribute to bundle size. Each icon is ~1KB gzipped.
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { LayoutDashboard, Users, Trophy, User, Settings, LogOut, BookOpen, Swords, Wallet, Zap, ArrowRightLeft, Wifi, ClipboardList, Gavel } from 'lucide-react';
 // ScoringEngine is read-only here (getOrchestrationStatus); no mutation occurs.
 // It is imported as a module-level singleton — no React state needed for status.
@@ -56,19 +56,17 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ icon, label, isActive, onClic
         style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '12px',
-            padding: '12px 24px',
-            margin: '8px 0',
+            gap: '10px',
+            padding: '8px 18px',
+            margin: '0',
             borderRadius: '50px', // STADIUM OVAL
             cursor: 'pointer',
-            // Leather texture image is composited over a brown gradient via
-            // backgroundImage stacking (first URL = top layer) to mimic depth.
-            // GEL LOOK BASE - Realistic Leather Active State (Matched to Standings)
-            backgroundImage: isActive
-                ? `url(/leather_panel_large.png), linear-gradient(135deg, rgba(120, 53, 15, 0.4) 0%, rgba(69, 26, 3, 0.4) 100%)`
-                : 'none',
-            backgroundColor: isActive ? 'transparent' : 'rgba(0,0,0,0.3)',
+            // leather_texture.png is the dark pebbled hide — cover fills the oval pill.
+            backgroundImage: isActive ? `url(${leatherTexture})` : 'none',
+            backgroundColor: isActive ? '#1a0a03' : 'rgba(0,0,0,0.3)',
             backgroundBlendMode: 'normal',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             color: isActive ? '#fff' : 'white', // White text for contrast on dark leather
@@ -90,20 +88,28 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ icon, label, isActive, onClic
         onMouseEnter={(e) => {
             e.currentTarget.style.transform = 'translateY(-2px)';
             if (!isActive) {
-                // Inactive: subtle gold border tint reveals the nav item as clickable.
-                e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.05)';
+                // Hover: same leather texture as active — feels tactile before clicking
+                e.currentTarget.style.backgroundImage = `url(${leatherTexture})`;
+                e.currentTarget.style.backgroundColor = '#1a0a03';
+                e.currentTarget.style.backgroundBlendMode = 'normal';
+                e.currentTarget.style.backgroundSize = 'cover';
+                e.currentTarget.style.backgroundPosition = 'center';
                 e.currentTarget.style.borderColor = 'rgba(234, 179, 8, 0.4)';
+                e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.2)';
             } else {
-                // Active: deeper shadow amplifies the 3D placard effect on hover.
                 e.currentTarget.style.boxShadow = '0 12px 30px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.5)';
             }
         }}
-        // onMouseLeave: restore resting state — translate back, reset colors.
+        // onMouseLeave: restore resting state — translate back, reset leather.
         onMouseLeave={(e) => {
             e.currentTarget.style.transform = 'translateY(0)';
             if (!isActive) {
+                e.currentTarget.style.backgroundImage = 'none';
                 e.currentTarget.style.backgroundColor = 'rgba(0,0,0,0.3)';
+                e.currentTarget.style.backgroundSize = '';
+                e.currentTarget.style.backgroundPosition = '';
                 e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)';
+                e.currentTarget.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.05)';
             } else {
                 e.currentTarget.style.boxShadow = '0 10px 25px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.4)';
             }
@@ -188,6 +194,16 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
         total_production_pts: 0, points_escrowed: 0, points_spent: 0
     } as unknown as FantasyTeam;
 
+    // Sidebar zoom scale — proportional to window height, clamped to [0.72, 1.0].
+    // At 900px tall the sidebar renders at 100%; at 720px it scales to 0.80×.
+    const calcScale = () => Math.max(0.72, Math.min(window.innerHeight / 900, 1.0));
+    const [sidebarScale, setSidebarScale] = useState(calcScale);
+    useEffect(() => {
+        const onResize = () => setSidebarScale(calcScale());
+        window.addEventListener('resize', onResize);
+        return () => window.removeEventListener('resize', onResize);
+    }, []);
+
     // overflow:hidden on the outer wrapper prevents the sidebar from causing
     // horizontal scroll; only the <main> element scrolls vertically.
     return (
@@ -212,7 +228,9 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
                 zIndex: 20,
                 boxShadow: '4px 0 15px rgba(0,0,0,0.5)',
                 position: 'relative',
-                flexShrink: 0
+                flexShrink: 0,
+                zoom: sidebarScale,
+                transformOrigin: 'top left',
             }}>
                 {/* Yard Markers Overlay — repeating white stripes at 40px intervals
                     simulate sideline yard-marker lines; purely decorative */}
@@ -229,9 +247,9 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
                 }} />
 
                 {/* Top: Title */}
-                <div style={{ marginBottom: 'clamp(5px, 1vw, 15px)', textAlign: 'center', position: 'relative', zIndex: 10 }}>
+                <div style={{ marginBottom: 'clamp(2px, 0.4vw, 6px)', textAlign: 'center', position: 'relative', zIndex: 10 }}>
                     <h1 style={{
-                        fontSize: 'clamp(1.2rem, 3.5vw, 3.6rem)',
+                        fontSize: 'clamp(0.9rem, 2.4vw, 2.6rem)',
                         fontWeight: 900,
                         margin: 0,
                         color: 'transparent',
@@ -257,16 +275,16 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    margin: '0 0 clamp(10px, 2vh, 20px) 0',
+                    margin: '0 0 clamp(3px, 0.5vh, 8px) 0',
                     paddingLeft: '30px', // Offset for Yard Markers
                     position: 'relative',
                     zIndex: 10,
-                    minHeight: '60px',
+                    minHeight: '40px',
                     flexShrink: 0
                 }}>
                     <div style={{
-                        width: 'clamp(100px, 15vh, 180px)',
-                        height: 'clamp(100px, 15vh, 180px)',
+                        width: 'clamp(80px, 12vh, 140px)',
+                        height: 'clamp(80px, 12vh, 140px)',
                         borderRadius: '50%',
                         overflow: 'hidden',
                         border: '4px solid rgba(234, 179, 8, 0.4)',
@@ -291,8 +309,8 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
                 <div
                     title={`Season: ${ScoringEngine.getOrchestrationStatus().season_state} | Data: ${ScoringEngine.getOrchestrationStatus().data_status}\n\n- COMPLETED_OFFICIAL: All games finished and verified.\n- VALIDATED: Points cross-checked against official box scores.`}
                     style={{
-                        marginBottom: 'clamp(8px, 1.5vh, 16px)',
-                        padding: '8px 12px',
+                        marginBottom: 'clamp(3px, 0.6vh, 8px)',
+                        padding: '5px 10px',
                         background: 'rgba(0,0,0,0.4)',
                         borderRadius: '8px',
                         border: '1px solid rgba(255,255,255,0.1)',
@@ -324,7 +342,7 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
                 {/* ── Navigation Links ──────────────────────────────────────────────
                     justifyContent:'space-evenly' distributes items without hard-coded
                     pixel gaps, so the sidebar scales cleanly on short screens. */}
-                <nav style={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column', justifyContent: 'space-evenly', gap: '4px', zIndex: 10, overflowY: 'auto', minHeight: '100px' }}>
+                <nav style={{ flex: '1 1 auto', display: 'flex', flexDirection: 'column', justifyContent: 'space-evenly', gap: '0', zIndex: 10, overflowY: 'hidden', minHeight: 0 }}>
 
                     {/* Dashboard & My Team: Disabled for guests.
                         Opacity 0.3 + pointer-events:none visually greys out and
@@ -374,7 +392,7 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
 
                 {/* LOGO WAS HERE - Moved Up */}
 
-                <div style={{ paddingTop: 'clamp(10px, 2vh, 20px)', borderTop: '1px solid rgba(255,255,255,0.2)', zIndex: 10 }}>
+                <div style={{ paddingTop: 'clamp(4px, 0.8vh, 10px)', borderTop: '1px solid rgba(255,255,255,0.2)', zIndex: 10 }}>
                     <SidebarItem icon={<div style={{ width: 20 }}><Settings size={20} /></div>} label="Settings / Create Team" isActive={activeView === 'settings'} onClick={() => onNavigate('settings')} title="Franchise administration and league commissioner settings." />
 
                     {/* Log Out clears the active team — onSelectTeam('') signals
@@ -391,8 +409,8 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
                     onClick={onSaveAndClose}
                     title="Persist all changes to disk and exit the application safely."
                     style={{
-                        marginTop: '15px',
-                        padding: '14px 20px',
+                        marginTop: '6px',
+                        padding: '9px 20px',
                         borderRadius: '50px',
                         cursor: 'pointer',
                         backgroundImage: `url(${leatherTexture}), linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%)`,
@@ -450,7 +468,7 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
                         borderTop: '2px solid #eab308',
                         background: 'rgba(0,0,0,0.6)',
                         borderRadius: '12px',
-                        margin: 'clamp(10px, 1.5vh, 20px) 0 10px 0',
+                        margin: 'clamp(4px, 0.7vh, 10px) 0 4px 0',
                         transition: 'all 0.3s ease',
                         zIndex: 10
                     }}
