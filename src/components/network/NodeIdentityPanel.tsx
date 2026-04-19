@@ -121,33 +121,25 @@ export const NodeIdentityPanel: React.FC<Props> = ({
     };
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '3rem', gap: '1rem' }}>
-            <h1 style={{
-                fontSize: 'clamp(2rem, 3.5vw, 3rem)',
-                fontWeight: 900,
-                margin: 0,
-                color: 'transparent',
-                backgroundImage: `url(${leatherTexture})`,
-                backgroundSize: '150px',
-                backgroundPosition: 'center',
-                WebkitBackgroundClip: 'text',
-                backgroundClip: 'text',
-                fontFamily: "'Graduate', 'Impact', sans-serif",
-                WebkitTextStroke: '1px rgba(255,255,255,0.95)',
-                textShadow: '0 5px 15px rgba(0,0,0,0.9)',
-                lineHeight: '1.2'
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', width: '100%' }}>
+
+            {/* Section label */}
+            <div style={{
+                background: 'rgba(10,14,26,0.82)', backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px',
+                padding: '0.6rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem',
             }}>
-                FIND OR ADD FRIENDS
-            </h1>
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 6px #4ade80' }} />
+                <span style={{ fontWeight: 900, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', color: '#d1d5db' }}>P2P Network Node</span>
+            </div>
 
             {/* ── YOUR PEER ID CARD ── */}
             <div style={{
                 background: 'rgba(23, 37, 84, 0.85)',
                 border: '1px solid rgba(96, 165, 250, 0.4)',
-                borderRadius: '16px',
-                padding: '1.25rem 1.75rem',
-                maxWidth: '600px',
-                width: '100%',
+                borderRadius: '12px',
+                padding: '0.85rem 1.1rem',
+                width: '100%', boxSizing: 'border-box',
                 boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
             }}>
                 <div style={{ fontSize: '0.7rem', color: '#60a5fa', fontWeight: 900, letterSpacing: '0.15em', marginBottom: '0.5rem', textTransform: 'uppercase' }}>
@@ -203,11 +195,11 @@ export const NodeIdentityPanel: React.FC<Props> = ({
 
             {/* ── FRIENDS PANEL ── */}
             <div style={{
-                maxWidth: '600px', width: '100%',
+                width: '100%', boxSizing: 'border-box',
                 background: 'rgba(10,14,26,0.82)',
                 backdropFilter: 'blur(8px)',
                 border: '1px solid rgba(255,255,255,0.08)',
-                borderRadius: '16px',
+                borderRadius: '12px',
                 overflow: 'hidden',
             }}>
                 <div style={{
@@ -338,162 +330,54 @@ export const NodeIdentityPanel: React.FC<Props> = ({
                 )}
             </div>
 
+            {/* Action buttons — compact 3-column grid */}
             <div style={{
-                display: 'flex', gap: '1rem', marginTop: '1rem', flexWrap: 'wrap', justifyContent: 'center',
                 background: 'rgba(10,14,26,0.82)', backdropFilter: 'blur(8px)',
-                border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px',
-                padding: '1rem 1.5rem',
-                maxWidth: '700px', width: '100%',
+                border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px',
+                padding: '0.75rem',
+                display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem',
+                width: '100%', boxSizing: 'border-box',
             }}>
-                <button
-                    onClick={onShowInviteModal}
-                    style={{
-                        padding: '0.75rem 1.5rem',
-                        background: '#4ade80',
-                        border: '1px solid #22c55e',
-                        color: '#000',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', gap: '0.5rem',
-                        fontWeight: 'bold',
-                        fontSize: '1rem',
-                        boxShadow: '0 4px 6px rgba(0,0,0,0.3)'
-                    }}
-                    title="Generate a secure invite code to share with a friend on this network."
-                >
-                    <UserPlus size={20} />
-                    <span>INVITE</span>
+                <button onClick={onShowInviteModal} title="Generate a secure invite code"
+                    style={{ padding: '0.5rem 0.4rem', background: 'rgba(74,222,128,0.15)', border: '1px solid #22c55e', color: '#4ade80', borderRadius: '7px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem', fontWeight: 800, fontSize: '0.72rem' }}>
+                    <UserPlus size={14} /> INVITE
                 </button>
-
-                <button
-                    onClick={onShowJoinModal}
-                    style={{
-                        padding: '0.75rem 1.5rem',
-                        background: 'rgba(255, 255, 255, 0.25)',
-                        border: '1px solid rgba(255,255,255,0.4)',
-                        color: '#fff',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', gap: '0.5rem',
-                        fontSize: '1rem',
-                        fontWeight: 'bold',
-                        backdropFilter: 'blur(4px)',
-                        boxShadow: '0 4px 6px rgba(0,0,0,0.2)'
-                    }}
-                    title="Enter an invite code from a friend to connect."
-                >
-                    <Users size={20} />
-                    <span>JOIN</span>
+                <button onClick={onShowJoinModal} title="Enter an invite code from a friend"
+                    style={{ padding: '0.5rem 0.4rem', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.2)', color: '#d1d5db', borderRadius: '7px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem', fontWeight: 800, fontSize: '0.72rem' }}>
+                    <Users size={14} /> JOIN
                 </button>
-
-                <button
-                    onClick={onShowDiagnostics}
-                    style={{
-                        padding: '0.75rem 1.5rem',
-                        background: showDiagnostics ? 'rgba(255, 255, 255, 0.4)' : 'rgba(255, 255, 255, 0.2)',
-                        border: '1px solid rgba(255,255,255,0.3)',
-                        color: '#fff',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', gap: '0.5rem',
-                        fontWeight: 'bold',
-                        backdropFilter: 'blur(4px)',
-                        boxShadow: '0 4px 6px rgba(0,0,0,0.2)'
-                    }}
-                    title="Run network diagnostics (Ping Gateway, DNS) to troubleshoot connectivity."
-                >
-                    <Activity size={20} />
-                    <span>DIAGNOSTICS</span>
+                <button onClick={onShowDiagnostics} title="Run network diagnostics"
+                    style={{ padding: '0.5rem 0.4rem', background: showDiagnostics ? 'rgba(96,165,250,0.2)' : 'rgba(96,165,250,0.08)', border: '1px solid rgba(96,165,250,0.3)', color: '#93c5fd', borderRadius: '7px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem', fontWeight: 800, fontSize: '0.72rem' }}>
+                    <Activity size={14} /> DIAG
                 </button>
-
-                <button
-                    onClick={handleClearCache}
-                    style={{
-                        padding: '0.75rem 1.5rem',
-                        background: 'rgba(220, 38, 38, 0.3)',
-                        border: '1px solid #ef4444',
-                        color: '#fca5a5',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', gap: '0.5rem',
-                        fontWeight: 'bold',
-                        backdropFilter: 'blur(4px)',
-                        boxShadow: '0 4px 6px rgba(0,0,0,0.2)'
-                    }}
-                    title="Clear discovered peers and reset local cache. Use if peers are stale."
-                >
-                    <Trash2 size={20} />
-                    <span>RESET</span>
+                <button onClick={handleClearCache} title="Clear discovered peers cache"
+                    style={{ padding: '0.5rem 0.4rem', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.4)', color: '#fca5a5', borderRadius: '7px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem', fontWeight: 800, fontSize: '0.72rem' }}>
+                    <Trash2 size={14} /> RESET
                 </button>
-
-                <button
-                    onClick={async () => {
-                        try {
-                            await DiscoveryService.openFirewall();
-                            showAlert("Firewall rules updated. Restart the app if connectivity issues persist.", "Firewall Updated");
-                        } catch {
-                            showAlert("Firewall update failed. You may need to run as administrator.", "Update Failed");
-                        }
-                    }}
-                    style={{
-                        padding: '0.75rem 1.5rem',
-                        background: 'rgba(202, 138, 4, 0.3)',
-                        border: '1px solid #eab308',
-                        color: '#fde047',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', gap: '0.5rem',
-                        fontWeight: 'bold',
-                        backdropFilter: 'blur(4px)',
-                        boxShadow: '0 4px 6px rgba(0,0,0,0.2)'
-                    }}
-                    title="Attempt to automatically add Windows Firewall rules for Trier Fantasy."
-                >
-                    <Shield size={20} />
-                    <span>FIX FIREWALL</span>
+                <button onClick={async () => {
+                        try { await DiscoveryService.openFirewall(); showAlert("Firewall rules updated.", "Updated"); }
+                        catch { showAlert("Firewall update failed — try running as administrator.", "Failed"); }
+                    }} title="Add Windows Firewall rules"
+                    style={{ padding: '0.5rem 0.4rem', background: 'rgba(202,138,4,0.1)', border: '1px solid rgba(234,179,8,0.4)', color: '#fde047', borderRadius: '7px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem', fontWeight: 800, fontSize: '0.72rem' }}>
+                    <Shield size={14} /> FIREWALL
                 </button>
             </div>
 
+            {/* Export / Import — compact row */}
             <div style={{
-                display: 'flex', gap: '1.5rem', marginTop: '1rem',
+                display: 'flex', gap: '0.5rem',
                 background: 'rgba(10,14,26,0.82)', backdropFilter: 'blur(8px)',
-                border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px',
-                padding: '1rem 1.5rem',
+                border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px',
+                padding: '0.6rem 0.75rem',
+                width: '100%', boxSizing: 'border-box',
             }}>
-                <button
-                    onClick={handleExport}
-                    style={{
-                        background: '#0a192f',
-                        border: '2px solid #1e3a8a',
-                        color: '#fff',
-                        padding: '1rem 2rem',
-                        borderRadius: '8px',
-                        fontSize: '1.2rem',
-                        fontWeight: 'bold',
-                        cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', gap: '0.8rem',
-                        boxShadow: '0 4px 10px rgba(0,0,0,0.3)'
-                    }}
-                    title="Save your current profile and team data to a JSON file."
-                >
-                    <Download size={24} /> EXPORT
+                <button onClick={handleExport} title="Save profile and events to a JSON file."
+                    style={{ flex: 1, padding: '0.45rem 0.5rem', background: 'rgba(30,58,138,0.4)', border: '1px solid #1e3a8a', color: '#93c5fd', borderRadius: '7px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', fontWeight: 800, fontSize: '0.75rem' }}>
+                    <Download size={14} /> EXPORT
                 </button>
-                <label
-                    style={{
-                        background: '#0a192f',
-                        border: '2px solid #1e3a8a',
-                        color: '#fff',
-                        padding: '1rem 2rem',
-                        borderRadius: '8px',
-                        fontSize: '1.2rem',
-                        fontWeight: 'bold',
-                        cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', gap: '0.8rem',
-                        boxShadow: '0 4px 10px rgba(0,0,0,0.3)'
-                    }}
-                    title="Restore profile and events from a JSON backup file."
-                >
-                    <Upload size={24} /> IMPORT
+                <label title="Restore from a JSON backup file."
+                    style={{ flex: 1, padding: '0.45rem 0.5rem', background: 'rgba(30,58,138,0.4)', border: '1px solid #1e3a8a', color: '#93c5fd', borderRadius: '7px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', fontWeight: 800, fontSize: '0.75rem' }}>
+                    <Upload size={14} /> IMPORT
                     <input type="file" onChange={handleImport} style={{ display: 'none' }} accept=".json" />
                 </label>
             </div>

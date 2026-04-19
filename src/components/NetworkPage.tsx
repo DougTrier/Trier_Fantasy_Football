@@ -45,6 +45,9 @@ export const NetworkPage: React.FC = () => {
     const [lobbies, setLobbies] = useState<RelayLobby[]>([]);
     const [relayOnline, setRelayOnline] = useState(0);
 
+    // Right-column active tab
+    const [activeTab, setActiveTab] = useState<'peers' | 'advanced'>('peers');
+
     // TURN config state
     const [turnUrl, setTurnUrl] = useState('');
     const [turnUser, setTurnUser] = useState('');
@@ -326,78 +329,92 @@ export const NetworkPage: React.FC = () => {
         });
     };
 
-    return (
-        <div style={{ height: '100%', padding: '2rem', overflowY: 'auto', position: 'relative' }}>
-            {/* HEADER + IDENTITY + FRIENDS + ACTION BUTTONS + EXPORT/IMPORT */}
-            <NodeIdentityPanel
-                myPeerUuid={myPeerUuid}
-                myId={myId}
-                eventCount={eventCount}
-                friends={friends}
-                peers={peers}
-                onFriendsChange={setFriends}
-                showDiagnostics={showDiagnostics}
-                onShowDiagnostics={() => setShowDiagnostics(true)}
-                onShowInviteModal={handleGenerateInvite}
-                onShowJoinModal={() => setShowJoinModal(true)}
-                getStateByNodeId={getStateByNodeId}
-                handleConnect={handleConnect}
-            />
+    // Tab pill styles
+    const tabBtn = (active: boolean): React.CSSProperties => ({
+        flex: 1, padding: '7px 14px', borderRadius: '7px', border: 'none',
+        fontWeight: 800, fontSize: '0.78rem', letterSpacing: '1px', cursor: 'pointer',
+        textTransform: 'uppercase', transition: 'all 0.15s',
+        background: active ? 'rgba(234,179,8,0.2)' : 'transparent',
+        color: active ? '#eab308' : '#6b7280',
+    });
 
-            {/* CUSTOM RELAY URL — optional self-hosted relay, must be wss:// */}
-            <div style={{
-                marginBottom: '1.5rem',
-                background: 'rgba(10,14,26,0.82)', backdropFilter: 'blur(8px)',
-                border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px',
-                padding: '0.85rem 1.25rem',
-                display: 'flex', alignItems: 'center', gap: '0.75rem',
-            }}>
-                <label style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 'bold', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
-                    RELAY URL
-                </label>
-                <input
-                    value={customRelayUrl}
-                    onChange={e => setCustomRelayUrl(e.target.value)}
-                    placeholder="wss://your-relay.example.com (leave blank for default)"
-                    style={{
-                        flex: 1, padding: '0.4rem 0.75rem',
-                        background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.12)',
-                        color: '#fff', borderRadius: '6px', fontSize: '0.8rem', fontFamily: 'monospace',
-                    }}
+    return (
+        // Two-column layout that fills the viewport — no outer scroll
+        <div style={{ height: '100%', display: 'flex', gap: '1.25rem', padding: '1.5rem 2rem', overflow: 'hidden', boxSizing: 'border-box' }}>
+
+            {/* ── LEFT SIDEBAR — Identity, Friends, Actions ─────────────────────── */}
+            <div style={{ width: '340px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem', overflowY: 'auto' }}>
+                <NodeIdentityPanel
+                    myPeerUuid={myPeerUuid}
+                    myId={myId}
+                    eventCount={eventCount}
+                    friends={friends}
+                    peers={peers}
+                    onFriendsChange={setFriends}
+                    showDiagnostics={showDiagnostics}
+                    onShowDiagnostics={() => setShowDiagnostics(true)}
+                    onShowInviteModal={handleGenerateInvite}
+                    onShowJoinModal={() => setShowJoinModal(true)}
+                    getStateByNodeId={getStateByNodeId}
+                    handleConnect={handleConnect}
                 />
-                <button
-                    onClick={handleSaveRelayUrl}
-                    style={{ padding: '0.4rem 1rem', background: '#1d4ed8', border: 'none', color: '#fff', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.8rem' }}
-                >
-                    Save
-                </button>
             </div>
 
-            {/* TURN SERVER CONFIG + GLOBAL NETWORK RELAY PANEL */}
-            <RelayPanel
-                turnUrl={turnUrl}
-                turnUser={turnUser}
-                turnCred={turnCred}
-                onTurnUrlChange={setTurnUrl}
-                onTurnUserChange={setTurnUser}
-                onTurnCredChange={setTurnCred}
-                onTurnSave={handleSaveTurn}
-                onTurnClear={handleTurnClear}
-                turnSaved={turnSaved}
-                relayStatus={relayStatus}
-                relayOnline={relayOnline}
-                lobbies={lobbies}
-                peers={peers}
-                onRelayToggle={handleRelayToggle}
-            />
+            {/* ── RIGHT COLUMN — Tabbed content ─────────────────────────────────── */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
 
-            {/* SCANNING GRID */}
-            <DiscoveredPeersGrid
-                peers={peers}
-                getState={getState}
-                handleConnect={handleConnect}
-                handleTerminate={handleTerminate}
-            />
+                {/* Tab bar */}
+                <div style={{ flexShrink: 0, background: 'rgba(10,14,26,0.82)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '10px', padding: '5px', display: 'flex', gap: '4px', marginBottom: '0.75rem' }}>
+                    <button style={tabBtn(activeTab === 'peers')} onClick={() => setActiveTab('peers')}>Discovered Peers</button>
+                    <button style={tabBtn(activeTab === 'advanced')} onClick={() => setActiveTab('advanced')}>Relay &amp; TURN</button>
+                </div>
+
+                {/* Tab content — inner scroll only */}
+                <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+                    {activeTab === 'peers' ? (
+                        <DiscoveredPeersGrid
+                            peers={peers}
+                            getState={getState}
+                            handleConnect={handleConnect}
+                            handleTerminate={handleTerminate}
+                        />
+                    ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            {/* Custom relay URL */}
+                            <div style={{ background: 'rgba(10,14,26,0.82)', backdropFilter: 'blur(8px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '0.85rem 1.25rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <label style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 'bold', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
+                                    RELAY URL
+                                </label>
+                                <input
+                                    value={customRelayUrl}
+                                    onChange={e => setCustomRelayUrl(e.target.value)}
+                                    placeholder="wss://your-relay.example.com (leave blank for default)"
+                                    style={{ flex: 1, padding: '0.4rem 0.75rem', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.12)', color: '#fff', borderRadius: '6px', fontSize: '0.8rem', fontFamily: 'monospace' }}
+                                />
+                                <button onClick={handleSaveRelayUrl} style={{ padding: '0.4rem 1rem', background: '#1d4ed8', border: 'none', color: '#fff', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.8rem' }}>
+                                    Save
+                                </button>
+                            </div>
+                            <RelayPanel
+                                turnUrl={turnUrl}
+                                turnUser={turnUser}
+                                turnCred={turnCred}
+                                onTurnUrlChange={setTurnUrl}
+                                onTurnUserChange={setTurnUser}
+                                onTurnCredChange={setTurnCred}
+                                onTurnSave={handleSaveTurn}
+                                onTurnClear={handleTurnClear}
+                                turnSaved={turnSaved}
+                                relayStatus={relayStatus}
+                                relayOnline={relayOnline}
+                                lobbies={lobbies}
+                                peers={peers}
+                                onRelayToggle={handleRelayToggle}
+                            />
+                        </div>
+                    )}
+                </div>
+            </div>
 
             {/* MODALS */}
             <InviteModal
@@ -406,7 +423,6 @@ export const NetworkPage: React.FC = () => {
                 expiresAt={inviteExpiresAt}
                 onClose={() => setShowInviteModal(false)}
             />
-
             <JoinModal
                 show={showJoinModal}
                 joinCode={joinCode}
@@ -415,14 +431,12 @@ export const NetworkPage: React.FC = () => {
                 onClose={() => { setShowJoinModal(false); setJoinError(''); }}
                 onRedeem={handleRedeemInvite}
             />
-
             <DiagnosticsModal
                 show={showDiagnostics}
                 peers={peers}
                 getConnection={getConnection}
                 onClose={() => setShowDiagnostics(false)}
             />
-
             <IncomingRequestModal
                 incomingRequest={incomingRequest}
                 onAccept={handleAccept}
