@@ -12,6 +12,8 @@
 import React from 'react';
 import { type LiveGame, type TeamRecord, ScoreboardService } from '../../services/ScoreboardService';
 import { getTeamTheme } from '../../utils/teamThemes';
+import afcLogo from '../../assets/afc_logo.png';
+import nfcLogo from '../../assets/nfc_logo.png';
 
 interface NFLTeamColumnProps {
     conference: 'AFC' | 'NFC';
@@ -143,16 +145,18 @@ export const NFLTeamColumn: React.FC<NFLTeamColumnProps> = ({
             maxHeight: 'calc(100vh - 120px)',
             paddingBottom: '20px',
         }}>
-            {/* Conference header */}
+            {/* Conference logo header */}
             <div style={{
-                fontSize: '0.7rem', fontWeight: 900, letterSpacing: '2px',
-                color: conference === 'AFC' ? '#3b82f6' : '#10b981',
-                textTransform: 'uppercase', marginBottom: '8px',
+                marginBottom: '10px',
                 textAlign: align === 'right' ? 'right' : 'left',
                 paddingLeft: align === 'left' ? '8px' : undefined,
                 paddingRight: align === 'right' ? '8px' : undefined,
             }}>
-                {conference}
+                <img
+                    src={conference === 'AFC' ? afcLogo : nfcLogo}
+                    alt={conference}
+                    style={{ height: '36px', width: 'auto', objectFit: 'contain', opacity: 0.9 }}
+                />
             </div>
 
             {/* Division groups */}
