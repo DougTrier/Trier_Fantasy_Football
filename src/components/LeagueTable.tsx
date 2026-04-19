@@ -38,6 +38,7 @@ import { TeamSnapshotPanel } from './scoreboard/TeamSnapshotPanel';
 import { LiveScoreboardStrip } from './scoreboard/LiveScoreboardStrip';
 import { GameDetailModal } from './scoreboard/GameDetailModal';
 import { ScoringTicker } from './scoreboard/ScoringTicker';
+import { FieldGoalKicker } from './FieldGoalKicker';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 // ChatMessage is local-only — it's never stored in League state or synced.
@@ -53,6 +54,7 @@ interface ChatMessage {
 interface LeagueTableProps {
     league: League;
     myTeamName?: string;
+    isGameday?: boolean; // drives the Field Goal Kicker mini-game visibility
 }
 
 /**
@@ -60,7 +62,7 @@ interface LeagueTableProps {
  * Reads from ScoringEngine (no mutations) and subscribes to SyncService for
  * incoming chat messages. All state is ephemeral: refresh resets chat.
  */
-export const LeagueTable: React.FC<LeagueTableProps> = ({ league, myTeamName }) => {
+export const LeagueTable: React.FC<LeagueTableProps> = ({ league, myTeamName, isGameday = false }) => {
     // status is read once per render; no polling needed because re-renders are
     // triggered by parent (App.tsx) on data file reload or league prop change.
     const status = ScoringEngine.getOrchestrationStatus();
@@ -241,9 +243,9 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({ league, myTeamName }) 
     };
 
     return (
-        // Outer shell: fills <main> exactly via absolute positioning so no content
-        // ever overflows into <main>'s scroll area. Zoom scales everything together.
-        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
+        // Outer shell: fills <main> and scrolls vertically so the mini-game row
+        // below the ticker is reachable. overflowX hidden prevents horizontal drift.
+        <div style={{ position: 'absolute', inset: 0, overflowX: 'hidden', overflowY: 'auto' }}>
         <div className="responsive-container" style={{
             background: 'transparent',
             display: 'grid',
@@ -251,7 +253,7 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({ league, myTeamName }) 
             columnGap: '0',
             justifyContent: 'center', // center the column group within the full-width grid
             width: '100%',
-            height: '100%',
+            minHeight: '100%', // can grow taller than viewport for the mini-game row
             overflowX: 'visible',
             overflowY: 'visible',
             padding: '20px 40px',
@@ -626,6 +628,14 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({ league, myTeamName }) 
                 <ScoringTicker
                     games={ScoreboardService.getLiveGames()}
                     events={ScoreboardService.getTickerItems()}
+                />
+            </div>
+
+            {/* Mini-game — row 3, spans all 5 columns, below the ticker */}
+            <div style={{ gridColumn: '1 / 6', gridRow: 3, paddingTop: '32px', paddingBottom: '32px' }}>
+                <FieldGoalKicker
+                    isGameday={isGameday}
+                    myTeamName={myTeamName ?? ''}
                 />
             </div>
         </div>

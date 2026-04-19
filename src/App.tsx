@@ -47,7 +47,6 @@ import { SeasonArchivePage } from './components/SeasonArchivePage';
 import { RulesPage } from './components/RulesPage';
 import { SettingsPage } from './components/SettingsPage';
 import { DynastyPage } from './components/DynastyPage';
-import { FieldGoalKicker } from './components/FieldGoalKicker';
 import type { DynastySettings } from './types';
 import { H2HPage } from './components/H2HPage';
 import { TradeOfferModal } from './components/TradeOfferModal';
@@ -2015,14 +2014,8 @@ export default function App() {
       )}
 
       {activeView === 'league' && (
-        <>
-          <LeagueTable league={displayLeague} myTeamName={myTeam?.name} />
-          {/* Field Goal Kicker mini-game — gameday only (roadmap 4.6) */}
-          <FieldGoalKicker
-            isGameday={isGameday()}
-            myTeamName={myTeam?.name ?? ''}
-          />
-        </>
+        // FieldGoalKicker is rendered inside LeagueTable as a scrollable row 3 below the ticker
+        <LeagueTable league={displayLeague} myTeamName={myTeam?.name} isGameday={isGameday()} />
       )}
 
       {activeView === 'rules' && <RulesPage />}
