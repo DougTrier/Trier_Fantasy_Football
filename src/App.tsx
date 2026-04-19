@@ -66,6 +66,7 @@ import { P2PService } from './services/P2PService';
 import { IdentityService } from './services/IdentityService';
 import { NetworkPage } from './components/NetworkPage';
 import { GlobalEventStore } from './services/EventStore';
+import { MultiLeagueService, leagueKey, type LeagueSlot } from './services/MultiLeagueService';
 import { ScoringEngine } from './utils/ScoringEngine';
 import { SCORING_PRESETS } from './types';
 import type { ScoringRuleset } from './types';
@@ -177,11 +178,38 @@ import { normalizeTeam } from './utils/dataNormalizer';
 export default function App() {
   const { showAlert, showConfirm, showPrompt } = useDialog();
 
+  // Migrate single-league data to multi-league storage layout on first run.
+  // Safe to call unconditionally — exits immediately if already migrated.
+  MultiLeagueService.migrate();
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // MULTI-LEAGUE STATE
+  // ─────────────────────────────────────────────────────────────────────────────
+  const [leagues, setLeagues] = useState<LeagueSlot[]>(() => {
+    const reg = MultiLeagueService.getRegistry();
+    // If still empty after migration (truly fresh install), create a default slot
+    if (reg.length === 0) {
+      const slot = MultiLeagueService.createLeague("My League");
+      MultiLeagueService.setActiveId(slot.id);
+      return [slot];
+    }
+    return reg;
+  });
+
+  const [activeLeagueId, setActiveLeagueId] = useState<string>(() => {
+    const id = MultiLeagueService.getActiveId();
+    if (id) return id;
+    const first = MultiLeagueService.getRegistry()[0];
+    if (first) { MultiLeagueService.setActiveId(first.id); return first.id; }
+    return '';
+  });
+
   // ─────────────────────────────────────────────────────────────────────────────
   // PERSISTENT STATE — initializers run once at mount, reading from localStorage
   // ─────────────────────────────────────────────────────────────────────────────
   const [userTeams, setUserTeams] = useState<FantasyTeam[]>(() => {
-    const saved = localStorage.getItem('trier_fantasy_all_teams_v3');
+    const lid = MultiLeagueService.getActiveId() || '';
+    const saved = localStorage.getItem(leagueKey.teams(lid));
     try {
       const parsed = saved ? JSON.parse(saved) : null;
       if (Array.isArray(parsed) && parsed.length > 0) {
@@ -193,8 +221,9 @@ export default function App() {
   });
 
   const [activeTeamId, setActiveTeamId] = useState<string>(() => {
+    const lid = MultiLeagueService.getActiveId() || '';
     // Session storage is window-scoped, perfect for multi-instance dev testing
-    return sessionStorage.getItem('trier_fantasy_active_id') || localStorage.getItem('trier_fantasy_active_id') || '';
+    return sessionStorage.getItem('trier_fantasy_active_id') || localStorage.getItem(leagueKey.activeTeam(lid)) || '';
   });
 
   // Anti-Cheat: Game Day Locking Logic (Team-Specific)
@@ -491,10 +520,11 @@ export default function App() {
 
   // Save on Change — keep localStorage always current so close-from-X loses nothing
   useEffect(() => {
-    localStorage.setItem('trier_fantasy_all_teams_v3', JSON.stringify(userTeams));
+    if (!activeLeagueId) return;
+    localStorage.setItem(leagueKey.teams(activeLeagueId), JSON.stringify(userTeams));
     sessionStorage.setItem('trier_fantasy_active_id', activeTeamId);
-    localStorage.setItem('trier_fantasy_active_id', activeTeamId);
-  }, [userTeams, activeTeamId]);
+    localStorage.setItem(leagueKey.activeTeam(activeLeagueId), activeTeamId);
+  }, [userTeams, activeTeamId, activeLeagueId]);
 
   // Ref that always holds the latest userTeams — used in close handlers that are
   // registered once and can't close over a changing state value.
@@ -506,8 +536,9 @@ export default function App() {
   // (clears activeTeamId) so the next session starts on the team-select screen.
   useEffect(() => {
     const doLogout = () => {
-      localStorage.setItem('trier_fantasy_all_teams_v3', JSON.stringify(userTeamsRef.current));
-      localStorage.setItem('trier_fantasy_active_id', '');
+      const lid = MultiLeagueService.getActiveId() || '';
+      if (lid) localStorage.setItem(leagueKey.teams(lid), JSON.stringify(userTeamsRef.current));
+      if (lid) localStorage.setItem(leagueKey.activeTeam(lid), '');
       sessionStorage.removeItem('trier_fantasy_active_id');
     };
 
@@ -804,9 +835,11 @@ export default function App() {
   const handleSaveAndClose = async () => {
     console.log("[App] Executing Save and Close Protocol...");
 
-    // 1. FORCE SYNCHRONOUS SAVE
-    localStorage.setItem('trier_fantasy_all_teams_v3', JSON.stringify(userTeams));
-    localStorage.setItem('trier_fantasy_active_id', ''); // Log out for security
+    // 1. FORCE SYNCHRONOUS SAVE (per-league keys)
+    if (activeLeagueId) {
+      localStorage.setItem(leagueKey.teams(activeLeagueId), JSON.stringify(userTeams));
+      localStorage.setItem(leagueKey.activeTeam(activeLeagueId), ''); // log out for security
+    }
 
     // 2. TAURI EXIT (DESKTOP)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -978,17 +1011,75 @@ export default function App() {
 
   // League State (Standings + H2H Schedule)
   const [league, setLeague] = useState<League>(() => {
+    const lid = MultiLeagueService.getActiveId() || '';
     try {
-      const saved = localStorage.getItem('trier_fantasy_league_v1');
+      const saved = localStorage.getItem(leagueKey.league(lid));
       if (saved) return JSON.parse(saved) as League;
     } catch { /* fall through */ }
-    return { id: 'league-1', name: "Trier's Fantasy League", teams: [], history: [] };
+    const slotName = MultiLeagueService.getRegistry().find(s => s.id === lid)?.name || "My League";
+    return { id: lid || 'league-1', name: slotName, teams: [], history: [] };
   });
   // Persist league and keep ScoringEngine in sync with the active ruleset.
   useEffect(() => {
-    localStorage.setItem('trier_fantasy_league_v1', JSON.stringify(league));
+    if (activeLeagueId) {
+      localStorage.setItem(leagueKey.league(activeLeagueId), JSON.stringify(league));
+      // Keep registry display name in sync with league.name
+      MultiLeagueService.renameLeague(activeLeagueId, league.name);
+      setLeagues(MultiLeagueService.getRegistry());
+    }
     ScoringEngine.setRuleset(league.settings?.ruleset ?? SCORING_PRESETS.PPR);
-  }, [league]);
+  }, [league, activeLeagueId]);
+
+  // ── Multi-League Handlers ─────────────────────────────────────────────────
+
+  const handleSwitchLeague = (newId: string) => {
+    if (newId === activeLeagueId) return;
+
+    // Persist current league's data before switching
+    localStorage.setItem(leagueKey.teams(activeLeagueId), JSON.stringify(userTeams));
+    localStorage.setItem(leagueKey.league(activeLeagueId), JSON.stringify(league));
+    localStorage.setItem(leagueKey.activeTeam(activeLeagueId), activeTeamId);
+
+    // Activate the new league slot
+    MultiLeagueService.setActiveId(newId);
+    setActiveLeagueId(newId);
+    setActiveTeamId('');
+
+    const savedTeams = localStorage.getItem(leagueKey.teams(newId));
+    const savedLeague = localStorage.getItem(leagueKey.league(newId));
+    const savedActive = localStorage.getItem(leagueKey.activeTeam(newId));
+
+    const slotName = MultiLeagueService.getRegistry().find(s => s.id === newId)?.name || 'New League';
+    setUserTeams(savedTeams ? (JSON.parse(savedTeams) as FantasyTeam[]).map(normalizeTeam) : [normalizeTeam(formatInitialTeam())]);
+    setLeague(savedLeague ? JSON.parse(savedLeague) as League : { id: newId, name: slotName, teams: [], history: [] });
+    setActiveTeamId(savedActive || '');
+
+    // Switch EventStore to the new league's event log
+    GlobalEventStore.setLeagueId(newId);
+  };
+
+  const handleCreateLeague = async () => {
+    const name = await showPrompt('League name:', 'New League', 'Create New League');
+    if (!name?.trim()) return;
+    const slot = MultiLeagueService.createLeague(name.trim());
+    setLeagues(MultiLeagueService.getRegistry());
+    handleSwitchLeague(slot.id);
+  };
+
+  const handleDeleteLeague = async (id: string) => {
+    if (leagues.length <= 1) {
+      await showAlert('You must have at least one league.', 'Cannot Delete');
+      return;
+    }
+    const slot = leagues.find(s => s.id === id);
+    if (!await showConfirm(`Delete "${slot?.name || id}" and all its data? This cannot be undone.`, 'Delete League', 'DELETE')) return;
+    MultiLeagueService.deleteLeague(id);
+    const updated = MultiLeagueService.getRegistry();
+    setLeagues(updated);
+    if (activeLeagueId === id && updated.length > 0) {
+      handleSwitchLeague(updated[0].id);
+    }
+  };
 
   // Handler passed to SettingsPage — updates league.settings.ruleset and persists.
   const handleUpdateRuleset = (ruleset: ScoringRuleset) => {
@@ -1641,6 +1732,11 @@ export default function App() {
       onSelectTeam={setActiveTeamId}
       onSaveAndClose={handleSaveAndClose}
       hasNewOffers={hasNewOffers}
+      leagues={leagues}
+      activeLeagueId={activeLeagueId}
+      onSwitchLeague={handleSwitchLeague}
+      onCreateLeague={handleCreateLeague}
+      onDeleteLeague={handleDeleteLeague}
     >
       {activeView === 'dashboard' && (
         !activeTeamId || activeTeamId === 'guest' || !myTeam ? (

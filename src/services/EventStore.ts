@@ -38,11 +38,12 @@ import type { EventLogEntry } from '../types/P2P';
 /** Maximum events retained per author node. Oldest are dropped when exceeded. */
 const MAX_EVENTS_PER_NODE = 500;
 
-const STORAGE_KEY = 'trier_event_log';
+const DEFAULT_STORAGE_KEY = 'trier_event_log';
 
 export class EventStore {
     private events: EventLogEntry[] = [];
     private subscriptions: ((events: EventLogEntry[]) => void)[] = [];
+    private storageKey = DEFAULT_STORAGE_KEY;
 
     constructor() {
         this.hydrate();
@@ -51,7 +52,7 @@ export class EventStore {
     /** Load persisted events from localStorage on startup. */
     private hydrate(): void {
         try {
-            const raw = localStorage.getItem(STORAGE_KEY);
+            const raw = localStorage.getItem(this.storageKey);
             if (!raw) return;
             const parsed: EventLogEntry[] = JSON.parse(raw);
             // Re-validate every stored event — reject anything corrupted
@@ -86,7 +87,7 @@ export class EventStore {
             if (capped.length !== this.events.length) {
                 this.events = capped.sort((a, b) => a.seq - b.seq);
             }
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(this.events));
+            localStorage.setItem(this.storageKey, JSON.stringify(this.events));
         } catch (e) {
             console.warn('[EventStore] Failed to flush to storage.', e);
         }
@@ -160,6 +161,14 @@ export class EventStore {
 
     private notify() {
         this.subscriptions.forEach(sub => sub(this.events));
+    }
+
+    /** Switch to a different league's event log. Flushes pending events and reloads from storage. */
+    public setLeagueId(leagueId: string): void {
+        this.storageKey = leagueId ? `trier_events_${leagueId}` : DEFAULT_STORAGE_KEY;
+        this.events = [];
+        this.hydrate();
+        this.notify();
     }
 }
 

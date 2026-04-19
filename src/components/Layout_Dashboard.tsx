@@ -23,11 +23,12 @@
 // External imports — lucide-react icons are tree-shaken at build time so only
 // the imported names contribute to bundle size. Each icon is ~1KB gzipped.
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Users, Trophy, User, Settings, LogOut, BookOpen, Swords, Wallet, Zap, ArrowRightLeft, Wifi, ClipboardList, Gavel, TrendingUp, Archive } from 'lucide-react';
+import { LayoutDashboard, Users, Trophy, User, Settings, LogOut, BookOpen, Swords, Wallet, Zap, ArrowRightLeft, Wifi, ClipboardList, Gavel, TrendingUp, Archive, ChevronDown, Plus, Trash2 } from 'lucide-react';
 // ScoringEngine is read-only here (getOrchestrationStatus); no mutation occurs.
 // It is imported as a module-level singleton — no React state needed for status.
 import { ScoringEngine } from '../utils/ScoringEngine';
 import type { FantasyTeam } from '../types';
+import type { LeagueSlot } from '../services/MultiLeagueService';
 // Static assets — resolved to hashed filenames by Vite at build time.
 import turfBg from '../assets/turf1.jpg';
 import leatherTexture from '../assets/leather_texture.png';
@@ -161,6 +162,12 @@ interface LayoutDashboardProps {
     onSelectTeam: (id: string) => void;
     onSaveAndClose: () => void;
     hasNewOffers?: boolean;
+    // Multi-league
+    leagues?: LeagueSlot[];
+    activeLeagueId?: string;
+    onSwitchLeague?: (id: string) => void;
+    onCreateLeague?: () => void;
+    onDeleteLeague?: (id: string) => void;
 }
 
 /**
@@ -178,8 +185,15 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
     activeTeamId,
     onSelectTeam,
     onSaveAndClose,
-    hasNewOffers
+    hasNewOffers,
+    leagues = [],
+    activeLeagueId = '',
+    onSwitchLeague,
+    onCreateLeague,
+    onDeleteLeague,
 }) => {
+    const [leagueMenuOpen, setLeagueMenuOpen] = useState(false);
+
     // Find the active team from the userTeams array for KPI display.
     // Linear scan is fine — leagues rarely exceed 20 teams.
     const activeTeam = userTeams.find(t => t.id === activeTeamId);
@@ -302,6 +316,68 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
                         />
                     </div>
                 </div>
+
+                {/* ── League Switcher ───────────────────────────────────────────
+                    Compact dropdown: shows active league name, lists others, allows
+                    creating or deleting leagues. Rendered above the status bar. */}
+                {leagues.length > 0 && (
+                    <div style={{ position: 'relative', marginBottom: 'clamp(3px, 0.5vh, 7px)', zIndex: 30 }}>
+                        <button
+                            onClick={() => setLeagueMenuOpen(v => !v)}
+                            style={{
+                                width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                padding: '5px 10px', background: 'rgba(234,179,8,0.12)',
+                                border: '1px solid rgba(234,179,8,0.4)', borderRadius: '8px',
+                                color: '#eab308', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 700,
+                                letterSpacing: '0.04em', gap: '6px',
+                            }}
+                        >
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {leagues.find(l => l.id === activeLeagueId)?.name || 'Select League'}
+                            </span>
+                            <ChevronDown size={12} style={{ flexShrink: 0, transform: leagueMenuOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                        </button>
+
+                        {leagueMenuOpen && (
+                            <div style={{
+                                position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0,
+                                background: 'rgba(10,14,26,0.97)', backdropFilter: 'blur(8px)',
+                                border: '1px solid rgba(234,179,8,0.35)', borderRadius: '8px',
+                                overflow: 'hidden', zIndex: 100,
+                                boxShadow: '0 8px 24px rgba(0,0,0,0.7)',
+                            }}>
+                                {leagues.map(slot => (
+                                    <div key={slot.id} style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '6px 8px', background: slot.id === activeLeagueId ? 'rgba(234,179,8,0.15)' : 'transparent', cursor: 'pointer' }}
+                                        onClick={() => { onSwitchLeague?.(slot.id); setLeagueMenuOpen(false); }}>
+                                        <span style={{ flex: 1, fontSize: '0.78rem', color: slot.id === activeLeagueId ? '#eab308' : '#d1d5db', fontWeight: slot.id === activeLeagueId ? 700 : 400, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                            {slot.name}
+                                        </span>
+                                        {slot.id === activeLeagueId && (
+                                            <span style={{ fontSize: '0.6rem', color: '#eab308', fontWeight: 800, flexShrink: 0 }}>●</span>
+                                        )}
+                                        {leagues.length > 1 && (
+                                            <button
+                                                onClick={e => { e.stopPropagation(); onDeleteLeague?.(slot.id); setLeagueMenuOpen(false); }}
+                                                title="Delete league"
+                                                style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', padding: '0 2px', display: 'flex', alignItems: 'center', flexShrink: 0 }}
+                                            >
+                                                <Trash2 size={11} />
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
+                                <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', padding: '5px 8px' }}>
+                                    <button
+                                        onClick={() => { onCreateLeague?.(); setLeagueMenuOpen(false); }}
+                                        style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '5px', background: 'none', border: 'none', color: '#60a5fa', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600, padding: '3px 0' }}
+                                    >
+                                        <Plus size={12} /> New League
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* Orchestration Status Bar — green dot = VALIDATED (cross-checked),
                     red dot = any other state (in-progress, provisional, or missing).
