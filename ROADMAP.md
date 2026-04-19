@@ -117,11 +117,12 @@ Deeper data features that make Trier stand out as a research platform.
 - ✅ Avg points by position bar chart (projected gold vs actual green)
 - ✅ Recharts installed for chart rendering
 
-### 3.2 Waiver Wire Intelligence
-- AI-ranked add candidates each week based on projected points and roster need
-- "Handcuff" suggestions — identify the backup RB for every starter on your roster
-- Injury report integration (pull from Sleeper API, already in the data pipeline)
-- Trending players widget on the dashboard (biggest ownership changes week-over-week)
+### 3.2 Waiver Wire Intelligence ✅
+- ✅ INTEL tab in Waiver Wire — toggles from list view to intelligence panel
+- ✅ AI Top Picks — composite score (projected pts × boom bonus × ownership %)
+- ✅ Handcuff Targets — free agent RBs on same NFL team as user's rostered RBs
+- ✅ Trending Now — free agents ranked by platform ownership % with inline bar
+- ⏭ Injury report integration — requires Sleeper API pipeline extension (deferred)
 
 ### 3.3 IDP Full Mode
 The data models support LB/DL/DB — just the scoring UI and roster slots need extending.

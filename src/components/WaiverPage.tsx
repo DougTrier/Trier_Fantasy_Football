@@ -14,7 +14,7 @@
  *   that calls onProcessWaivers() immediately.
  */
 import React, { useState, useEffect, useMemo } from 'react';
-import { Gavel, Clock, DollarSign, X, ChevronDown, CheckCircle, XCircle, AlertCircle, Info } from 'lucide-react';
+import { Gavel, Clock, DollarSign, X, ChevronDown, CheckCircle, XCircle, AlertCircle, Info, Brain, Link2, TrendingUp } from 'lucide-react';
 import type { FantasyTeam, Player, WaiverBid } from '../types';
 import {
     getFreeAgents, placeBid, cancelBid,
@@ -180,6 +180,8 @@ export const WaiverPage: React.FC<WaiverPageProps> = ({
     const [search, setSearch] = useState('');
     const [bidTarget, setBidTarget] = useState<Player | null>(null);
     const [showHelp, setShowHelp] = useState(false);
+    // 'list' = normal free agent pool, 'intel' = AI intelligence panel
+    const [viewMode, setViewMode] = useState<'list' | 'intel'>('list');
     // Countdown to next Tuesday 02:00 processing window
     const [countdown, setCountdown] = useState(() => getNextWaiverTime() - Date.now());
 
@@ -219,6 +221,51 @@ export const WaiverPage: React.FC<WaiverPageProps> = ({
     // Find existing pending bid for a given player
     const existingBidFor = (playerId: string) =>
         myPendingBids.find(b => b.playerId === playerId);
+
+    // ── Intelligence Data ─────────────────────────────────────────────────────
+
+    // AI composite score: projected pts weighted highest, boom bonus for over-performers,
+    // platform ownership % as a tiebreaker for equal-projection players.
+    const aiTopPicks = useMemo(() => {
+        return freeAgents
+            .filter(p => (p.projectedPoints ?? 0) > 0)
+            .map(p => ({
+                ...p,
+                _score: (p.projectedPoints ?? 0) * 0.7
+                    + Math.max(0, p.performance_differential ?? 0) * 0.4
+                    + parseFloat((p.ownership ?? '0').replace('%', '')) * 0.3,
+            }))
+            .sort((a, b) => b._score - a._score)
+            .slice(0, 20);
+    }, [freeAgents]);
+
+    // Handcuff targets: free agent RBs on the same NFL team as the user's rostered RBs.
+    // If the starter goes down, the backup instantly becomes the starter.
+    const handcuffTargets = useMemo(() => {
+        const myRBs = [
+            ...Object.values(myTeam.roster || {}).filter((p): p is Player => p?.position === 'RB'),
+            ...(myTeam.bench || []).filter(p => p?.position === 'RB'),
+        ];
+        const results: Array<{ starter: Player; backup: Player }> = [];
+        myRBs.forEach(starter => {
+            freeAgents
+                .filter(p => p.position === 'RB' && p.team === starter.team && p.id !== starter.id)
+                .forEach(backup => results.push({ starter, backup }));
+        });
+        return results.slice(0, 12);
+    }, [freeAgents, myTeam]);
+
+    // Trending: highest platform ownership % among free agents — proxy for league-wide demand.
+    const trendingPlayers = useMemo(() =>
+        [...freeAgents]
+            .filter(p => parseFloat((p.ownership ?? '0').replace('%', '')) > 0)
+            .sort((a, b) =>
+                parseFloat((b.ownership ?? '0').replace('%', '')) -
+                parseFloat((a.ownership ?? '0').replace('%', ''))
+            )
+            .slice(0, 15),
+        [freeAgents]
+    );
 
     const sectionLabel: React.CSSProperties = {
         fontSize: '0.58rem', fontWeight: 900, color: '#6b7280',
@@ -265,9 +312,10 @@ export const WaiverPage: React.FC<WaiverPageProps> = ({
                         </button>
                     </div>
 
-                    {/* Position tabs */}
-                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '10px' }}>
-                        {POSITIONS.map(pos => (
+                    {/* Position tabs + INTEL toggle */}
+                    <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '10px', alignItems: 'center' }}>
+                        {/* Normal position filters — hidden when in intel mode */}
+                        {viewMode === 'list' && POSITIONS.map(pos => (
                             <button key={pos} onClick={() => setPosFilter(pos)} style={{
                                 padding: '4px 10px', borderRadius: '12px', cursor: 'pointer',
                                 border: 'none', fontSize: '0.65rem', fontWeight: 800,
@@ -276,6 +324,22 @@ export const WaiverPage: React.FC<WaiverPageProps> = ({
                                 transition: 'all 0.12s',
                             }}>{pos}</button>
                         ))}
+                        {/* INTEL tab — always visible, toggles mode */}
+                        <button
+                            onClick={() => setViewMode(v => v === 'intel' ? 'list' : 'intel')}
+                            style={{
+                                padding: '4px 10px', borderRadius: '12px', cursor: 'pointer',
+                                border: viewMode === 'intel' ? '1px solid rgba(168,85,247,0.6)' : '1px solid rgba(168,85,247,0.25)',
+                                fontSize: '0.65rem', fontWeight: 800,
+                                background: viewMode === 'intel' ? 'rgba(168,85,247,0.25)' : 'rgba(168,85,247,0.08)',
+                                color: viewMode === 'intel' ? '#c084fc' : '#7c3aed',
+                                display: 'flex', alignItems: 'center', gap: '4px',
+                                marginLeft: viewMode === 'list' ? '6px' : 0,
+                                transition: 'all 0.12s',
+                            }}
+                        >
+                            <Brain size={11} /> INTEL
+                        </button>
                     </div>
 
                     {/* Search */}
@@ -291,81 +355,217 @@ export const WaiverPage: React.FC<WaiverPageProps> = ({
                     />
                 </div>
 
-                {/* Column headers */}
-                <div style={{
-                    display: 'grid', gridTemplateColumns: '50px 1fr 60px 60px 80px', columnGap: '12px',
-                    padding: '6px 18px', background: 'rgba(0,0,0,0.3)',
-                    borderBottom: '1px solid rgba(255,255,255,0.05)', flexShrink: 0,
-                }}>
-                    {['POS', 'PLAYER', 'PROJ', 'ADP', ''].map((h, i) => (
-                        <span key={i} style={{ ...sectionLabel, textAlign: i >= 2 ? 'center' : 'left' }}>{h}</span>
-                    ))}
-                </div>
+                {/* Column headers — hidden in intel mode */}
+                {viewMode === 'list' && (
+                    <div style={{
+                        display: 'grid', gridTemplateColumns: '50px 1fr 60px 60px 80px', columnGap: '12px',
+                        padding: '6px 18px', background: 'rgba(0,0,0,0.3)',
+                        borderBottom: '1px solid rgba(255,255,255,0.05)', flexShrink: 0,
+                    }}>
+                        {['POS', 'PLAYER', 'PROJ', 'ADP', ''].map((h, i) => (
+                            <span key={i} style={{ ...sectionLabel, textAlign: i >= 2 ? 'center' : 'left' }}>{h}</span>
+                        ))}
+                    </div>
+                )}
 
-                {/* Player rows */}
-                <div style={{ flex: 1, overflowY: 'auto', scrollbarWidth: 'thin', scrollbarColor: '#eab308 rgba(0,0,0,0.2)' }}>
-                    {filtered.slice(0, 150).map(player => {
-                        const bid = existingBidFor(player.id);
-                        return (
-                            <div key={player.id} style={{
-                                display: 'grid', gridTemplateColumns: '50px 1fr 60px 60px 80px', columnGap: '12px',
-                                alignItems: 'center', padding: '8px 18px',
-                                borderBottom: '1px solid rgba(255,255,255,0.03)',
-                                background: bid ? 'rgba(234,179,8,0.05)' : 'transparent',
-                                transition: 'background 0.1s',
-                            }}
-                                onMouseEnter={e => (e.currentTarget.style.background = bid ? 'rgba(234,179,8,0.1)' : 'rgba(255,255,255,0.03)')}
-                                onMouseLeave={e => (e.currentTarget.style.background = bid ? 'rgba(234,179,8,0.05)' : 'transparent')}
-                            >
-                                {/* Position badge */}
-                                <span style={{
-                                    fontSize: '0.62rem', fontWeight: 900, padding: '2px 6px',
-                                    borderRadius: '5px', display: 'inline-block', textAlign: 'center',
-                                    background: `${POS_COLOR[player.position] || '#9ca3af'}20`,
-                                    color: POS_COLOR[player.position] || '#9ca3af',
-                                    border: `1px solid ${POS_COLOR[player.position] || '#9ca3af'}40`,
-                                }}>{player.position}</span>
-
-                                {/* Name + team */}
-                                <div>
-                                    <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#e5e7eb' }}>
-                                        {player.firstName} {player.lastName}
-                                        {bid && <span style={{ marginLeft: '6px', fontSize: '0.58rem', color: '#eab308', fontWeight: 900 }}>BID ${bid.bidAmount}</span>}
+                {/* ── List mode: normal free agent rows ────────────────────── */}
+                {viewMode === 'list' && (
+                    <div style={{ flex: 1, overflowY: 'auto', scrollbarWidth: 'thin', scrollbarColor: '#eab308 rgba(0,0,0,0.2)' }}>
+                        {filtered.slice(0, 150).map(player => {
+                            const bid = existingBidFor(player.id);
+                            return (
+                                <div key={player.id} style={{
+                                    display: 'grid', gridTemplateColumns: '50px 1fr 60px 60px 80px', columnGap: '12px',
+                                    alignItems: 'center', padding: '8px 18px',
+                                    borderBottom: '1px solid rgba(255,255,255,0.03)',
+                                    background: bid ? 'rgba(234,179,8,0.05)' : 'transparent',
+                                    transition: 'background 0.1s',
+                                }}
+                                    onMouseEnter={e => (e.currentTarget.style.background = bid ? 'rgba(234,179,8,0.1)' : 'rgba(255,255,255,0.03)')}
+                                    onMouseLeave={e => (e.currentTarget.style.background = bid ? 'rgba(234,179,8,0.05)' : 'transparent')}
+                                >
+                                    <span style={{
+                                        fontSize: '0.62rem', fontWeight: 900, padding: '2px 6px',
+                                        borderRadius: '5px', display: 'inline-block', textAlign: 'center',
+                                        background: `${POS_COLOR[player.position] || '#9ca3af'}20`,
+                                        color: POS_COLOR[player.position] || '#9ca3af',
+                                        border: `1px solid ${POS_COLOR[player.position] || '#9ca3af'}40`,
+                                    }}>{player.position}</span>
+                                    <div>
+                                        <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#e5e7eb' }}>
+                                            {player.firstName} {player.lastName}
+                                            {bid && <span style={{ marginLeft: '6px', fontSize: '0.58rem', color: '#eab308', fontWeight: 900 }}>BID ${bid.bidAmount}</span>}
+                                        </div>
+                                        <div style={{ fontSize: '0.62rem', color: '#4b5563', fontWeight: 600 }}>{player.team}</div>
                                     </div>
-                                    <div style={{ fontSize: '0.62rem', color: '#4b5563', fontWeight: 600 }}>{player.team}</div>
+                                    <span style={{ fontSize: '0.78rem', fontWeight: 900, color: '#10b981', textAlign: 'center' }}>
+                                        {player.projectedPoints?.toFixed(0) ?? '—'}
+                                    </span>
+                                    <span style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 700, textAlign: 'center' }}>
+                                        {player.adp ?? '—'}
+                                    </span>
+                                    <button
+                                        onClick={() => setBidTarget(player)}
+                                        style={{
+                                            padding: '5px 10px', borderRadius: '8px', cursor: 'pointer',
+                                            fontWeight: 800, fontSize: '0.65rem', letterSpacing: '0.5px',
+                                            border: bid ? '1px solid rgba(234,179,8,0.5)' : '1px solid rgba(255,255,255,0.15)',
+                                            background: bid ? 'rgba(234,179,8,0.15)' : 'rgba(255,255,255,0.07)',
+                                            color: bid ? '#eab308' : '#9ca3af',
+                                            transition: 'all 0.12s',
+                                        }}
+                                    >{bid ? '✏ Edit Bid' : '+ Bid'}</button>
                                 </div>
-
-                                {/* Proj pts */}
-                                <span style={{ fontSize: '0.78rem', fontWeight: 900, color: '#10b981', textAlign: 'center' }}>
-                                    {player.projectedPoints?.toFixed(0) ?? '—'}
-                                </span>
-
-                                {/* ADP */}
-                                <span style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 700, textAlign: 'center' }}>
-                                    {player.adp ?? '—'}
-                                </span>
-
-                                {/* Bid button */}
-                                <button
-                                    onClick={() => setBidTarget(player)}
-                                    style={{
-                                        padding: '5px 10px', borderRadius: '8px', cursor: 'pointer',
-                                        fontWeight: 800, fontSize: '0.65rem', letterSpacing: '0.5px',
-                                        border: bid ? '1px solid rgba(234,179,8,0.5)' : '1px solid rgba(255,255,255,0.15)',
-                                        background: bid ? 'rgba(234,179,8,0.15)' : 'rgba(255,255,255,0.07)',
-                                        color: bid ? '#eab308' : '#9ca3af',
-                                        transition: 'all 0.12s',
-                                    }}
-                                >{bid ? '✏ Edit Bid' : '+ Bid'}</button>
+                            );
+                        })}
+                        {filtered.length === 0 && (
+                            <div style={{ padding: '48px', textAlign: 'center', color: '#4b5563', fontSize: '0.8rem', fontStyle: 'italic' }}>
+                                No free agents match your filter
                             </div>
-                        );
-                    })}
-                    {filtered.length === 0 && (
-                        <div style={{ padding: '48px', textAlign: 'center', color: '#4b5563', fontSize: '0.8rem', fontStyle: 'italic' }}>
-                            No free agents match your filter
+                        )}
+                    </div>
+                )}
+
+                {/* ── Intel mode: AI picks, handcuffs, trending ────────────── */}
+                {viewMode === 'intel' && (
+                    <div style={{ flex: 1, overflowY: 'auto', padding: '16px', scrollbarWidth: 'thin', scrollbarColor: '#7c3aed rgba(0,0,0,0.2)' }}>
+
+                        {/* Section 1: AI Top Picks */}
+                        <div style={{ marginBottom: '24px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '10px' }}>
+                                <Brain size={13} color="#c084fc" />
+                                <span style={{ fontSize: '0.65rem', fontWeight: 900, color: '#c084fc', textTransform: 'uppercase', letterSpacing: '1.5px' }}>
+                                    AI Top Picks
+                                </span>
+                                <span style={{ fontSize: '0.58rem', color: '#4b5563' }}>projected × boom bonus × ownership</span>
+                            </div>
+                            {aiTopPicks.map((p, i) => {
+                                const bid = existingBidFor(p.id);
+                                const isBoom = (p.performance_differential ?? 0) >= 20;
+                                return (
+                                    <div key={p.id} style={{
+                                        display: 'flex', alignItems: 'center', gap: '10px',
+                                        padding: '8px 10px', borderRadius: '8px', marginBottom: '4px',
+                                        background: i === 0 ? 'rgba(168,85,247,0.12)' : 'rgba(255,255,255,0.03)',
+                                        border: i === 0 ? '1px solid rgba(168,85,247,0.3)' : '1px solid transparent',
+                                    }}>
+                                        <span style={{ fontSize: '0.65rem', color: '#4b5563', fontWeight: 700, width: '18px', textAlign: 'right', flexShrink: 0 }}>{i + 1}</span>
+                                        <span style={{
+                                            fontSize: '0.58rem', fontWeight: 900, padding: '2px 5px', borderRadius: '4px', flexShrink: 0,
+                                            background: `${POS_COLOR[p.position] || '#9ca3af'}20`,
+                                            color: POS_COLOR[p.position] || '#9ca3af',
+                                        }}>{p.position}</span>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#e5e7eb', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                {p.firstName} {p.lastName}
+                                                {isBoom && <span style={{ marginLeft: '5px', fontSize: '0.55rem', color: '#10b981', fontWeight: 900 }}>BOOM</span>}
+                                            </div>
+                                            <div style={{ fontSize: '0.6rem', color: '#4b5563' }}>{p.team} · {p.projectedPoints?.toFixed(0)} proj</div>
+                                        </div>
+                                        <span style={{ fontSize: '0.65rem', color: '#c084fc', fontWeight: 800, flexShrink: 0 }}>{p._score.toFixed(0)}</span>
+                                        <button onClick={() => setBidTarget(p)} style={{
+                                            padding: '4px 9px', borderRadius: '6px', cursor: 'pointer', fontWeight: 800, fontSize: '0.62rem',
+                                            border: bid ? '1px solid rgba(234,179,8,0.5)' : '1px solid rgba(168,85,247,0.4)',
+                                            background: bid ? 'rgba(234,179,8,0.12)' : 'rgba(168,85,247,0.1)',
+                                            color: bid ? '#eab308' : '#c084fc',
+                                        }}>{bid ? `$${bid.bidAmount}` : '+ Bid'}</button>
+                                    </div>
+                                );
+                            })}
                         </div>
-                    )}
-                </div>
+
+                        {/* Section 2: Handcuff Targets */}
+                        <div style={{ marginBottom: '24px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '10px' }}>
+                                <Link2 size={13} color="#10b981" />
+                                <span style={{ fontSize: '0.65rem', fontWeight: 900, color: '#10b981', textTransform: 'uppercase', letterSpacing: '1.5px' }}>
+                                    Handcuff Targets
+                                </span>
+                                <span style={{ fontSize: '0.58rem', color: '#4b5563' }}>backup RBs for your starters</span>
+                            </div>
+                            {handcuffTargets.length === 0 ? (
+                                <div style={{ fontSize: '0.72rem', color: '#4b5563', fontStyle: 'italic', padding: '12px 0' }}>
+                                    {(myTeam.bench || []).some(p => p.position === 'RB') || Object.values(myTeam.roster || {}).some(p => p?.position === 'RB')
+                                        ? 'No free agent RBs found on your starters\' teams.'
+                                        : 'Add an RB to your roster to see handcuff suggestions.'}
+                                </div>
+                            ) : handcuffTargets.map(({ starter, backup }) => {
+                                const bid = existingBidFor(backup.id);
+                                return (
+                                    <div key={`${starter.id}-${backup.id}`} style={{
+                                        display: 'flex', alignItems: 'center', gap: '10px',
+                                        padding: '8px 10px', borderRadius: '8px', marginBottom: '4px',
+                                        background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.15)',
+                                    }}>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ fontSize: '0.62rem', color: '#6b7280', marginBottom: '2px' }}>
+                                                Backup for <span style={{ color: '#10b981', fontWeight: 800 }}>{starter.firstName} {starter.lastName}</span>
+                                            </div>
+                                            <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#e5e7eb' }}>
+                                                {backup.firstName} {backup.lastName}
+                                            </div>
+                                            <div style={{ fontSize: '0.6rem', color: '#4b5563' }}>{backup.team} · {backup.projectedPoints?.toFixed(0) ?? '—'} proj</div>
+                                        </div>
+                                        <button onClick={() => setBidTarget(backup)} style={{
+                                            padding: '4px 9px', borderRadius: '6px', cursor: 'pointer', fontWeight: 800, fontSize: '0.62rem',
+                                            border: bid ? '1px solid rgba(234,179,8,0.5)' : '1px solid rgba(16,185,129,0.4)',
+                                            background: bid ? 'rgba(234,179,8,0.12)' : 'rgba(16,185,129,0.1)',
+                                            color: bid ? '#eab308' : '#10b981',
+                                        }}>{bid ? `$${bid.bidAmount}` : '+ Bid'}</button>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {/* Section 3: Trending Now (highest platform ownership among free agents) */}
+                        <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '10px' }}>
+                                <TrendingUp size={13} color="#3b82f6" />
+                                <span style={{ fontSize: '0.65rem', fontWeight: 900, color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '1.5px' }}>
+                                    Trending Now
+                                </span>
+                                <span style={{ fontSize: '0.58rem', color: '#4b5563' }}>highest platform ownership %</span>
+                            </div>
+                            {trendingPlayers.map((p, i) => {
+                                const bid = existingBidFor(p.id);
+                                const pct = parseFloat((p.ownership ?? '0').replace('%', ''));
+                                return (
+                                    <div key={p.id} style={{
+                                        display: 'flex', alignItems: 'center', gap: '10px',
+                                        padding: '7px 10px', borderRadius: '8px', marginBottom: '4px',
+                                        background: 'rgba(59,130,246,0.05)', border: '1px solid rgba(59,130,246,0.1)',
+                                    }}>
+                                        <span style={{ fontSize: '0.65rem', color: '#4b5563', fontWeight: 700, width: '18px', textAlign: 'right', flexShrink: 0 }}>{i + 1}</span>
+                                        <span style={{
+                                            fontSize: '0.58rem', fontWeight: 900, padding: '2px 5px', borderRadius: '4px', flexShrink: 0,
+                                            background: `${POS_COLOR[p.position] || '#9ca3af'}20`,
+                                            color: POS_COLOR[p.position] || '#9ca3af',
+                                        }}>{p.position}</span>
+                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#e5e7eb', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                {p.firstName} {p.lastName}
+                                            </div>
+                                            <div style={{ fontSize: '0.6rem', color: '#4b5563' }}>{p.team} · {p.projectedPoints?.toFixed(0)} proj</div>
+                                        </div>
+                                        {/* Ownership bar */}
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexShrink: 0 }}>
+                                            <div style={{ width: '50px', height: '4px', borderRadius: '2px', background: 'rgba(255,255,255,0.1)' }}>
+                                                <div style={{ height: '100%', borderRadius: '2px', width: `${pct}%`, background: '#3b82f6' }} />
+                                            </div>
+                                            <span style={{ fontSize: '0.62rem', color: '#3b82f6', fontWeight: 800, width: '34px' }}>{pct.toFixed(0)}%</span>
+                                        </div>
+                                        <button onClick={() => setBidTarget(p)} style={{
+                                            padding: '4px 9px', borderRadius: '6px', cursor: 'pointer', fontWeight: 800, fontSize: '0.62rem',
+                                            border: bid ? '1px solid rgba(234,179,8,0.5)' : '1px solid rgba(59,130,246,0.4)',
+                                            background: bid ? 'rgba(234,179,8,0.12)' : 'rgba(59,130,246,0.08)',
+                                            color: bid ? '#eab308' : '#3b82f6',
+                                        }}>{bid ? `$${bid.bidAmount}` : '+ Bid'}</button>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* ── Right: Bids + Status ──────────────────────────────────────── */}
