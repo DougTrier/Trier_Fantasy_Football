@@ -28,12 +28,7 @@ The architecture exists (DiscoveryService.generateInvite / redeemInvite) but the
 - System tray notification when teams lock ("Chiefs vs Broncos just kicked off — roster locked")
 - Visual countdown timer on locked players showing when the game ends
 
-### 1.3 X (Twitter) Video Adapter **[Partial]**
-`VideoPipelineService` already has X as a provider type; the adapter isn't fully implemented.
-- Complete the X video embed adapter in `UniversalVideoPlayer`
-- Add X video results to the Tier A/B scout film search
-
-### 1.4 System Tray Integration
+### 1.3 System Tray Integration
 Tauri supports native system tray. Minimal footprint while the app is "running in background."
 - Show badge count for pending trade offers
 - Notification when a peer connects or disconnects

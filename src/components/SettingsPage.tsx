@@ -288,16 +288,45 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                         {/* ── YouTube API Key ───────────────────────────────────── */}
                         {isAdmin && (
                             <div style={{ background: 'rgba(255,0,0,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '18px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                                {/* Header row with status badge */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
                                     <Youtube size={16} color="#ef4444" />
                                     <span style={{ fontWeight: 800, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '1px' }}>YouTube API Key</span>
                                     <span style={{ fontSize: '0.65rem', color: ytApiKey ? '#10b981' : '#6b7280', fontWeight: 700 }}>
                                         {ytApiKey ? '● CONFIGURED' : '○ MOCK MODE'}
                                     </span>
                                 </div>
-                                <div style={{ fontSize: '0.75rem', color: '#6b7280', marginBottom: '10px' }}>
-                                    Paste a YouTube Data API v3 key to enable real video search. Without a key, the video pipeline uses demo data.
+
+                                {/* Brief description */}
+                                <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginBottom: '12px', lineHeight: 1.5 }}>
+                                    A free YouTube Data API v3 key enables real player highlight search and game film.
+                                    Without one, the video pipeline uses demo data only.
                                 </div>
+
+                                {/* Step-by-step setup instructions */}
+                                <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '12px', marginBottom: '12px', fontSize: '0.72rem', color: '#9ca3af', lineHeight: 1.7 }}>
+                                    <div style={{ fontWeight: 700, color: '#d1d5db', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px', fontSize: '0.68rem' }}>How to get a free key (2 minutes)</div>
+                                    <div>1. Click <strong style={{ color: '#ef4444' }}>GET API KEY</strong> below — opens Google Cloud Console</div>
+                                    <div>2. Sign in with any Google account and create a project (e.g. "TrierFantasy")</div>
+                                    <div>3. In the left menu go to <strong style={{ color: '#d1d5db' }}>APIs &amp; Services → Library</strong></div>
+                                    <div>4. Search for <strong style={{ color: '#d1d5db' }}>YouTube Data API v3</strong> and click <strong style={{ color: '#d1d5db' }}>Enable</strong></div>
+                                    <div>5. Go to <strong style={{ color: '#d1d5db' }}>APIs &amp; Services → Credentials → Create Credentials → API Key</strong></div>
+                                    <div>6. Copy the key (starts with <code style={{ color: '#fbbf24' }}>AIza</code>) and paste it below</div>
+                                    <div style={{ marginTop: '6px', color: '#6b7280' }}>Free quota: 10,000 units/day — more than enough for a fantasy league.</div>
+                                </div>
+
+                                {/* Open Google Cloud Console button */}
+                                <button
+                                    onClick={() => {
+                                        // shell.open is allowed in tauri.conf.json allowlist
+                                        (window as any).__TAURI__?.shell?.open('https://console.cloud.google.com/apis/library/youtube.googleapis.com');
+                                    }}
+                                    style={{ ...btnStyle, padding: '6px 14px', background: 'rgba(239,68,68,0.15)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', fontSize: '0.75rem', marginBottom: '10px' }}
+                                >
+                                    GET API KEY →
+                                </button>
+
+                                {/* Key input + save */}
                                 <div style={{ display: 'flex', gap: '8px' }}>
                                     <input
                                         type="password"
