@@ -208,8 +208,11 @@ function normalizePlayer(id, raw, trendingData = {}) {
         height:           raw.height     || null,
         weight:           raw.weight     || null,
 
-        // Photo — Sleeper CDN reliably hosts headshots for all active roster players
-        photoUrl: `https://sleepercdn.com/content/nfl/players/thumb/${id}.jpg`,
+        // Photo — ESPN full headshots are higher quality when espnId is available;
+        // onError handlers in the UI fall back to Sleeper CDN automatically.
+        photoUrl: raw.espn_id
+            ? `https://a.espncdn.com/i/headshots/nfl/players/full/${raw.espn_id}.png`
+            : `https://sleepercdn.com/content/nfl/players/thumb/${id}.jpg`,
 
         // Fantasy signals
         fantasyPositions: raw.fantasy_positions || [position],

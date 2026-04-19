@@ -289,9 +289,13 @@ export const PlayersPage: React.FC<PlayersPageProps> = ({ players, onMakeOffer, 
                                     highlightStat={sortBy === 'PERF_DIFF' ? { label: 'PERF DIFF', value: p.performance_differential || 0 } : highlight}
                                     onMakeOffer={onMakeOffer ? () => onMakeOffer(p) : undefined}
                                     onRefreshPhoto={onUpdatePlayer ? async (target) => {
-                                        // Try Wikipedia first for a high-res shot; fall back to Sleeper CDN
-                                        const freshUrl = await scrapePlayerPhoto(`${target.firstName} ${target.lastName}`)
-                                            || `https://sleepercdn.com/content/nfl/players/thumb/${target.id}.jpg`;
+                                        // Wikipedia first (action shots > headshots); if nothing found,
+                                        // restore ESPN CDN so onError can cascade to Sleeper if needed.
+                                        const wikiUrl = await scrapePlayerPhoto(`${target.firstName} ${target.lastName}`);
+                                        const freshUrl = wikiUrl
+                                            || (target.espnId
+                                                ? `https://a.espncdn.com/i/headshots/nfl/players/full/${target.espnId}.png`
+                                                : `https://sleepercdn.com/content/nfl/players/thumb/${target.id}.jpg`);
                                         onUpdatePlayer({ ...target, photoUrl: freshUrl });
                                     } : undefined}
                                 />
