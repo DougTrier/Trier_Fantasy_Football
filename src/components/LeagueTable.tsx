@@ -22,7 +22,7 @@
  */
 // React hooks used: useMemo for sorted standings, useState for chat input/list,
 // useEffect for subscription lifecycle, useRef for auto-scroll anchor.
-import React, { useMemo, useState, useEffect, useRef } from 'react';
+import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import type { League } from '../types';
 import { Trophy, Send } from 'lucide-react';
 // ScoringEngine called once at component top to cache orchestration status.
@@ -31,6 +31,10 @@ import leatherTexture from '../assets/leather_texture.png';
 // SyncService provides both the listener API and the sendChat helper.
 import { SyncService, type SidebandMessage, type ChatPayload } from '../utils/SyncService';
 import { AnimatePresence, motion } from 'framer-motion';
+// NFL Intelligence Panel — scoreboard service + column/snapshot components
+import { ScoreboardService, type TeamSnapshot, AFC_DIVISIONS, NFC_DIVISIONS } from '../services/ScoreboardService';
+import { NFLTeamColumn } from './scoreboard/NFLTeamColumn';
+import { TeamSnapshotPanel } from './scoreboard/TeamSnapshotPanel';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 // ChatMessage is local-only — it's never stored in League state or synced.
@@ -58,11 +62,49 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({ league, myTeamName }) 
     // triggered by parent (App.tsx) on data file reload or league prop change.
     const status = ScoringEngine.getOrchestrationStatus();
 
+    // ── NFL Intelligence Panel ────────────────────────────────────────────────
+    // Tracks which team is selected and the loaded snapshot for that team.
+    const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
+    const [selectedConf, setSelectedConf] = useState<'AFC' | 'NFC' | null>(null);
+    const [snapshot, setSnapshot] = useState<TeamSnapshot | null>(null);
+    const [snapshotLoading, setSnapshotLoading] = useState(false);
+    // scoreboardTick increments on every ScoreboardService notification,
+    // forcing re-renders so live score badges stay current.
+    const [scoreboardTick, setScoreboardTick] = useState(0);
+
+    useEffect(() => {
+        // Initial data load + subscribe to updates
+        ScoreboardService.refresh();
+        const unsub = ScoreboardService.subscribe(() => setScoreboardTick(t => t + 1));
+        // Re-poll every 60 seconds so live scores stay fresh without gameday check
+        const pollId = setInterval(() => ScoreboardService.refresh(), 60_000);
+        return () => { unsub(); clearInterval(pollId); };
+    }, []);
+
+    const handleTeamClick = useCallback(async (abbr: string, conf: 'AFC' | 'NFC') => {
+        // Clicking the same team again closes the panel
+        if (selectedTeam === abbr) {
+            setSelectedTeam(null);
+            setSelectedConf(null);
+            setSnapshot(null);
+            return;
+        }
+        setSelectedTeam(abbr);
+        setSelectedConf(conf);
+        setSnapshot(null);
+        setSnapshotLoading(true);
+        const snap = await ScoreboardService.getTeamSnapshot(abbr);
+        setSnapshot(snap);
+        setSnapshotLoading(false);
+    }, [selectedTeam]);
+
     // ── League Chat ───────────────────────────────────────────────────────────
     const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
     const [chatInput, setChatInput] = useState('');
     const chatBottomRef = useRef<HTMLDivElement>(null);
     const myInstanceId = SyncService.getInstanceId();
+    // Suppress unused-variable warning — scoreboardTick is used only to trigger re-renders
+    void scoreboardTick;
 
     useEffect(() => {
         const handleMsg = (msg: SidebandMessage) => {
@@ -171,8 +213,23 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({ league, myTeamName }) 
             padding: '20px 40px',
             alignItems: 'start'
         }}>
-            {/* --- COLUMN 1: LEFT OUTER SPACER --- */}
-            <div style={{ pointerEvents: 'none' }} />
+            {/* --- COLUMN 1: AFC INTELLIGENCE PANEL --- */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', paddingTop: '4px' }}>
+                <NFLTeamColumn
+                    conference="AFC"
+                    divisions={AFC_DIVISIONS}
+                    selectedTeam={selectedConf === 'AFC' ? selectedTeam : null}
+                    onTeamClick={abbr => handleTeamClick(abbr, 'AFC')}
+                    align="left"
+                />
+                {selectedConf === 'AFC' && selectedTeam && (
+                    <TeamSnapshotPanel
+                        snapshot={snapshotLoading ? null : snapshot}
+                        align="left"
+                        onClose={() => { setSelectedTeam(null); setSelectedConf(null); setSnapshot(null); }}
+                    />
+                )}
+            </div>
 
             {/* --- COLUMN 2: TROPHY PANEL (Left Centered) --- */}
             <div style={{
@@ -484,6 +541,24 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({ league, myTeamName }) 
                         })}
                     </div>
                 </div>
+            </div>
+
+            {/* --- COLUMN 5: NFC INTELLIGENCE PANEL --- */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', paddingTop: '4px' }}>
+                <NFLTeamColumn
+                    conference="NFC"
+                    divisions={NFC_DIVISIONS}
+                    selectedTeam={selectedConf === 'NFC' ? selectedTeam : null}
+                    onTeamClick={abbr => handleTeamClick(abbr, 'NFC')}
+                    align="right"
+                />
+                {selectedConf === 'NFC' && selectedTeam && (
+                    <TeamSnapshotPanel
+                        snapshot={snapshotLoading ? null : snapshot}
+                        align="right"
+                        onClose={() => { setSelectedTeam(null); setSelectedConf(null); setSnapshot(null); }}
+                    />
+                )}
             </div>
         </div>
     );
