@@ -1,7 +1,7 @@
 # Trier Fantasy Football — Product Roadmap
 
 > Last updated: 2026-04-19  
-> Current release: v1.3.0
+> Current release: v1.4.0
 
 This roadmap is organized into four phases based on complexity and dependency order.
 Items marked **[Partial]** have architecture already in place — they just need completion.
@@ -29,8 +29,8 @@ Items marked **[Partial]** have architecture already in place — they just need
 
 ---
 
-## Phase 2 — Core Feature Expansion
-*Target: v1.4.x – v1.5.x — In Progress*
+## Phase 2 — Core Feature Expansion ✅ DONE
+*Shipped: v1.4.0*
 
 Significant new features that build directly on the existing architecture.
 
@@ -46,14 +46,11 @@ Significant new features that build directly on the existing architecture.
 - ✅ Fantasy dot indicators on standing rows (green = scoring now, yellow = pregame)
 - ✅ `ScoringTicker` — bottom scrolling strip with live scores + scoring/big play/red zone events
 
-### 2.1.1 Sidebar Responsive Scaling
-The sidebar currently uses fixed padding/font sizes and does not scale proportionally
-when the window is resized. Apply the same `zoom: scale` approach used on the League page,
-or switch all sidebar sizing to viewport-relative units so nav items, icons, and text
-shrink/grow cleanly at any window size.
-- Scale nav item font, icon size, padding, and logo proportionally with window height
-- Minimum readable size: ~720px tall window
-- Do this before or alongside any view that introduces new sidebar items
+### 2.1.1 Sidebar Responsive Scaling ✅
+- ✅ `zoom: sidebarScale` on `<aside>` — proportional to window height, clamped 0.72–1.0
+- ✅ Nav items use leather_texture.png on hover and active state
+- ✅ No-scroll layout — margins/gaps tightened so all items fit without overflow
+- ✅ Football image sized to fill sidebar without crowding nav
 
 ### 2.2 Draft Simulator ✅
 *Shipped: v1.4.0*
