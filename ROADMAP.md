@@ -1,38 +1,31 @@
 # Trier Fantasy Football — Product Roadmap
 
 > Last updated: 2026-04-19  
-> Current release: v1.2.0
-
-> **New:** Live NFL Scoreboard added to Phase 2 (see §2.1)
+> Current release: v1.3.0
 
 This roadmap is organized into four phases based on complexity and dependency order.
 Items marked **[Partial]** have architecture already in place — they just need completion.
 
 ---
 
-## Phase 1 — Complete What's Started
-*Target: v1.3.x — next 4–6 weeks*
+## Phase 1 — Complete What's Started ✅ DONE
+*Shipped: v1.3.0*
 
-These items have code already written; they need finishing, wiring, or UI polish.
+### 1.1 WAN Invite Codes — Full Flow Polish ✅
+- ✅ QR code generation (qrcode.react QRCodeSVG, 180px)
+- ✅ Expiry countdown displayed on the invite modal (10-min TTL with live timer)
+- ✅ Better error messaging when a code is stale or already redeemed
+- ⏭ Deep-link support (`trierfantasy://join/<code>`) — deferred; requires OS URL scheme registration
 
-### 1.1 WAN Invite Codes — Full Flow Polish **[Partial]**
-The architecture exists (DiscoveryService.generateInvite / redeemInvite) but the UX is rough.
-- QR code generation so phones can scan instead of typing the code
-- Expiry countdown displayed on the invite modal
-- Deep-link support (`trierfantasy://join/<code>`) so sharing a link opens the app directly
-- Better error messaging when a code is stale or already redeemed
+### 1.2 Live Schedule Auto-Locking ✅
+- ✅ Hourly gameday polling via useEffect (Sun/Mon/Thu only)
+- ✅ System tray notification when teams lock
+- ✅ Game status string on locked player badges ("LOCKED · Q3 7:42")
 
-### 1.2 Live Schedule Auto-Locking **[Partial]**
-`fetchLiveLockedTeams()` exists in the codebase but is triggered manually by the commissioner.
-- Wire it to a scheduled Tauri background task that polls once per hour on gameday
-- System tray notification when teams lock ("Chiefs vs Broncos just kicked off — roster locked")
-- Visual countdown timer on locked players showing when the game ends
-
-### 1.3 System Tray Integration
-Tauri supports native system tray. Minimal footprint while the app is "running in background."
-- Show badge count for pending trade offers
-- Notification when a peer connects or disconnects
-- Quick "Lock all / Unlock all" action from tray menu on gameday
+### 1.3 System Tray Integration ✅
+- ✅ Badge count for pending trade offers (update_tray_badge command)
+- ✅ Notification when a peer connects or disconnects
+- ✅ Lock All / Unlock All actions from tray menu on gameday
 
 ---
 
@@ -41,59 +34,21 @@ Tauri supports native system tray. Minimal footprint while the app is "running i
 
 Significant new features that build directly on the existing architecture.
 
-### 2.1 Live NFL Scoreboard on League Standings Page ⭐
-Show live NFL game scores directly on the League Standings page so managers can track
-all active games without leaving the app. Ties directly into the existing gameday lock
-system and fantasy scoring pipeline.
+### 2.1 NFL Intelligence Panel **[Partial]** ⭐
+AFC/NFC team columns flanking the League Standings page. Live records, scores, and per-team snapshots.
 
-**Four-tier fallback chain — decided:**
+**Completed ✅**
+- `ScoreboardService.ts` — ESPN standings + scoreboard APIs, subscriber pattern, 60s polling
+- AFC/NFC vertical columns with team logos, W-L records, live score badges, pulse animation
+- Division headers: neon red (AFC) / neon blue (NFC) with dark pill for readability
+- `TeamSnapshotPanel` — last game result, next game, "View on NFL.com" button
+- Columns sized to match League Standings panel height exactly
 
-| Tier | Source | Type | Notes |
-|------|--------|------|-------|
-| 1 | **Sleeper API** | Automatic | Official, already in pipeline — tried first every poll |
-| 2 | **ESPN scoreboard endpoint** | Automatic | Unofficial but rock-solid; no API key; tried on Sleeper failure |
-| 3 | **TheSportsDB free API** | Automatic | Documented public API; independent of Sleeper/ESPN; tried if both fail |
-| 4 | **Commissioner manual entry** | Manual | Score input grid; optional screenshot attached as visual reference; broadcasts to all peers via P2P sync |
-| ∞ | **"View on NFL.com" button** | Link | Always visible; `shell.open()` launches NFL.com scores in the default browser — already permitted in `tauri.conf.json` allowlist, zero extra code |
-
-`ScoreboardService` waterfall: tries each automatic source in order, stopping at the
-first success. If all three fail, shows last-known data with a timestamp and a
-"data unavailable" banner. The manual entry panel and NFL.com link are always accessible
-regardless of auto-source status — managers are never left without a path to scores.
-
-- Fetched via the **Tauri Rust HTTP client** — no CORS restrictions, clean 60-second polling
-- Manual refresh button triggers an immediate out-of-cycle poll of all three sources
-
-**Scoreboard strip** (above or alongside the standings panel):
-- Each active game shows: home team / away team / score / quarter + time remaining
-- Pre-game: shows kickoff time and day
-- Final: shows final score with a "FINAL" badge
-- Auto-refreshes every 60 seconds during Sunday/Monday/Thursday windows only — no
-  unnecessary polling on off-days
-
-**Game detail modal** (click any game):
-- Full box score: passing yards, rushing yards, receiving, TDs, turnovers per team
-- Scoring summary: who scored, what quarter, running score
-- YouTube highlight reel via the existing **VideoPipelineService** — searches for
-  "[Team A] vs [Team B] highlights [week]" automatically
-- "Your players in this game" section — highlights any fantasy roster players from either
-  team with their live stat line
-
-**Fantasy integration:**
-- Small colored dot on each standing row player indicating which game they're in
-  (green = active and scoring, yellow = active game no stats yet, grey = bye/not playing)
-- "Last scoring play" ticker at the top of the standings — e.g. "Tyreek Hill 34-yd TD catch"
-- Connects to the existing game day lock indicator — locked teams show their live score
-  automatically
-
-**Implementation notes:**
-- New `ScoreboardService.ts` — handles polling, caching, and subscriber pattern (same
-  pattern as DiscoveryService)
-- New `LiveScoreboard` React component embedded in `LeagueTable.tsx`
-- New `GameDetailModal` component reusing the existing modal shell and
-  `UniversalVideoPlayer` for highlights
-- Poll only fires when `lockedNFLTeams.length > 0` (i.e., gameday is active) to avoid
-  wasting requests during the off-season
+**Remaining:**
+- Scoreboard strip showing all active games (score / quarter / time) above the standings
+- Game detail modal — box score, scoring summary, YouTube highlights
+- Fantasy dot indicators on standing rows (green = scoring now, yellow = active, grey = bye)
+- "Last scoring play" ticker
 
 ### 2.2 Draft Simulator
 The player pool, ADP data, and roster structure are all already modeled — no new data needed.
