@@ -74,14 +74,19 @@ const TeamRow: React.FC<{
                     isLive ? 'rgba(239,68,68,0.08)' : 'transparent';
             }}
         >
-            {/* Team color dot */}
-            <div style={{
-                width: 8, height: 8, borderRadius: '50%',
-                background: theme.primary, flexShrink: 0,
-                // Pulse animation when game is live
-                animation: isLive ? 'pulse 1.5s infinite' : 'none',
-                boxShadow: isLive ? `0 0 6px ${theme.primary}` : 'none',
-            }} />
+            {/* Team logo — ESPN CDN, same source used on player cards */}
+            <img
+                src={theme.logoUrl}
+                alt={abbr}
+                style={{
+                    width: 22, height: 22,
+                    objectFit: 'contain',
+                    flexShrink: 0,
+                    filter: isLive ? `drop-shadow(0 0 4px ${theme.primary})` : 'none',
+                    animation: isLive ? 'pulse 1.5s infinite' : 'none',
+                    opacity: isSelected ? 1 : 0.85,
+                }}
+            />
 
             {/* Abbreviation */}
             <span style={{

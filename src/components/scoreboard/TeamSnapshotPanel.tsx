@@ -35,7 +35,7 @@ interface TeamSnapshotPanelProps {
 }
 
 export const TeamSnapshotPanel: React.FC<TeamSnapshotPanelProps> = ({ snapshot, align, onClose }) => {
-    const theme = snapshot ? getTeamTheme(snapshot.abbr) : { primary: '#374151', secondary: '#6b7280' };
+    const theme = getTeamTheme(snapshot?.abbr ?? '');
 
     const openNFL = () => {
         const slug = snapshot ? (ESPN_SLUGS[snapshot.abbr] ?? '') : '';
@@ -85,19 +85,26 @@ export const TeamSnapshotPanel: React.FC<TeamSnapshotPanelProps> = ({ snapshot, 
 
             {snapshot && (
                 <>
-                    {/* Team name + record */}
-                    <div style={{ marginBottom: '10px', paddingRight: '16px' }}>
-                        <div style={{
-                            fontSize: '0.75rem', fontWeight: 900, color: '#fff',
-                            letterSpacing: '0.5px', lineHeight: 1.2,
-                        }}>
-                            {snapshot.fullName}
-                        </div>
-                        <div style={{
-                            fontSize: '1rem', fontWeight: 900,
-                            color: theme.primary, marginTop: '2px',
-                        }}>
-                            {snapshot.record}
+                    {/* Team logo + name + record */}
+                    <div style={{ marginBottom: '10px', paddingRight: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <img
+                            src={theme.logoUrl}
+                            alt={snapshot.abbr}
+                            style={{ width: 36, height: 36, objectFit: 'contain', flexShrink: 0 }}
+                        />
+                        <div>
+                            <div style={{
+                                fontSize: '0.72rem', fontWeight: 900, color: '#fff',
+                                letterSpacing: '0.5px', lineHeight: 1.2,
+                            }}>
+                                {snapshot.fullName}
+                            </div>
+                            <div style={{
+                                fontSize: '1rem', fontWeight: 900,
+                                color: theme.primary, marginTop: '2px',
+                            }}>
+                                {snapshot.record}
+                            </div>
                         </div>
                     </div>
 
