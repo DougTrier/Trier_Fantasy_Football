@@ -244,7 +244,7 @@ export const FieldView: React.FC<FieldViewProps> = ({ team, onSelectPlayer }) =>
                     className={`bubble-hover ${mode === 'SPECIAL' && !player ? 'force-target' : ''}`}
                 >
                     {player ? (
-                        <img src={player.photoUrl} alt={player.lastName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.currentTarget.style.display = 'none'; }} />
+                        <img src={player.photoUrl} alt={player.lastName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { const img = e.currentTarget; if (!img.src.includes('sleepercdn')) { img.src = `https://sleepercdn.com/content/nfl/players/thumb/${player.id}.jpg`; } else { img.style.display = 'none'; } }} />
                     ) : (
                         <div style={{ width: '100%', height: '100%' }}></div>
                     )}
@@ -390,7 +390,7 @@ export const FieldView: React.FC<FieldViewProps> = ({ team, onSelectPlayer }) =>
                 {team.bench.map(p => (
                     <div key={p.id} onClick={() => onSelectPlayer(p.id, 'PLAYER')} style={{ minWidth: '60px', cursor: 'pointer', textAlign: 'center' }}>
                         <div style={{ position: 'relative', width: '45px', height: '45px', margin: '0 auto' }}>
-                            <img src={p.photoUrl} style={{ width: '100%', height: '100%', borderRadius: '50%', border: '2px solid #ccc' }} onError={e => { e.currentTarget.style.display = 'none'; }} />
+                            <img src={p.photoUrl} style={{ width: '100%', height: '100%', borderRadius: '50%', border: '2px solid #ccc' }} onError={e => { const img = e.currentTarget; if (!img.src.includes('sleepercdn')) { img.src = `https://sleepercdn.com/content/nfl/players/thumb/${p.id}.jpg`; } else { img.style.display = 'none'; } }} />
                         </div>
                         <div style={{ fontSize: '0.65rem', color: '#ddd', marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.lastName}</div>
                     </div>

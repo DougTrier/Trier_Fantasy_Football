@@ -63,7 +63,7 @@ export const CardFrontFace: React.FC<CardFrontFaceProps> = ({ player, isFlipped,
                 <img src={theme.logoUrl} style={{ position: 'absolute', top: '5%', right: '5%', width: '20%', opacity: 0.8, filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))' }} />
                 <div style={{ width: '100%', height: '100%', zIndex: 5, marginBottom: '-5%', display: 'flex', justifyContent: 'center', alignItems: 'flex-end' }}>
                     {player.photoUrl ? (
-                        <img src={player.photoUrl} alt={player.lastName} style={{ width: 'auto', maxWidth: '140%', height: '110%', objectFit: 'contain', objectPosition: 'bottom center', maskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)', filter: 'drop-shadow(0 0 10px rgba(0,0,0,0.5)) contrast(1.1)' }} onError={e => { e.currentTarget.style.display = 'none'; }} />
+                        <img src={player.photoUrl} alt={player.lastName} style={{ width: 'auto', maxWidth: '140%', height: '110%', objectFit: 'contain', objectPosition: 'bottom center', maskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)', filter: 'drop-shadow(0 0 10px rgba(0,0,0,0.5)) contrast(1.1)' }} onError={e => { const img = e.currentTarget; if (!img.src.includes('sleepercdn')) { img.src = `https://sleepercdn.com/content/nfl/players/thumb/${player.id}.jpg`; } else { img.style.display = 'none'; } }} />
                     ) : (
                         <Shield size={100} color="#fff" />
                     )}
