@@ -214,7 +214,8 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({ league, myTeamName }) 
             alignItems: 'start'
         }}>
             {/* --- COLUMN 1: AFC INTELLIGENCE PANEL --- */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', paddingTop: '4px' }}>
+            {/* height:85% matches the standings/trophy panels so teams stop at the same bottom edge */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', height: '85%', position: 'relative', paddingTop: '4px' }}>
                 <NFLTeamColumn
                     conference="AFC"
                     divisions={AFC_DIVISIONS}
@@ -222,12 +223,15 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({ league, myTeamName }) 
                     onTeamClick={abbr => handleTeamClick(abbr, 'AFC')}
                     align="left"
                 />
+                {/* Snapshot overlays the team list; position absolute keeps column full-height */}
                 {selectedConf === 'AFC' && selectedTeam && (
-                    <TeamSnapshotPanel
-                        snapshot={snapshotLoading ? null : snapshot}
-                        align="left"
-                        onClose={() => { setSelectedTeam(null); setSelectedConf(null); setSnapshot(null); }}
-                    />
+                    <div style={{ position: 'absolute', top: '64px', left: 0, right: 0, zIndex: 10, padding: '0 4px' }}>
+                        <TeamSnapshotPanel
+                            snapshot={snapshotLoading ? null : snapshot}
+                            align="left"
+                            onClose={() => { setSelectedTeam(null); setSelectedConf(null); setSnapshot(null); }}
+                        />
+                    </div>
                 )}
             </div>
 
@@ -544,7 +548,8 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({ league, myTeamName }) 
             </div>
 
             {/* --- COLUMN 5: NFC INTELLIGENCE PANEL --- */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', paddingTop: '4px' }}>
+            {/* height:85% mirrors column 1 exactly — both columns share the same bottom edge */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', height: '85%', position: 'relative', paddingTop: '4px' }}>
                 <NFLTeamColumn
                     conference="NFC"
                     divisions={NFC_DIVISIONS}
@@ -552,12 +557,15 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({ league, myTeamName }) 
                     onTeamClick={abbr => handleTeamClick(abbr, 'NFC')}
                     align="right"
                 />
+                {/* Snapshot overlays the team list; right:0 keeps it aligned to the NFC column */}
                 {selectedConf === 'NFC' && selectedTeam && (
-                    <TeamSnapshotPanel
-                        snapshot={snapshotLoading ? null : snapshot}
-                        align="right"
-                        onClose={() => { setSelectedTeam(null); setSelectedConf(null); setSnapshot(null); }}
-                    />
+                    <div style={{ position: 'absolute', top: '64px', left: 0, right: 0, zIndex: 10, padding: '0 4px', display: 'flex', justifyContent: 'flex-end' }}>
+                        <TeamSnapshotPanel
+                            snapshot={snapshotLoading ? null : snapshot}
+                            align="right"
+                            onClose={() => { setSelectedTeam(null); setSelectedConf(null); setSnapshot(null); }}
+                        />
+                    </div>
                 )}
             </div>
         </div>

@@ -54,11 +54,11 @@ const TeamRow: React.FC<{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                padding: '6px 8px',
+                padding: '8px 8px',
                 borderRadius: '8px',
                 cursor: 'pointer',
                 marginBottom: '3px',
-                flexDirection: align === 'right' ? 'row-reverse' : 'row',
+                flexDirection: 'row', // logo always left so division label center matches visual center
                 background: isSelected
                     ? `rgba(${hexToRgb(theme.primary)}, 0.18)`
                     : isLive ? 'rgba(239,68,68,0.08)' : 'transparent',
@@ -80,7 +80,7 @@ const TeamRow: React.FC<{
                 src={theme.logoUrl}
                 alt={abbr}
                 style={{
-                    width: 30, height: 30,
+                    width: 36, height: 36,
                     objectFit: 'contain',
                     flexShrink: 0,
                     filter: isLive ? `drop-shadow(0 0 5px ${theme.primary})` : 'none',
@@ -92,7 +92,7 @@ const TeamRow: React.FC<{
             {/* Name + record stacked vertically — record sits tight under the abbr */}
             <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{
-                    fontSize: '0.8rem', fontWeight: 800,
+                    fontSize: '0.85rem', fontWeight: 800,
                     color: isSelected ? '#fff' : '#e5e7eb',
                     letterSpacing: '0.5px', lineHeight: 1,
                     textAlign: align === 'right' ? 'right' : 'left',
@@ -135,56 +135,84 @@ export const NFLTeamColumn: React.FC<NFLTeamColumnProps> = ({
     conference, divisions, selectedTeam, onTeamClick, align,
 }) => {
     return (
+        // height: 100% fills the stretched grid cell; flex column lets logo stay fixed
+        // while the divisions area grows to fill remaining space
         <div style={{
             width: '100%',
             maxWidth: '200px',
             marginLeft: align === 'right' ? 'auto' : undefined,
             marginRight: align === 'left'  ? 'auto' : undefined,
-            overflowY: 'auto',
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
             overflowX: 'hidden',
-            maxHeight: 'calc(100vh - 120px)',
-            paddingBottom: '20px',
         }}>
-            {/* Conference logo header */}
+            {/* Conference logo — centered over the column, slightly larger than v1 */}
             <div style={{
                 marginBottom: '10px',
-                textAlign: align === 'right' ? 'right' : 'left',
-                paddingLeft: align === 'left' ? '8px' : undefined,
-                paddingRight: align === 'right' ? '8px' : undefined,
+                textAlign: 'center',
+                padding: '0 8px',
             }}>
                 <img
                     src={conference === 'AFC' ? afcLogo : nfcLogo}
                     alt={conference}
-                    style={{ height: '36px', width: 'auto', objectFit: 'contain', opacity: 0.9 }}
+                    style={{ height: '50px', width: 'auto', objectFit: 'contain', opacity: 0.9 }}
                 />
             </div>
 
-            {/* Division groups */}
-            {Object.entries(divisions).map(([divName, teams]) => (
-                <div key={divName} style={{ marginBottom: '8px' }}>
-                    {/* Thin divider line instead of a text label — saves vertical space */}
-                    <div style={{
-                        height: '1px',
-                        background: 'rgba(255,255,255,0.06)',
-                        marginBottom: '4px',
-                        marginLeft: align === 'left' ? '8px' : undefined,
-                        marginRight: align === 'right' ? '8px' : undefined,
-                    }} title={divName} />
+            {/* Divisions fill remaining height; space-evenly distributes groups top-to-bottom */}
+            <div style={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-evenly',
+                overflow: 'hidden',
+            }}>
+                {Object.entries(divisions).map(([divName, teams]) => (
+                    <div key={divName}>
+                        {/* Division header: full-width flex row so label centers over the teams */}
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'center',
+                            width: '100%',
+                            marginBottom: '5px',
+                        }}>
+                            <span style={{
+                                fontSize: '0.9rem',
+                                fontWeight: 900,
+                                // AFC = neon red, NFC = neon blue
+                                color: conference === 'AFC' ? '#ff3333' : '#00d4ff',
+                                letterSpacing: '1.5px',
+                                textTransform: 'uppercase',
+                                textDecoration: 'underline',
+                                textDecorationColor: conference === 'AFC' ? 'rgba(255,51,51,0.45)' : 'rgba(0,212,255,0.45)',
+                                textUnderlineOffset: '3px',
+                                whiteSpace: 'nowrap',
+                                textShadow: conference === 'AFC' ? '0 0 8px rgba(255,51,51,0.6)' : '0 0 8px rgba(0,212,255,0.55)',
+                                // dark pill ensures readability over the chalk background
+                                background: 'rgba(0,0,0,0.65)',
+                                padding: '2px 10px',
+                                borderRadius: '4px',
+                            }}>
+                                {divName}
+                            </span>
+                        </div>
 
-                    {/* Team rows */}
-                    {teams.map(abbr => (
-                        <TeamRow
-                            key={abbr}
-                            abbr={abbr}
-                            record={ScoreboardService.getRecord(abbr)}
-                            liveGame={ScoreboardService.getLiveGame(abbr)}
-                            isSelected={selectedTeam === abbr}
-                            align={align}
-                            onClick={() => onTeamClick(abbr)}
-                        />
-                    ))}
-                </div>
-            ))}
+                        {/* Team rows */}
+                        {teams.map(abbr => (
+                            <TeamRow
+                                key={abbr}
+                                abbr={abbr}
+                                record={ScoreboardService.getRecord(abbr)}
+                                liveGame={ScoreboardService.getLiveGame(abbr)}
+                                isSelected={selectedTeam === abbr}
+                                align={align}
+                                onClick={() => onTeamClick(abbr)}
+                            />
+                        ))}
+                    </div>
+                ))}
+            </div>
         </div>
     );
 };
