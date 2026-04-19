@@ -23,7 +23,7 @@
 // External imports — lucide-react icons are tree-shaken at build time so only
 // the imported names contribute to bundle size. Each icon is ~1KB gzipped.
 import React from 'react';
-import { LayoutDashboard, Users, Trophy, User, Settings, LogOut, BookOpen, Swords, Wallet, Zap, ArrowRightLeft, Wifi, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, Users, Trophy, User, Settings, LogOut, BookOpen, Swords, Wallet, Zap, ArrowRightLeft, Wifi, ClipboardList, Gavel } from 'lucide-react';
 // ScoringEngine is read-only here (getOrchestrationStatus); no mutation occurs.
 // It is imported as a module-level singleton — no React state needed for status.
 import { ScoringEngine } from '../utils/ScoringEngine';
@@ -353,6 +353,7 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
                     <SidebarItem icon={<div style={{ width: 20 }}><Swords size={20} /></div>} label="Head to Head" isActive={activeView === 'h2h'} onClick={() => onNavigate('h2h')} title="Matchup preview and live scoring comparison between teams." />
                     <SidebarItem icon={<div style={{ width: 20 }}><Users size={20} /></div>} label="Players" isActive={activeView === 'players'} onClick={() => onNavigate('players')} title="Browse active player pool, free agents, and detailed stats." />
                     <SidebarItem icon={<div style={{ width: 20 }}><ClipboardList size={20} /></div>} label="Draft Simulator" isActive={activeView === 'draft'} onClick={() => onNavigate('draft')} title="Run a mock snake draft against AI opponents." />
+                    <SidebarItem icon={<div style={{ width: 20 }}><Gavel size={20} /></div>} label="Waiver Wire" isActive={activeView === 'waiver'} onClick={() => onNavigate('waiver')} title="Browse free agents and place blind FAAB bids." />
                     <SidebarItem
                         icon={
                             <div style={{ width: 20, position: 'relative' }}>

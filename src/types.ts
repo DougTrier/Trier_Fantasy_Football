@@ -182,9 +182,25 @@ export interface Player {
  * TRADE_OFFER creates escrow; TRADE_ACCEPT or decline releases it.
  * amount is denominated in Production Points (PTS), not dollars.
  */
+/**
+ * WaiverBid — a blind FAAB claim submitted by a team for a free agent.
+ * Status transitions: pending → won | lost | cancelled.
+ */
+export interface WaiverBid {
+    id: string;
+    teamId: string;
+    playerId: string;
+    playerName: string;
+    dropPlayerId?: string;   // player to drop from bench when claim succeeds
+    dropPlayerName?: string;
+    bidAmount: number;       // FAAB dollars (0–100)
+    submittedAt: number;     // Unix ms timestamp
+    status: 'pending' | 'won' | 'lost' | 'cancelled';
+}
+
 export interface Transaction {
     id: string;
-    type: 'ADD' | 'DROP' | 'TRADE' | 'STASH' | 'SWAP' | 'TRADE_OFFER' | 'TRADE_ACCEPT';
+    type: 'ADD' | 'DROP' | 'TRADE' | 'STASH' | 'SWAP' | 'TRADE_OFFER' | 'TRADE_ACCEPT' | 'WAIVER_WIN' | 'WAIVER_LOSS';
     date?: string;
     timestamp: number;
     description: string;
@@ -233,6 +249,10 @@ export interface FantasyTeam {
     points_escrowed?: number; // Held while an outgoing trade offer is open
     points_spent?: number;
     ownerId?: string;
+    // Waiver Wire — FAAB budget, priority order, and pending claims
+    faabBalance?: number;       // Free Agent Acquisition Budget (default 100)
+    waiverPriority?: number;    // Lower number = higher priority; worst record gets 1
+    waiverBids?: WaiverBid[];   // Pending blind bids awaiting Tuesday processing
 }
 
 /**

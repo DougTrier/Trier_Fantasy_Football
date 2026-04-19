@@ -48,10 +48,12 @@ import { H2HPage } from './components/H2HPage';
 import { TradeOfferModal } from './components/TradeOfferModal';
 import { TradeCenter } from './components/TradeCenter';
 import { DraftSimulator } from './components/DraftSimulator';
+import { WaiverPage } from './components/WaiverPage';
 import { scrapePlayerStats, scrapePlayerPhoto } from './utils/scraper';
 import stadiumBg from './assets/stadium_bg.png';
 import leatherTexture from './assets/leather_texture.png';
 import { isPlayerLocked, NFL_TEAMS, fetchLiveGameData, isGameday } from './utils/gamedayLogic';
+import { processWaivers, ensureWaiverFields } from './services/WaiverService';
 
 import { Lock } from 'lucide-react';
 import { SyncService } from './utils/SyncService';
@@ -1822,6 +1824,20 @@ export default function App() {
           myTeam={myTeam}
           onSaveTeam={(team) => setUserTeams(prev => [...prev, team])}
           onExit={() => setActiveView('league')}
+        />
+      )}
+
+      {activeView === 'waiver' && myTeam && (
+        <WaiverPage
+          allPlayers={availablePlayers}
+          allTeams={userTeams}
+          myTeam={ensureWaiverFields(myTeam, userTeams.indexOf(myTeam) + 1)}
+          isAdmin={isAdmin}
+          onUpdateTeam={(updated) => setUserTeams(prev => prev.map(t => t.id === updated.id ? updated : t))}
+          onProcessWaivers={() => setUserTeams(prev => processWaivers(
+            prev.map((t, i) => ensureWaiverFields(t, i + 1)),
+            availablePlayers
+          ))}
         />
       )}
 
