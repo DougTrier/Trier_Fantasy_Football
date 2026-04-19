@@ -56,6 +56,7 @@ export const TeamSnapshotPanel: React.FC<TeamSnapshotPanelProps> = ({ snapshot, 
         const slug = snapshot ? (ESPN_SLUGS[snapshot.abbr] ?? '') : '';
         const url = `https://www.nfl.com/teams/${slug}`;
         // shell.open is permitted in tauri.conf.json — falls back to window.open in browser mode
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const tauri = (window as any).__TAURI__;
         if (tauri?.shell?.open) {
             tauri.shell.open(url);

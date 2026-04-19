@@ -146,7 +146,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             const encryptionPass =
                 await showPrompt("Set a backup password (leave blank to skip):", "Backup Encryption", { placeholder: "Optional password..." }) ||
                 undefined;
-            // eslint-disable-next-line react-hooks/purity
             const securePayload = { version: 'v2', timestamp: Date.now(), teamData: team };
             const encryptedData = await SecurityService.encrypt(securePayload, encryptionPass);
             const finalPayload = { trier_secure_v2: true, payload: encryptedData };

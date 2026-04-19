@@ -81,7 +81,7 @@ function BoomBustBadge({ diff }: { diff: number }) {
 
 // ─── Custom scatter tooltip ───────────────────────────────────────────────────
 
-const ScatterTooltip = ({ active, payload }: any) => {
+const ScatterTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ payload: ProjectionRow }> }) => {
     if (!active || !payload?.length) return null;
     const d = payload[0].payload as ProjectionRow;
     const diff = d.actual - d.projected;

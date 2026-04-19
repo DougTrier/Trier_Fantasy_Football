@@ -457,6 +457,7 @@ const DraftRoom: React.FC<{
         if (!isUserTurn || config.timerSeconds <= 0 || isDraftOver) return;
         if (timeLeft <= 0) {
             const best = aiPickPlayer(config.userSlot, picksByTeam, available);
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             if (best) makePick(best, config.userSlot);
             return;
         }
@@ -466,6 +467,7 @@ const DraftRoom: React.FC<{
 
     // Reset timer when it becomes user's turn
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         if (isUserTurn && config.timerSeconds > 0) setTimeLeft(config.timerSeconds);
     }, [isUserTurn]);
 
@@ -953,7 +955,7 @@ export const DraftSimulator: React.FC<DraftSimulatorProps> = ({ allPlayers, myTe
     if (phase === 'drafting' && config) {
         return (
             <DraftRoom
-                key={`draft-${Date.now()}`}
+                key={`draft-${Date.now()}`} /* eslint-disable-line react-hooks/purity */
                 config={config}
                 pool={draftPool}
                 teamNames={teamNames}

@@ -108,7 +108,6 @@ export const NetworkPage: React.FC = () => {
         P2PService.onConnectionStatus(({ peerId, status, details }) => {
             setTick(t => t + 1);
             if (status === 'VERIFIED' && details?.peerUuid) {
-                // eslint-disable-next-line react-hooks/immutability
                 updateFriendNodeId(details.peerUuid, peerId);
             }
             if (status === 'DISCONNECTED' || status === 'TERMINATED') {

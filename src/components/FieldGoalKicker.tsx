@@ -131,15 +131,17 @@ export const FieldGoalKicker: React.FC<Props> = ({ isGameday, myTeamName }) => {
     const oppScoreRef  = useRef(0);
     const timeLeftRef  = useRef(GAME_SECS);
     const timerAccRef  = useRef(0);
+    // eslint-disable-next-line react-hooks/purity
     const aiTimerRef   = useRef(6000 + Math.random() * 4000);
     const aiAccRef     = useRef(0);
     const prevTsRef    = useRef(0);
     const rafRef       = useRef(0);
+    const tickRef      = useRef<FrameRequestCallback | null>(null);
     const flashTimeRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-    const [_yourScore, setYourScore] = useState(0);
-    const [_oppScore,  setOppScore]  = useState(0);
-    const [_timeLeft,  setTimeLeft]  = useState(GAME_SECS);
+    const [, setYourScore] = useState(0);
+    const [, setOppScore]  = useState(0);
+    const [, setTimeLeft]  = useState(GAME_SECS);
     const [phase,     setPhase]     = useState<Phase>('IDLE');
     const [gameMode,  setGameMode]  = useState<GameMode>('cpu');
     const [flash,     setFlash]     = useState<{ text: string; good: boolean } | null>(null);
@@ -562,8 +564,9 @@ export const FieldGoalKicker: React.FC<Props> = ({ isGameday, myTeamName }) => {
         }
 
         draw();
-        rafRef.current = requestAnimationFrame(tick);
+        rafRef.current = requestAnimationFrame((ts) => tickRef.current?.(ts));
     }, [draw, showFlash, updateRightPost, updateLeftPost]);
+    tickRef.current = tick;
 
     // ── Keyboard ───────────────────────────────────────────────────────────────
     useEffect(() => {

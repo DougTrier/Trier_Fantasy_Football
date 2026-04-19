@@ -139,7 +139,7 @@ const MatchupCard: React.FC<{
     return (
         <div style={{ ...PANEL, padding: '12px 16px', marginBottom: '8px', border: isMine ? '1px solid rgba(234,179,8,0.35)' : '1px solid rgba(255,255,255,0.07)' }}>
             {[{ team: home, score: matchup.homeScore, won: homeWon }, { team: away, score: matchup.awayScore, won: awayWon }].map(({ team, score, won }) => (
-                <div key={team?.id ?? Math.random()} style={{ display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center', padding: '5px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                <div key={team?.id ?? 'unknown'} style={{ display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center', padding: '5px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
                         <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: won ? '#10b981' : 'transparent', border: won ? 'none' : '1px solid rgba(255,255,255,0.2)', flexShrink: 0 }} />
                         <span style={{ fontSize: '0.8rem', fontWeight: team?.id === myTeamId ? 900 : 600, color: team?.id === myTeamId ? GOLD : '#e5e7eb' }}>{team?.name ?? '—'}</span>

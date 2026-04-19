@@ -13,6 +13,7 @@
  * Subscriber pattern mirrors DiscoveryService — call subscribe() to get
  * notified whenever standings or live scores refresh.
  */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 // ─── Static conference / division roster ─────────────────────────────────────
 // Pre-defined so the columns render immediately before the ESPN standings
@@ -139,7 +140,7 @@ const SNAPSHOT_TTL = 30 * 60 * 1000;  // 30 min — schedule is stable within a 
 const DETAIL_TTL_LIVE  = 30 * 1000;        // 30 s  — scoring plays change during live games
 const DETAIL_TTL_FINAL = 5 * 60 * 1000;   // 5 min — completed game data is stable
 
-let recordsCache: Record<string, TeamRecord> = {};
+const recordsCache: Record<string, TeamRecord> = {};
 let recordsLastFetch = 0;
 
 let gamesCache: LiveGame[] = [];

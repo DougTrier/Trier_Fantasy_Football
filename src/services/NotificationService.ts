@@ -50,6 +50,7 @@ export function setNotifPref(event: NotifEvent, enabled: boolean): void {
 
 async function send(title: string, body: string): Promise<void> {
     // Tauri path — uses native OS notification
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const win = window as any;
     if (win.__TAURI__) {
         try {

@@ -85,7 +85,7 @@ const MatchupCard: React.FC<{
         }}>
             {/* Home team row */}
             {[{ team: home, score: homeScore, won: homeWon, isHome: true }, { team: away, score: awayScore, won: awayWon, isHome: false }].map(({ team, score, won }) => (
-                <div key={team?.id ?? Math.random()} style={{ display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                <div key={team?.id ?? 'unknown'} style={{ display: 'grid', gridTemplateColumns: '1fr auto', alignItems: 'center', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         {/* Win indicator */}
                         <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: won ? '#10b981' : 'transparent', border: won ? 'none' : '1px solid rgba(255,255,255,0.2)', flexShrink: 0 }} />

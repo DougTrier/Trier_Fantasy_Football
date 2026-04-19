@@ -77,6 +77,7 @@ export const ScoutingReportModal: React.FC<ScoutingReportModalProps> = ({ matchu
             `Scouting Report: Can ${subject.lastName} Exploit the ${metric.toLowerCase()} Mismatch ? `,
             `Tape Breakdown: ${subject.lastName} vs ${opponent?.lastName || 'Defense'} `
         ];
+        // eslint-disable-next-line react-hooks/purity
         const headline = headlines[Math.floor(Math.random() * headlines.length)];
 
         const socialIntel = subjectIntel.socialIntelligence;

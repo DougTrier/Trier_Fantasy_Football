@@ -246,7 +246,7 @@ export default function App() {
   });
   // Per-team game status strings shown on locked roster slots (e.g. "Q3 7:42")
   const [gameStatuses, setGameStatuses] = useState<Record<string, string>>({});
-  const [_peers, setPeers] = useState<DiscoveredPeer[]>([]);
+  const [, setPeers] = useState<DiscoveredPeer[]>([]);
   const [connectedPeers, setConnectedPeers] = useState<string[]>([]);
   const [hasNewOffers, setHasNewOffers] = useState(false);
   const [activeView, setActiveView] = useState('dashboard');
@@ -616,6 +616,7 @@ export default function App() {
 
   // System tray event listeners — wired to Rust tray menu items
   useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const win = window as any;
     if (!win.__TAURI__) return;
     const unlisteners: (() => void)[] = [];
@@ -629,6 +630,7 @@ export default function App() {
 
   // Keep the tray badge in sync with pending trade offer state
   useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const win = window as any;
     if (!win.__TAURI__) return;
     import('@tauri-apps/api/tauri').then(({ invoke }) => {
@@ -1649,6 +1651,7 @@ export default function App() {
   // Commissioner dashboard event listeners — actions triggered from http://localhost:15434.
   // Placed here (after handleAcceptOffer/handleDeclineOffer) to avoid TDZ errors.
   useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const win = window as any;
     if (!win.__TAURI__) return;
     const unlisteners: (() => void)[] = [];
@@ -1703,6 +1706,7 @@ export default function App() {
 
   // Push league state snapshot to Rust every 5 s while admin is active.
   useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const win = window as any;
     if (!win.__TAURI__ || !isAdmin) return;
 

@@ -58,6 +58,7 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({ eventId, onClo
 
     useEffect(() => {
         let cancelled = false;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLoading(true);
         ScoreboardService.getGameDetail(eventId).then(d => {
             if (!cancelled) { setDetail(d); setLoading(false); }
@@ -70,6 +71,7 @@ export const GameDetailModal: React.FC<GameDetailModalProps> = ({ eventId, onClo
 
     const openESPN = () => {
         const url = `https://www.espn.com/nfl/game/_/gameId/${eventId}`;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const tauri = (window as any).__TAURI__;
         if (tauri?.shell?.open) tauri.shell.open(url);
         else window.open(url, '_blank', 'noopener');
