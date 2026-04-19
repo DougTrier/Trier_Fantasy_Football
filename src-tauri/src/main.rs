@@ -50,6 +50,22 @@ struct AppState {
     p2p_started: Arc<Mutex<bool>>,
     port: Arc<Mutex<u16>>,
     commissioner: Arc<Mutex<CommissionerState>>,
+    // Per-process session token — required by all dashboard API routes.
+    // Generated once at startup; never changes; no mutex needed.
+    token: String,
+}
+
+/// Generates a 32-char hex session token from timestamp + PID using LCG mixing.
+/// Not cryptographically random, but unique per process start and unguessable locally.
+fn generate_comm_token() -> String {
+    use std::time::{SystemTime, UNIX_EPOCH};
+    let ts  = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_nanos();
+    let pid = std::process::id() as u128;
+    let a = ts.wrapping_mul(6364136223846793005u128)
+              .wrapping_add(1442695040888963407u128) ^ pid;
+    let b = a.wrapping_mul(2862933555777941757u128)
+              .wrapping_add(3037000499u128);
+    format!("{:032x}", b)
 }
 
 // ── Embedded Commissioner Dashboard HTML ──────────────────────────────────────
@@ -155,12 +171,13 @@ tr:last-child td{border-bottom:none}
 <div class="status-bar">Last sync: <span id="ts">–</span> &middot; auto-refresh 5 s &middot; localhost only</div>
 
 <script>
+const __TOKEN='%%COMM_TOKEN%%'; // replaced at serve-time by comm_dashboard_html()
 const TEAMS=['ARI','ATL','BAL','BUF','CAR','CHI','CIN','CLE','DAL','DEN','DET','GB','HOU','IND','JAC','KC','LAC','LAR','LV','MIA','MIN','NE','NO','NYG','NYJ','PHI','PIT','SEA','SF','TB','TEN','WAS'];
 let st=null,locked=[];
 
 async function sync(){
   try{
-    const r=await fetch('/api/state');
+    const r=await fetch('/api/state',{headers:{'X-Comm-Token':__TOKEN}});
     if(!r.ok)return;
     st=await r.json();
     locked=st.locked_teams||[];
@@ -252,7 +269,7 @@ async function sendAnn(){
   ok.style.display='';setTimeout(()=>ok.style.display='none',3000);
 }
 async function post(url,body){
-  try{await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});}catch(e){}
+  try{await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','X-Comm-Token':__TOKEN},body:JSON.stringify(body)});}catch(e){}
 }
 function jp(s,fb){try{return JSON.parse(s)||fb;}catch{return fb;}}
 function x(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
@@ -261,6 +278,12 @@ sync();setInterval(sync,5000);
 </script>
 </body>
 </html>"#;
+
+/// Injects the per-session token into the dashboard HTML before serving.
+/// Using string replacement avoids having to escape every `{` and `}` in the HTML.
+fn comm_dashboard_html(token: &str) -> String {
+    COMM_DASHBOARD_HTML.replace("%%COMM_TOKEN%%", token)
+}
 
 #[tauri::command]
 fn p2p_list_discovered_peers(state: State<'_, AppState>) -> Vec<PeerInfo> {
@@ -562,6 +585,12 @@ fn build_tray_menu() -> SystemTrayMenu {
         .add_item(quit)
 }
 
+/// Returns the per-session dashboard token so the Settings page can display the full URL.
+#[tauri::command]
+fn get_comm_token(state: State<'_, AppState>) -> String {
+    state.token.clone()
+}
+
 fn main() {
   // Build the system tray with tooltip and right-click menu
   let tray = SystemTray::new()
@@ -575,6 +604,7 @@ fn main() {
         p2p_started: Arc::new(Mutex::new(false)),
         port: Arc::new(Mutex::new(0)),
         commissioner: Arc::new(Mutex::new(CommissionerState::default())),
+        token: generate_comm_token(),
     })
     .invoke_handler(tauri::generate_handler![
         start_p2p_services,
@@ -586,7 +616,8 @@ fn main() {
         p2p_refresh_discovery,
         run_network_diagnostics,
         update_tray_badge,
-        sync_commissioner_state
+        sync_commissioner_state,
+        get_comm_token
     ])
     .setup(|app| {
         // Commissioner dashboard HTTP server — localhost:15434 only.
@@ -594,74 +625,98 @@ fn main() {
         // to the React app via Tauri events. Bound to 127.0.0.1 so it is
         // never reachable from other machines on the network.
         let handle = app.handle();
-        let comm = app.state::<AppState>().commissioner.clone();
+        let comm  = app.state::<AppState>().commissioner.clone();
+        // Clone the session token into the spawned thread
+        let token = app.state::<AppState>().token.clone();
 
         std::thread::spawn(move || {
             let rt = tokio::runtime::Runtime::new().expect("comm dashboard runtime");
             rt.block_on(async {
 
-                // GET / — serve the dashboard HTML page
+                // GET / — serve dashboard HTML with session token injected into page JS
+                let page_html = comm_dashboard_html(&token);
                 let html_route = warp::get()
                     .and(warp::path::end())
-                    .map(|| warp::reply::html(COMM_DASHBOARD_HTML));
+                    .map(move || warp::reply::html(page_html.clone()));
 
-                // GET /api/state — return current CommissionerState snapshot
-                let comm_get = comm.clone();
+                // GET /api/state — token required; silently returns error JSON if wrong
+                let comm_get  = comm.clone();
+                let tok_state = token.clone();
                 let state_route = warp::get()
                     .and(warp::path("api"))
                     .and(warp::path("state"))
                     .and(warp::path::end())
-                    .map(move || {
+                    .and(warp::header::optional::<String>("x-comm-token"))
+                    .map(move |tok: Option<String>| {
+                        if tok.as_deref() != Some(&tok_state) {
+                            return warp::reply::json(&serde_json::json!({"error":"unauthorized"}));
+                        }
                         let data = comm_get.lock().unwrap().clone();
                         warp::reply::json(&data)
                     });
 
-                // POST /api/locks — { set: ["KC","DAL",...] } → COMM_SET_LOCKS event
-                let h_locks = handle.clone();
+                // POST /api/locks — token required; silently ignores unauthorized calls
+                let h_locks   = handle.clone();
+                let tok_locks = token.clone();
                 let locks_route = warp::post()
                     .and(warp::path("api"))
                     .and(warp::path("locks"))
                     .and(warp::path::end())
+                    .and(warp::header::optional::<String>("x-comm-token"))
                     .and(warp::body::json::<serde_json::Value>())
-                    .map(move |body: serde_json::Value| {
-                        let _ = h_locks.emit_all("COMM_SET_LOCKS", &body);
+                    .map(move |tok: Option<String>, body: serde_json::Value| {
+                        if tok.as_deref() == Some(&tok_locks) {
+                            let _ = h_locks.emit_all("COMM_SET_LOCKS", &body);
+                        }
                         warp::reply::json(&serde_json::json!({"ok": true}))
                     });
 
-                // POST /api/trade — { offerId, action: "approve"|"decline" } → COMM_TRADE_ACTION
-                let h_trade = handle.clone();
+                // POST /api/trade — { offerId, action } → COMM_TRADE_ACTION (token required)
+                let h_trade   = handle.clone();
+                let tok_trade = token.clone();
                 let trade_route = warp::post()
                     .and(warp::path("api"))
                     .and(warp::path("trade"))
                     .and(warp::path::end())
+                    .and(warp::header::optional::<String>("x-comm-token"))
                     .and(warp::body::json::<serde_json::Value>())
-                    .map(move |body: serde_json::Value| {
-                        let _ = h_trade.emit_all("COMM_TRADE_ACTION", &body);
+                    .map(move |tok: Option<String>, body: serde_json::Value| {
+                        if tok.as_deref() == Some(&tok_trade) {
+                            let _ = h_trade.emit_all("COMM_TRADE_ACTION", &body);
+                        }
                         warp::reply::json(&serde_json::json!({"ok": true}))
                     });
 
-                // POST /api/announce — { text: "..." } → COMM_ANNOUNCE
-                let h_ann = handle.clone();
+                // POST /api/announce — { text } → COMM_ANNOUNCE (token required)
+                let h_ann   = handle.clone();
+                let tok_ann = token.clone();
                 let ann_route = warp::post()
                     .and(warp::path("api"))
                     .and(warp::path("announce"))
                     .and(warp::path::end())
+                    .and(warp::header::optional::<String>("x-comm-token"))
                     .and(warp::body::json::<serde_json::Value>())
-                    .map(move |body: serde_json::Value| {
-                        let _ = h_ann.emit_all("COMM_ANNOUNCE", &body);
+                    .map(move |tok: Option<String>, body: serde_json::Value| {
+                        if tok.as_deref() == Some(&tok_ann) {
+                            let _ = h_ann.emit_all("COMM_ANNOUNCE", &body);
+                        }
                         warp::reply::json(&serde_json::json!({"ok": true}))
                     });
 
-                // POST /api/week/advance — {} → COMM_ADVANCE_WEEK
-                let h_week = handle.clone();
+                // POST /api/week/advance — {} → COMM_ADVANCE_WEEK (token required)
+                let h_week   = handle.clone();
+                let tok_week = token.clone();
                 let week_route = warp::post()
                     .and(warp::path("api"))
                     .and(warp::path("week"))
                     .and(warp::path("advance"))
                     .and(warp::path::end())
+                    .and(warp::header::optional::<String>("x-comm-token"))
                     .and(warp::body::json::<serde_json::Value>())
-                    .map(move |_body: serde_json::Value| {
-                        let _ = h_week.emit_all("COMM_ADVANCE_WEEK", ());
+                    .map(move |tok: Option<String>, _body: serde_json::Value| {
+                        if tok.as_deref() == Some(&tok_week) {
+                            let _ = h_week.emit_all("COMM_ADVANCE_WEEK", ());
+                        }
                         warp::reply::json(&serde_json::json!({"ok": true}))
                     });
 

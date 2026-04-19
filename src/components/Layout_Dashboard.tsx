@@ -581,15 +581,15 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
                         a Trier OS product
                     </div>
 
-                    {/* DONATE BUTTON — uses Tauri shell.open for desktop, window.open as browser fallback */}
+                    {/* SPONSOR BUTTON — uses Tauri shell.open for desktop, window.open as browser fallback */}
                     <a
-                        href="https://buymeacoffee.com/dougtrier"
+                        href="https://github.com/sponsors/DougTrier"
                         onClick={(e) => {
                             e.preventDefault();
                             import('@tauri-apps/api/shell').then(({ open }) =>
-                                open('https://buymeacoffee.com/dougtrier')
+                                open('https://github.com/sponsors/DougTrier')
                             ).catch(() =>
-                                window.open('https://buymeacoffee.com/dougtrier', '_blank')
+                                window.open('https://github.com/sponsors/DougTrier', '_blank')
                             );
                         }}
                         style={{
@@ -599,37 +599,34 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
                             gap: '6px',
                             marginTop: '8px',
                             padding: '7px 14px',
-                            background: 'linear-gradient(135deg, #FFDD00 0%, #FF9500 100%)',
+                            background: 'linear-gradient(135deg, #2d333b 0%, #1c2128 100%)',
                             borderRadius: '50px',
-                            color: '#1a0800',
+                            color: '#fff',
                             fontWeight: 900,
                             fontSize: '0.72rem',
                             textDecoration: 'none',
                             letterSpacing: '0.06em',
                             textTransform: 'uppercase',
                             fontFamily: "'Graduate', sans-serif",
-                            boxShadow: '0 4px 12px rgba(255,149,0,0.55), inset 0 1px 0 rgba(255,255,255,0.45)',
-                            border: '1px solid rgba(255,255,255,0.25)',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)',
+                            border: '1px solid rgba(255,255,255,0.15)',
                             transition: 'all 0.2s ease',
                             cursor: 'pointer',
                             userSelect: 'none',
                         }}
-                        // Scale-up on hover gives the donate button extra personality —
-                        // it's not a navigation item so the stronger animation is intentional.
                         onMouseEnter={(e) => {
                             e.currentTarget.style.transform = 'translateY(-2px) scale(1.04)';
-                            e.currentTarget.style.boxShadow = '0 8px 20px rgba(255,149,0,0.75), inset 0 1px 0 rgba(255,255,255,0.5)';
-                            e.currentTarget.style.filter = 'brightness(1.08)';
+                            e.currentTarget.style.boxShadow = '0 8px 20px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.15)';
+                            e.currentTarget.style.filter = 'brightness(1.2)';
                         }}
-                        // Reset transforms on leave to avoid sticky state after fast moves.
                         onMouseLeave={(e) => {
                             e.currentTarget.style.transform = 'translateY(0)';
-                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(255,149,0,0.55), inset 0 1px 0 rgba(255,255,255,0.45)';
+                            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1)';
                             e.currentTarget.style.filter = 'brightness(1)';
                         }}
                     >
-                        <span style={{ fontSize: '0.9rem', lineHeight: 1 }}>☕</span>
-                        BUY ME A COFFEE
+                        <span style={{ fontSize: '0.9rem', lineHeight: 1 }}>♥</span>
+                        SPONSOR ON GITHUB
                     </a>
 
                     <div style={{

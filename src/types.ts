@@ -434,6 +434,10 @@ export interface League {
     id: string;
     name: string;
     teams: FantasyTeam[];
+    // PBKDF2 hash of the commissioner password — stored in the league so it syncs
+    // to all members via SYNC_LEAGUE. Members receive this hash and cannot admin
+    // without knowing the original plaintext. Replaces the global trier_admin_pass key.
+    commPasswordHash?: string;
     settings?: {
         budget: number;
         maxPlayers: number;

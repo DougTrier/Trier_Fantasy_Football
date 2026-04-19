@@ -47,16 +47,15 @@ export const CardActionButtons: React.FC<CardActionButtonsProps> = ({
             {onDraft && (
                 <button
                     onClick={onDraft}
-                    disabled={isDrafted}
                     style={{
                         padding: '14px',
-                        background: isDrafted ? '#9ca3af' : (actionColor || '#2563eb'),
+                        background: actionColor || (isDrafted ? '#dc2626' : '#2563eb'),
                         color: 'white',
                         border: 'none',
                         borderRadius: '10px',
                         fontSize: '1.1rem',
                         fontWeight: 900,
-                        cursor: isDrafted ? 'not-allowed' : 'pointer',
+                        cursor: 'pointer',
                         textTransform: 'uppercase',
                         display: 'flex',
                         alignItems: 'center',

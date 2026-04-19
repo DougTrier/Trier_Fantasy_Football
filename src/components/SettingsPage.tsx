@@ -25,7 +25,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { useDialog } from './AppDialog';
 import {
     Settings, Shield, Users, Lock, Download, Upload,
-    Trash2, RefreshCw, HardDrive, Plus, Edit2, Youtube, Radio, Bell, Sliders, Star
+    Trash2, RefreshCw, HardDrive, Plus, Edit2, Radio, Bell, Sliders, Star
 } from 'lucide-react';
 import { getNotifPrefs, setNotifPref, type NotifEvent } from '../services/NotificationService';
 import type { FantasyTeam, ScoringRuleset, DynastySettings, League } from '../types';
@@ -56,6 +56,7 @@ interface SettingsPageProps {
     onUpdateRuleset: (ruleset: ScoringRuleset) => void;
     league: League;
     onUpdateDynastySettings: (settings: DynastySettings) => void;
+    onChangeCommPassword: () => Promise<void>;
 }
 
 /**
@@ -75,8 +76,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     onDeleteTeam,
     onUpdateDetails,
     onCreateTeam,
-    peers,
-    connectedPeers,
     onImportTeam,
     lockedNFLTeams,
     onToggleLock,
@@ -87,6 +86,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     onUpdateRuleset,
     league,
     onUpdateDynastySettings,
+    onChangeCommPassword,
 }) => {
     // fileInputRef: the hidden <input type="file"> used for .tff import clicks.
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -112,6 +112,18 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     const [newOwner, setNewOwner] = useState('');
     const [newPass, setNewPass] = useState('');
 
+    // commToken — per-session dashboard token fetched from Rust on admin login.
+    // Empty string until admin mode is active in a Tauri context.
+    const [commToken, setCommToken] = useState('');
+    useEffect(() => {
+        if (!isAdmin) { setCommToken(''); return; }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if (!(window as any).__TAURI__) return;
+        import('@tauri-apps/api/tauri').then(({ invoke }) => {
+            invoke<string>('get_comm_token').then(setCommToken).catch(() => {});
+        });
+    }, [isAdmin]);
+
     // notifPrefs — loaded from localStorage once; updates written back via setNotifPref.
     const [notifPrefs, setNotifPrefs] = useState(getNotifPrefs);
 
@@ -121,25 +133,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
         setNotifPrefs(prev => ({ ...prev, [event]: next }));
     };
 
-    // YouTube API key — decrypted from localStorage on mount, displayed in plaintext UI field.
-    // localStorage always holds the enc1: encrypted form; plaintext only lives in React state.
-    const [ytApiKey, setYtApiKey] = useState('');
-    useEffect(() => {
-        const loadApiKey = async () => {
-            const raw = localStorage.getItem('trier_yt_api_key');
-            if (!raw) return;
-            if (raw.startsWith('enc1:')) {
-                // Decrypt stored key for display
-                const { IdentityService } = await import('../services/IdentityService');
-                const plain = await IdentityService.decryptSecret(raw);
-                if (plain) setYtApiKey(plain);
-            } else {
-                // Legacy plaintext — display as-is and migrate to encrypted on next save
-                setYtApiKey(raw);
-            }
-        };
-        loadApiKey();
-    }, []);
     const { showAlert, showConfirm, showPrompt } = useDialog();
 
     /**
@@ -196,537 +189,209 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     };
 
     return (
-        <div style={{ color: 'white', maxWidth: '1200px', margin: '0 auto', fontFamily: "'Inter', sans-serif", paddingBottom: '5vh' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: 'clamp(20px, 4vh, 40px)' }}>
-                <Settings size={40} color="#eab308" />
+        <div style={{ color: 'white', maxWidth: '1200px', margin: '0 auto', fontFamily: "'Inter', sans-serif", height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+
+            {/* Page header */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '14px', flexShrink: 0 }}>
+                <Settings size={34} color="#eab308" />
                 <h1 style={{
-                    fontSize: '2.5rem',
-                    fontWeight: 900,
-                    margin: 0,
-                    textTransform: 'uppercase',
-                    letterSpacing: '2px',
-                    color: 'transparent',
-                    backgroundImage: `url(${leatherTexture})`,
-                    backgroundSize: '150px',
-                    backgroundPosition: 'center',
-                    WebkitBackgroundClip: 'text',
-                    backgroundClip: 'text',
+                    fontSize: '1.9rem', fontWeight: 900, margin: 0, textTransform: 'uppercase',
+                    letterSpacing: '2px', color: 'transparent',
+                    backgroundImage: `url(${leatherTexture})`, backgroundSize: '150px', backgroundPosition: 'center',
+                    WebkitBackgroundClip: 'text', backgroundClip: 'text',
                     fontFamily: "'Graduate', 'Impact', sans-serif",
-                    WebkitTextStroke: '1px rgba(255,255,255,0.95)',
-                    textShadow: '0 5px 15px rgba(0,0,0,0.9)'
+                    WebkitTextStroke: '1px rgba(255,255,255,0.95)', textShadow: '0 5px 15px rgba(0,0,0,0.9)'
                 }}>
                     League Settings
                 </h1>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))', gap: '30px' }}>
+            {/* Two-column body — each column scrolls independently */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '18px', flex: 1, minHeight: 0, overflow: 'hidden' }}>
 
-                {/* 1. Commissioner Control Center */}
-                <section style={cardStyle}>
-                    <div style={headerStyle}>
-                        <Shield size={22} color="#eab308" />
-                        <h2 style={titleStyle}>Commissioner Center</h2>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '20px', borderRadius: '12px' }}>
-                            <div>
-                                <div style={{ fontSize: '1.1rem', fontWeight: 700 }}>Admin Mode</div>
-                                <div style={{ fontSize: '0.85rem', color: '#9ca3af' }}>{isAdmin ? 'Full access to league data enabled.' : 'Enable to manage all franchises.'}</div>
-                            </div>
-                            <button
-                                onClick={onToggleAdmin}
-                                title="Enable commissioner tools to force trades, edit active teams, or modify league settings."
-                                style={{ ...btnStyle, background: isAdmin ? '#ef4444' : '#eab308', color: isAdmin ? 'white' : 'black' }}
-                            >
-                                {isAdmin ? 'EXIT ADMIN' : 'LOG IN'}
-                            </button>
+                {/* ── LEFT COLUMN: Commissioner · Scoring · Dynasty ── */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', overflowY: 'auto', paddingBottom: '12px' }}>
+
+                    {/* 1. Commissioner Center */}
+                    <section style={cardStyle}>
+                        <div style={headerStyle}>
+                            <Shield size={20} color="#eab308" />
+                            <h2 style={titleStyle}>Commissioner Center</h2>
                         </div>
-
-                        {isAdmin && (
-                            <>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.05)', padding: '14px 16px', borderRadius: '10px' }}>
+                                <div>
+                                    <div style={{ fontSize: '1rem', fontWeight: 700 }}>Admin Mode</div>
+                                    <div style={{ fontSize: '0.8rem', color: '#9ca3af' }}>{isAdmin ? 'Full access to league data enabled.' : 'Enable to manage all franchises.'}</div>
+                                </div>
                                 <button
-                                    onClick={() => onCreateTeam('Test Team #' + Math.floor(Math.random() * 100), 'Dummy Coach', '1234')}
-                                    title="Generate a dummy team for testing and layout verification."
-                                    style={{ ...btnStyle, background: 'rgba(255,255,255,0.05)', border: '1px dashed #eab308', color: '#eab308', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                                    onClick={onToggleAdmin}
+                                    title="Enable commissioner tools to force trades, edit active teams, or modify league settings."
+                                    style={{ ...btnStyle, background: isAdmin ? '#ef4444' : '#eab308', color: isAdmin ? 'white' : 'black', padding: '8px 16px' }}
                                 >
-                                    <Plus size={18} /> CREATE TEST FRANCHISE (ADMIN ONLY)
+                                    {isAdmin ? 'EXIT ADMIN' : 'LOG IN'}
                                 </button>
-
-                                {/* Commissioner Dashboard link — only visible when admin */}
-                                <div style={{ background: 'rgba(234,179,8,0.06)', border: '1px solid rgba(234,179,8,0.2)', borderRadius: '10px', padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <div>
-                                        <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#eab308', fontFamily: "'Orbitron', sans-serif", letterSpacing: '1px', marginBottom: '4px' }}>
-                                            COMMISSIONER DASHBOARD
-                                        </div>
-                                        <div style={{ fontSize: '0.78rem', color: '#9ca3af' }}>
-                                            Browser-based control panel. Open on any browser on this machine.
-                                        </div>
-                                        <code style={{ fontSize: '0.8rem', color: '#34d399', marginTop: '4px', display: 'block' }}>
-                                            http://localhost:15434
-                                        </code>
-                                    </div>
-                                    <button
-                                        onClick={() => navigator.clipboard?.writeText('http://localhost:15434')}
-                                        title="Copy URL to clipboard"
-                                        style={{ ...btnStyle, background: 'rgba(52,211,153,0.12)', border: '1px solid rgba(52,211,153,0.3)', color: '#34d399', fontSize: '0.75rem', padding: '6px 12px' }}
-                                    >
-                                        COPY URL
-                                    </button>
-                                </div>
-                            </>
-                        )}
-
-                        {/* ── NFL Game Day Locks ─────────────────────────────────── */}
-                        {isAdmin && (
-                            <div style={{ background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '12px', padding: '18px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-                                    <Radio size={16} color="#ef4444" />
-                                    <span style={{ fontWeight: 800, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '1px', color: '#ef4444' }}>Game Day Locks</span>
-                                    {lockedNFLTeams.length > 0 && (
-                                        <span style={{ fontSize: '0.7rem', background: 'rgba(239,68,68,0.15)', color: '#ef4444', padding: '1px 6px', borderRadius: '3px', fontWeight: 700 }}>
-                                            {lockedNFLTeams.length} LOCKED
-                                        </span>
-                                    )}
-                                </div>
-                                <div style={{ display: 'flex', gap: '8px', marginBottom: '14px', flexWrap: 'wrap' }}>
-                                    <button
-                                        onClick={async () => {
-                                            setFetchingSchedule(true);
-                                            await onFetchSchedule();
-                                            setFetchingSchedule(false);
-                                        }}
-                                        disabled={fetchingSchedule}
-                                        title="Fetch live game status from ESPN — auto-locks teams currently playing."
-                                        style={{ ...btnStyle, fontSize: '0.75rem', padding: '6px 12px', background: '#3b82f6', color: '#fff', display: 'flex', alignItems: 'center', gap: '6px', opacity: fetchingSchedule ? 0.6 : 1 }}
-                                    >
-                                        <RefreshCw size={12} /> {fetchingSchedule ? 'FETCHING...' : 'LIVE SCHEDULE'}
-                                    </button>
-                                    <button onClick={onLockAll} title="Lock all 32 NFL teams (simulate full Sunday)." style={{ ...btnStyle, fontSize: '0.75rem', padding: '6px 12px', background: 'rgba(239,68,68,0.2)', border: '1px solid #ef4444', color: '#ef4444' }}>
-                                        LOCK ALL
-                                    </button>
-                                    <button onClick={onUnlockAll} title="Unlock all teams — open season mode." style={{ ...btnStyle, fontSize: '0.75rem', padding: '6px 12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', color: '#9ca3af' }}>
-                                        UNLOCK ALL
-                                    </button>
-                                </div>
-                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
-                                    {NFL_TEAMS.map(team => (
-                                        <button
-                                            key={team}
-                                            onClick={() => onToggleLock(team)}
-                                            title={lockedNFLTeams.includes(team) ? `Unlock ${team}` : `Lock ${team}`}
-                                            style={{
-                                                padding: '4px 8px', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 900,
-                                                cursor: 'pointer', border: '1px solid', transition: 'all 0.1s',
-                                                background: lockedNFLTeams.includes(team) ? '#ef4444' : 'transparent',
-                                                color: lockedNFLTeams.includes(team) ? '#fff' : '#6b7280',
-                                                borderColor: lockedNFLTeams.includes(team) ? '#ef4444' : 'rgba(255,255,255,0.15)'
-                                            }}
-                                        >
-                                            {team}
-                                        </button>
-                                    ))}
-                                </div>
                             </div>
-                        )}
 
-                        {/* ── YouTube API Key ───────────────────────────────────── */}
-                        {isAdmin && (
-                            <div style={{ background: 'rgba(255,0,0,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px', padding: '18px' }}>
-                                {/* Header row with status badge */}
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                                    <Youtube size={16} color="#ef4444" />
-                                    <span style={{ fontWeight: 800, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '1px' }}>YouTube API Key</span>
-                                    <span style={{ fontSize: '0.65rem', color: ytApiKey ? '#10b981' : '#6b7280', fontWeight: 700 }}>
-                                        {ytApiKey ? '● CONFIGURED' : '○ MOCK MODE'}
-                                    </span>
-                                </div>
-
-                                {/* Brief description */}
-                                <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginBottom: '12px', lineHeight: 1.5 }}>
-                                    A free YouTube Data API v3 key enables real player highlight search and game film.
-                                    Without one, the video pipeline uses demo data only.
-                                </div>
-
-                                {/* Step-by-step setup instructions */}
-                                <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '8px', padding: '12px', marginBottom: '12px', fontSize: '0.72rem', color: '#9ca3af', lineHeight: 1.7 }}>
-                                    <div style={{ fontWeight: 700, color: '#d1d5db', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.5px', fontSize: '0.68rem' }}>How to get a free key (2 minutes)</div>
-                                    <div>1. Click <strong style={{ color: '#ef4444' }}>GET API KEY</strong> below — opens Google Cloud Console</div>
-                                    <div>2. Sign in with any Google account and create a project (e.g. "TrierFantasy")</div>
-                                    <div>3. In the left menu go to <strong style={{ color: '#d1d5db' }}>APIs &amp; Services → Library</strong></div>
-                                    <div>4. Search for <strong style={{ color: '#d1d5db' }}>YouTube Data API v3</strong> and click <strong style={{ color: '#d1d5db' }}>Enable</strong></div>
-                                    <div>5. Go to <strong style={{ color: '#d1d5db' }}>APIs &amp; Services → Credentials → Create Credentials → API Key</strong></div>
-                                    <div>6. Copy the key (starts with <code style={{ color: '#fbbf24' }}>AIza</code>) and paste it below</div>
-                                    <div style={{ marginTop: '6px', color: '#6b7280' }}>Free quota: 10,000 units/day — more than enough for a fantasy league.</div>
-                                </div>
-
-                                {/* Open Google Cloud Console button */}
-                                <button
-                                    onClick={() => {
-                                        // shell.open is allowed in tauri.conf.json allowlist
-                                        (window as any).__TAURI__?.shell?.open('https://console.cloud.google.com/apis/library/youtube.googleapis.com');
-                                    }}
-                                    style={{ ...btnStyle, padding: '6px 14px', background: 'rgba(239,68,68,0.15)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', fontSize: '0.75rem', marginBottom: '10px' }}
-                                >
-                                    GET API KEY →
-                                </button>
-
-                                {/* Key input + save */}
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                    <input
-                                        type="password"
-                                        placeholder="AIza..."
-                                        value={ytApiKey}
-                                        onChange={e => setYtApiKey(e.target.value)}
-                                        style={{ ...inputStyle, flex: 1, fontSize: '0.85rem' }}
-                                    />
+                            {isAdmin && (
+                                <>
+                                    {/* Change Commissioner password — only accessible while already logged in */}
                                     <button
-                                        onClick={async () => {
-                                            const trimmed = ytApiKey.trim();
-                                            if (trimmed) {
-                                                // Encrypt before storing — plaintext never touches localStorage
-                                                const { IdentityService } = await import('../services/IdentityService');
-                                                const encrypted = await IdentityService.encryptSecret(trimmed);
-                                                localStorage.setItem('trier_yt_api_key', encrypted);
-                                            } else {
-                                                localStorage.removeItem('trier_yt_api_key');
+                                        onClick={onChangeCommPassword}
+                                        title="Change the Commissioner password for this league."
+                                        style={{ ...btnStyle, background: 'rgba(234,179,8,0.08)', border: '1px solid rgba(234,179,8,0.3)', color: '#eab308', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '8px 16px' }}
+                                    >
+                                        <RefreshCw size={14} /> CHANGE COMMISSIONER PASSWORD
+                                    </button>
+
+                                    <button
+                                        onClick={() => onCreateTeam('Test Team #' + Math.floor(Math.random() * 100), 'Dummy Coach', '1234')}
+                                        title="Generate a dummy team for testing and layout verification."
+                                        style={{ ...btnStyle, background: 'rgba(255,255,255,0.05)', border: '1px dashed #eab308', color: '#eab308', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '8px 16px' }}
+                                    >
+                                        <Plus size={16} /> CREATE TEST FRANCHISE (ADMIN ONLY)
+                                    </button>
+
+                                    {/* Commissioner Dashboard link — token URL only visible to admin */}
+                                    <div style={{ background: 'rgba(234,179,8,0.06)', border: '1px solid rgba(234,179,8,0.2)', borderRadius: '10px', padding: '12px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div style={{ minWidth: 0, flex: 1 }}>
+                                            <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#eab308', fontFamily: "'Orbitron', sans-serif", letterSpacing: '1px', marginBottom: '3px' }}>COMMISSIONER DASHBOARD</div>
+                                            <div style={{ fontSize: '0.72rem', color: '#9ca3af', marginBottom: '3px' }}>Browser control panel — localhost only. Token refreshes on each app launch.</div>
+                                            {commToken
+                                                ? <code style={{ fontSize: '0.68rem', color: '#34d399', display: 'block', wordBreak: 'break-all' }}>http://localhost:15434/?token={commToken}</code>
+                                                : <code style={{ fontSize: '0.68rem', color: '#6b7280', display: 'block' }}>http://localhost:15434 (Tauri only)</code>
                                             }
-                                            showAlert(trimmed ? 'YouTube API key saved (encrypted). Real video search is now active.' : 'API key cleared. Pipeline will use demo data.', 'Saved');
-                                        }}
-                                        style={{ ...btnStyle, padding: '8px 14px', background: '#10b981', color: '#000', fontSize: '0.8rem' }}
-                                    >
-                                        SAVE
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-                    </div>
-                </section>
-
-                {/* 2. Scoring Format */}
-                <section style={cardStyle}>
-                    <div style={headerStyle}>
-                        <Sliders size={22} color="#eab308" />
-                        <h2 style={titleStyle}>Scoring Format</h2>
-                    </div>
-
-                    {/* Preset buttons */}
-                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
-                        {(Object.keys(SCORING_PRESETS) as Array<keyof typeof SCORING_PRESETS>).map(key => {
-                            const active = draftRuleset.presetKey === key;
-                            return (
-                                <button
-                                    key={key}
-                                    disabled={!isAdmin}
-                                    onClick={() => setDraftRuleset({ ...SCORING_PRESETS[key] })}
-                                    style={{
-                                        padding: '6px 14px', borderRadius: '6px', fontSize: '0.8rem',
-                                        fontFamily: "'Orbitron', sans-serif", cursor: isAdmin ? 'pointer' : 'default',
-                                        border: active ? '2px solid #eab308' : '1px solid rgba(255,255,255,0.15)',
-                                        background: active ? 'rgba(234,179,8,0.15)' : 'rgba(255,255,255,0.05)',
-                                        color: active ? '#eab308' : '#9ca3af',
-                                    }}
-                                >
-                                    {SCORING_PRESETS[key].name}
-                                </button>
-                            );
-                        })}
-                        {/* Custom badge — shown when user has diverged from any preset */}
-                        {draftRuleset.presetKey === 'Custom' && (
-                            <span style={{ padding: '6px 14px', borderRadius: '6px', fontSize: '0.8rem', fontFamily: "'Orbitron', sans-serif", border: '2px solid #a78bfa', background: 'rgba(167,139,250,0.15)', color: '#a78bfa' }}>
-                                CUSTOM
-                            </span>
-                        )}
-                    </div>
-
-                    {/* Current format summary */}
-                    <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', fontSize: '0.78rem', color: '#9ca3af', marginBottom: '12px' }}>
-                        <span>Reception: <b style={{ color: '#f3f4f6' }}>{draftRuleset.receptionPoints} pt</b></span>
-                        <span>Pass TD: <b style={{ color: '#f3f4f6' }}>{draftRuleset.passingTDPoints} pts</b></span>
-                        <span>Rush/Rec TD: <b style={{ color: '#f3f4f6' }}>{draftRuleset.rushingTDPoints} pts</b></span>
-                        {draftRuleset.tepBonus > 0 && <span>TEP Bonus: <b style={{ color: '#a78bfa' }}>+{draftRuleset.tepBonus} pts/TE catch</b></span>}
-                        {draftRuleset.passing300YardBonus > 0 && <span>300-yd Bonus: <b style={{ color: '#34d399' }}>+{draftRuleset.passing300YardBonus}</b></span>}
-                    </div>
-
-                    {/* Expand/collapse custom weight editor — admin-only */}
-                    {isAdmin && (
-                        <button
-                            onClick={() => setScoringExpanded(v => !v)}
-                            style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: '0.8rem', marginBottom: scoringExpanded ? '16px' : 0 }}
-                        >
-                            <Sliders size={14} /> {scoringExpanded ? '▲ Hide custom weights' : '▼ Edit custom weights'}
-                        </button>
-                    )}
-
-                    {scoringExpanded && isAdmin && (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                            {/* Helper: a labeled number input row */}
-                            {([
-                                { label: 'PASSING', fields: [
-                                    ['Pass yards per pt', 'passingYardsPerPoint'],
-                                    ['Pass TD pts', 'passingTDPoints'],
-                                    ['INT pts', 'passingINTPoints'],
-                                    ['300-yd game bonus', 'passing300YardBonus'],
-                                    ['400-yd game bonus', 'passing400YardBonus'],
-                                ]},
-                                { label: 'RUSHING', fields: [
-                                    ['Rush yards per pt', 'rushingYardsPerPoint'],
-                                    ['Rush TD pts', 'rushingTDPoints'],
-                                    ['100-yd rush bonus', 'rushing100YardBonus'],
-                                    ['200-yd rush bonus', 'rushing200YardBonus'],
-                                ]},
-                                { label: 'RECEIVING', fields: [
-                                    ['Rec yards per pt', 'receivingYardsPerPoint'],
-                                    ['Rec TD pts', 'receivingTDPoints'],
-                                    ['Reception pts', 'receptionPoints'],
-                                    ['TE bonus per catch', 'tepBonus'],
-                                    ['100-yd rec bonus', 'receiving100YardBonus'],
-                                    ['200-yd rec bonus', 'receiving200YardBonus'],
-                                ]},
-                                { label: 'MISC', fields: [
-                                    ['Fumble lost pts', 'fumbleLostPoints'],
-                                ]},
-                                { label: 'KICKER', fields: [
-                                    ['FG under 40 pts', 'fgUnder40Points'],
-                                    ['FG 40–49 pts', 'fg40to49Points'],
-                                    ['FG 50+ pts', 'fg50plusPoints'],
-                                    ['XP pts', 'xpPoints'],
-                                    ['Missed XP pts', 'missedXPPoints'],
-                                ]},
-                                { label: 'D/ST', fields: [
-                                    ['Sack pts', 'dstSackPoints'],
-                                    ['INT pts', 'dstINTPoints'],
-                                    ['TD pts', 'dstTDPoints'],
-                                    ['Safety pts', 'dstSafetyPoints'],
-                                    ['Fumble rec pts', 'dstFumbleRecPoints'],
-                                ]},
-                                { label: 'IDP', fields: [
-                                    ['Solo tackle', 'soloTacklePoints'],
-                                    ['Assisted tackle', 'assistedTacklePoints'],
-                                    ['Sack', 'idpSackPoints'],
-                                    ['TFL', 'tflPoints'],
-                                    ['Pass deflection', 'passDefPoints'],
-                                    ['QB hit', 'qbHitPoints'],
-                                    ['Forced fumble', 'ffPoints'],
-                                    ['Blocked kick', 'blockedKickPoints'],
-                                ]},
-                            ] as { label: string; fields: [string, keyof ScoringRuleset][] }[]).map(({ label, fields }) => (
-                                <div key={label}>
-                                    <div style={{ fontSize: '0.7rem', fontFamily: "'Orbitron', sans-serif", color: '#eab308', letterSpacing: '1px', marginBottom: '8px' }}>{label}</div>
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '8px' }}>
-                                        {fields.map(([fieldLabel, key]) => (
-                                            <label key={key} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                                                <span style={{ fontSize: '0.7rem', color: '#6b7280' }}>{fieldLabel}</span>
-                                                <input
-                                                    type="number"
-                                                    step="0.5"
-                                                    value={draftRuleset[key] as number}
-                                                    onChange={e => setDraftRuleset(prev => ({
-                                                        ...prev,
-                                                        presetKey: 'Custom',
-                                                        name: 'Custom',
-                                                        [key]: parseFloat(e.target.value) || 0,
-                                                    }))}
-                                                    style={{
-                                                        background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.15)',
-                                                        borderRadius: '4px', color: '#f3f4f6', padding: '4px 8px',
-                                                        fontSize: '0.85rem', width: '100%',
-                                                    }}
-                                                />
-                                            </label>
-                                        ))}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
-                    {/* Save / Export / Import row — commissioner-only */}
-                    {isAdmin && (
-                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '16px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-                            <button
-                                onClick={() => { onUpdateRuleset(draftRuleset); }}
-                                style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(234,179,8,0.15)', border: '1px solid #eab308', color: '#eab308', padding: '7px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontFamily: "'Orbitron', sans-serif" }}
-                            >
-                                SAVE FORMAT
-                            </button>
-                            {/* Export active ruleset as .tffr file */}
-                            <button
-                                onClick={() => {
-                                    const blob = new Blob([JSON.stringify(draftRuleset, null, 2)], { type: 'application/json' });
-                                    const a = document.createElement('a');
-                                    a.href = URL.createObjectURL(blob);
-                                    a.download = `${draftRuleset.name.replace(/\s+/g, '_')}.tffr`;
-                                    a.click();
-                                    URL.revokeObjectURL(a.href);
-                                }}
-                                style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', color: '#9ca3af', padding: '7px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem' }}
-                            >
-                                <Download size={14} /> Export .tffr
-                            </button>
-                            {/* Import a .tffr ruleset file */}
-                            <button
-                                onClick={() => rulesetFileRef.current?.click()}
-                                style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', color: '#9ca3af', padding: '7px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem' }}
-                            >
-                                <Upload size={14} /> Import .tffr
-                            </button>
-                            <input
-                                ref={rulesetFileRef}
-                                type="file"
-                                accept=".tffr,.json"
-                                style={{ display: 'none' }}
-                                onChange={async e => {
-                                    const file = e.target.files?.[0];
-                                    if (!file) return;
-                                    try {
-                                        const text = await file.text();
-                                        const parsed = JSON.parse(text) as ScoringRuleset;
-                                        // Basic validation — must have the key fields
-                                        if (typeof parsed.receptionPoints !== 'number') throw new Error('Invalid .tffr file');
-                                        setDraftRuleset(parsed);
-                                    } catch {
-                                        alert('Could not import ruleset — invalid .tffr file.');
-                                    }
-                                    e.target.value = '';
-                                }}
-                            />
-                        </div>
-                    )}
-                </section>
-
-                {/* 2b. Dynasty Mode — admin only */}
-                {isAdmin && (
-                <section style={cardStyle}>
-                    <div style={headerStyle}>
-                        <Star size={22} color="#eab308" />
-                        <h2 style={titleStyle}>Dynasty Mode</h2>
-                    </div>
-                    <div style={{ padding: '0 20px 20px' }}>
-                        <p style={{ margin: '0 0 16px', color: '#9ca3af', fontSize: '0.85rem', lineHeight: 1.6 }}>
-                            Enable season-to-season roster continuity. Managers designate keepers before each new season; all other players are released back to the free agent pool.
-                        </p>
-
-                        {/* Enable / Disable toggle */}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', padding: '12px 16px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                            <div>
-                                <div style={{ fontWeight: 700, color: '#f3f4f6', fontSize: '0.9rem' }}>Dynasty Mode</div>
-                                <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: 2 }}>Enables the Dynasty page and keeper selection for all teams</div>
-                            </div>
-                            <button
-                                onClick={() => onUpdateDynastySettings({
-                                    ...(league.settings?.dynastySettings ?? { enabled: false, maxKeepers: 3, contractYearsEnabled: false }),
-                                    enabled: !(league.settings?.dynastySettings?.enabled ?? false),
-                                })}
-                                style={{
-                                    padding: '6px 18px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: '0.82rem',
-                                    background: league.settings?.dynastySettings?.enabled ? '#16a34a' : 'rgba(255,255,255,0.1)',
-                                    color: league.settings?.dynastySettings?.enabled ? '#fff' : '#9ca3af',
-                                    transition: 'all 0.2s',
-                                }}
-                            >
-                                {league.settings?.dynastySettings?.enabled ? 'ENABLED' : 'DISABLED'}
-                            </button>
-                        </div>
-
-                        {league.settings?.dynastySettings?.enabled && (
-                            <>
-                                {/* Max Keepers */}
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px', padding: '12px 16px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                    <div style={{ flex: 1 }}>
-                                        <div style={{ fontWeight: 700, color: '#f3f4f6', fontSize: '0.85rem' }}>Max Keepers Per Team</div>
-                                        <div style={{ fontSize: '0.72rem', color: '#6b7280', marginTop: 2 }}>How many players each team can retain each off-season</div>
-                                    </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <button onClick={() => onUpdateDynastySettings({ ...league.settings!.dynastySettings!, maxKeepers: Math.max(1, (league.settings?.dynastySettings?.maxKeepers ?? 3) - 1) })} style={{ width: 28, height: 28, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.4)', color: '#fff', cursor: 'pointer', fontWeight: 900, fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>-</button>
-                                        <span style={{ minWidth: '2rem', textAlign: 'center', fontWeight: 800, color: '#eab308', fontSize: '1.1rem' }}>
-                                            {league.settings?.dynastySettings?.maxKeepers ?? 3}
-                                        </span>
-                                        <button onClick={() => onUpdateDynastySettings({ ...league.settings!.dynastySettings!, maxKeepers: Math.min(10, (league.settings?.dynastySettings?.maxKeepers ?? 3) + 1) })} style={{ width: 28, height: 28, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.4)', color: '#fff', cursor: 'pointer', fontWeight: 900, fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
-                                    </div>
-                                </div>
-
-                                {/* Contract Years */}
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                    <div>
-                                        <div style={{ fontWeight: 700, color: '#f3f4f6', fontSize: '0.85rem' }}>3-Year Contract Limit</div>
-                                        <div style={{ fontSize: '0.72rem', color: '#6b7280', marginTop: 2 }}>Players can only be kept for 3 seasons before returning to the free agent pool</div>
-                                    </div>
-                                    <button
-                                        onClick={() => onUpdateDynastySettings({ ...league.settings!.dynastySettings!, contractYearsEnabled: !league.settings?.dynastySettings?.contractYearsEnabled })}
-                                        style={{
-                                            padding: '6px 18px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: '0.82rem',
-                                            background: league.settings?.dynastySettings?.contractYearsEnabled ? '#1d4ed8' : 'rgba(255,255,255,0.1)',
-                                            color: league.settings?.dynastySettings?.contractYearsEnabled ? '#fff' : '#9ca3af',
-                                            transition: 'all 0.2s',
-                                        }}
-                                    >
-                                        {league.settings?.dynastySettings?.contractYearsEnabled ? 'ON' : 'OFF'}
-                                    </button>
-                                </div>
-                            </>
-                        )}
-                    </div>
-                </section>
-                )}
-
-                {/* ── Franchise Management ─────────────────────────────────────────── */}
-                {/* Spans full grid width so franchise cards don't wrap awkwardly      */}
-                <section style={{ ...cardStyle, gridColumn: '1 / -1' }}>
-                    <div style={headerStyle}>
-                        <Users size={22} color="#eab308" />
-                        <h2 style={titleStyle}>Manage Franchises</h2>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '20px' }}>
-                        {teams.map(t => {
-                            const active = t.id === activeTeamId;
-                            const editing = editingId === t.id;
-                            // Only the active owner (or admin) can edit/backup their own franchise.
-                            // Gold border on active team card for quick visual identification.
-                            // editingId drives the inline form; null = display mode.
-                            return (
-                                <div key={t.id} style={{
-                                    background: active ? 'rgba(234, 179, 8, 0.1)' : 'rgba(255,255,255,0.03)',
-                                    border: active ? '1px solid #eab308' : '1px solid rgba(255,255,255,0.1)',
-                                    borderRadius: '16px', padding: '24px', transition: 'all 0.2s'
-                                }}>
-                                    {editing ? (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                                            <input value={editName} onChange={e => setEditName(e.target.value)} placeholder="Team Name" style={inputStyle} />
-                                            <input value={editOwner} onChange={e => setEditOwner(e.target.value)} placeholder="Owner Name" style={inputStyle} />
-                                            <input type="password" value={editPass} onChange={e => setEditPass(e.target.value)} placeholder="Franchise Password" style={inputStyle} />
-                                            <div style={{ display: 'flex', gap: '10px' }}>
-                                                <button onClick={async () => {
-                                                    if (!editName || !editOwner || !editPass) {
-                                                        await showAlert("Team Name, Coach Name, and Password are all required.", "Required Fields");
-                                                        return;
-                                                    }
-                                                    onUpdateDetails(t.id, editName, editOwner, editPass);
-                                                    setEditingId(null);
-                                                }} style={{ ...btnStyle, flex: 1, background: '#10b981' }}>SAVE</button>
-                                                <button onClick={() => setEditingId(null)} style={{ ...btnStyle, flex: 1, background: '#64748b' }}>CANCEL</button>
-                                            </div>
                                         </div>
-                                    ) : (
-                                        <>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-                                                <div>
-                                                    <div style={{ fontSize: '1.4rem', fontWeight: 900, color: active ? '#eab308' : 'white' }}>{t.name}</div>
-                                                    <div style={{ fontSize: '0.9rem', color: '#9ca3af' }}>Coach: {t.ownerName}</div>
+                                        <button
+                                            onClick={() => navigator.clipboard?.writeText(commToken ? `http://localhost:15434/?token=${commToken}` : 'http://localhost:15434')}
+                                            title="Copy dashboard URL to clipboard"
+                                            style={{ ...btnStyle, background: 'rgba(52,211,153,0.12)', border: '1px solid rgba(52,211,153,0.3)', color: '#34d399', fontSize: '0.72rem', padding: '5px 10px', flexShrink: 0, marginLeft: '10px' }}
+                                        >
+                                            COPY URL
+                                        </button>
+                                    </div>
+
+                                    {/* ── NFL Game Day Locks ── */}
+                                    <div style={{ background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '10px', padding: '14px' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                                            <Radio size={14} color="#ef4444" />
+                                            <span style={{ fontWeight: 800, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '1px', color: '#ef4444' }}>Game Day Locks</span>
+                                            {lockedNFLTeams.length > 0 && (
+                                                <span style={{ fontSize: '0.68rem', background: 'rgba(239,68,68,0.15)', color: '#ef4444', padding: '1px 5px', borderRadius: '3px', fontWeight: 700 }}>
+                                                    {lockedNFLTeams.length} LOCKED
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div style={{ display: 'flex', gap: '6px', marginBottom: '10px', flexWrap: 'wrap' }}>
+                                            <button
+                                                onClick={async () => { setFetchingSchedule(true); await onFetchSchedule(); setFetchingSchedule(false); }}
+                                                disabled={fetchingSchedule}
+                                                title="Fetch live game status from ESPN — auto-locks teams currently playing."
+                                                style={{ ...btnStyle, fontSize: '0.7rem', padding: '5px 10px', background: '#3b82f6', color: '#fff', display: 'flex', alignItems: 'center', gap: '5px', opacity: fetchingSchedule ? 0.6 : 1 }}
+                                            >
+                                                <RefreshCw size={11} /> {fetchingSchedule ? 'FETCHING...' : 'LIVE SCHEDULE'}
+                                            </button>
+                                            <button onClick={onLockAll} title="Lock all 32 NFL teams (simulate full Sunday)." style={{ ...btnStyle, fontSize: '0.7rem', padding: '5px 10px', background: 'rgba(239,68,68,0.2)', border: '1px solid #ef4444', color: '#ef4444' }}>LOCK ALL</button>
+                                            <button onClick={onUnlockAll} title="Unlock all teams — open season mode." style={{ ...btnStyle, fontSize: '0.7rem', padding: '5px 10px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', color: '#9ca3af' }}>UNLOCK ALL</button>
+                                        </div>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                                            {NFL_TEAMS.map(team => (
+                                                <button
+                                                    key={team}
+                                                    onClick={() => onToggleLock(team)}
+                                                    title={lockedNFLTeams.includes(team) ? `Unlock ${team}` : `Lock ${team}`}
+                                                    style={{
+                                                        padding: '3px 6px', borderRadius: '3px', fontSize: '0.6rem', fontWeight: 900,
+                                                        cursor: 'pointer', border: '1px solid', transition: 'all 0.1s',
+                                                        background: lockedNFLTeams.includes(team) ? '#ef4444' : 'transparent',
+                                                        color: lockedNFLTeams.includes(team) ? '#fff' : '#6b7280',
+                                                        borderColor: lockedNFLTeams.includes(team) ? '#ef4444' : 'rgba(255,255,255,0.15)'
+                                                    }}
+                                                >
+                                                    {team}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                </>
+                            )}
+                        </div>
+                    </section>
+
+                    {/* 2. Data Operations */}
+                    <section style={cardStyle}>
+                        <div style={headerStyle}>
+                            <HardDrive size={20} color="#eab308" />
+                            <h2 style={titleStyle}>Data Operations</h2>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            <button onClick={() => fileInputRef.current?.click()} title="Restore league data from a previously exported .tff file." style={{ ...btnStyle, background: '#3b82f6', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <Upload size={16} /> IMPORT DATA FROM FILE (.TFF)
+                            </button>
+                            {isAdmin && (
+                                <button onClick={async () => {
+                                    // Double-confirm to prevent accidental wipes — no undo possible
+                                    if (await showConfirm("WARNING: This will permanently erase all teams, rosters, and settings. This cannot be undone.", "Factory Reset", "ERASE EVERYTHING")) {
+                                        localStorage.clear();
+                                        window.location.reload();
+                                    }
+                                }} title="Wipe all local data, clear cache, and start fresh (Irreversible)." style={{ ...btnStyle, background: 'rgba(239,68,68,0.1)', border: '1px solid #ef4444', color: '#ef4444', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <RefreshCw size={16} /> FACTORY RESET APP
+                                </button>
+                            )}
+                        </div>
+                    </section>
+
+                    {/* 3. Manage Franchises — compact rows */}
+                    <section style={cardStyle}>
+                        <div style={headerStyle}>
+                            <Users size={20} color="#eab308" />
+                            <h2 style={titleStyle}>Manage Franchises</h2>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {teams.map(t => {
+                                const active = t.id === activeTeamId;
+                                const editing = editingId === t.id;
+                                return (
+                                    <div key={t.id} style={{
+                                        background: active ? 'rgba(234,179,8,0.1)' : 'rgba(255,255,255,0.03)',
+                                        border: active ? '1px solid #eab308' : '1px solid rgba(255,255,255,0.08)',
+                                        borderRadius: '10px', padding: editing ? '14px' : '10px 14px', transition: 'all 0.2s'
+                                    }}>
+                                        {editing ? (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                                <input value={editName} onChange={e => setEditName(e.target.value)} placeholder="Team Name" style={inputStyle} />
+                                                <input value={editOwner} onChange={e => setEditOwner(e.target.value)} placeholder="Owner Name" style={inputStyle} />
+                                                <input type="password" value={editPass} onChange={e => setEditPass(e.target.value)} placeholder="Franchise Password" style={inputStyle} />
+                                                <div style={{ display: 'flex', gap: '8px' }}>
+                                                    <button onClick={async () => {
+                                                        if (!editName || !editOwner || !editPass) { await showAlert("Team Name, Coach Name, and Password are all required.", "Required Fields"); return; }
+                                                        onUpdateDetails(t.id, editName, editOwner, editPass);
+                                                        setEditingId(null);
+                                                    }} style={{ ...btnStyle, flex: 1, background: '#10b981', padding: '8px 12px', fontSize: '0.82rem' }}>SAVE</button>
+                                                    <button onClick={() => setEditingId(null)} style={{ ...btnStyle, flex: 1, background: '#64748b', padding: '8px 12px', fontSize: '0.82rem' }}>CANCEL</button>
                                                 </div>
-                                                {t.password && <Lock size={18} color={active || isAdmin ? '#10b981' : '#ef4444'} />}
                                             </div>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '15px' }}>
-                                                <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
+                                        ) : (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                {/* Name + owner */}
+                                                <div style={{ flex: 1, minWidth: 0 }}>
+                                                    <div style={{ fontWeight: 800, fontSize: '0.9rem', color: active ? '#eab308' : 'white', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.name}</div>
+                                                    <div style={{ fontSize: '0.72rem', color: '#9ca3af' }}>Coach: {t.ownerName}</div>
+                                                </div>
+                                                {t.password && <Lock size={13} color={active || isAdmin ? '#10b981' : '#ef4444'} style={{ flexShrink: 0 }} />}
+                                                {/* Action buttons */}
+                                                <div style={{ display: 'flex', gap: '4px', alignItems: 'center', flexShrink: 0 }}>
                                                     {(active || isAdmin) && (
                                                         <>
-                                                            <button onClick={() => handleExport(t)} title="Export this franchise's data to a secure file." style={actionBtnStyle}><Download size={14} /> BACKUP</button>
+                                                            <button onClick={() => handleExport(t)} title="Export backup (.tff)" style={compactIconBtn}><Download size={13} /></button>
                                                             <button onClick={() => {
                                                                 const input = document.createElement('input');
                                                                 input.type = 'file';
                                                                 input.accept = '.tff,.json';
                                                                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                                input.onchange = (e: any) => {
+                                                                input.onchange = (e: any) => {
                                                                     const file = e.target.files[0];
                                                                     const reader = new FileReader();
                                                                     reader.onload = async (ev) => {
@@ -750,183 +415,370 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                                                                     reader.readAsText(file);
                                                                 };
                                                                 input.click();
-                                                            }} title="Overwrite this franchise with external data." style={actionBtnStyle}><Upload size={14} /> IMPORT</button>
-                                                            <button onClick={() => {
-                                                                setEditingId(t.id);
-                                                                setEditName(t.name);
-                                                                setEditOwner(t.ownerName);
-                                                            }} title="Rename team or change owner." style={actionBtnStyle}><Edit2 size={14} /> EDIT</button>
+                                                            }} title="Import/overwrite from backup" style={compactIconBtn}><Upload size={13} /></button>
+                                                            <button onClick={() => { setEditingId(t.id); setEditName(t.name); setEditOwner(t.ownerName); }} title="Edit team details" style={compactIconBtn}><Edit2 size={13} /></button>
                                                         </>
                                                     )}
-
                                                     {isAdmin && t.password && (
                                                         <button
                                                             onClick={async () => {
-                                                                const p = await showPrompt(`Set new password for "${t.name}" (leave blank to remove password):`, "Reset Password", { placeholder: "New password..." });
+                                                                const p = await showPrompt(`Set new password for "${t.name}" (leave blank to remove):`, "Reset Password", { placeholder: "New password..." });
                                                                 if (p !== null) onResetOwnerPassword(t.id, p);
                                                             }}
-                                                            style={{ ...actionBtnStyle, color: '#eab308' }}
-                                                            title="Emergency override for lost owner passwords."
-                                                        >
-                                                            <RefreshCw size={14} /> RESET PASS
-                                                        </button>
+                                                            title="Reset owner password"
+                                                            style={{ ...compactIconBtn, color: '#eab308' }}
+                                                        ><RefreshCw size={13} /></button>
                                                     )}
-                                                </div>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                                     {!active && (
                                                         <button onClick={async () => {
                                                             const p = t.password ? await showPrompt(`Enter the password for "${t.name}":`, t.name, { placeholder: "Password..." }) : undefined;
-                                                            if (t.password && p === null) return; // cancelled
+                                                            if (t.password && p === null) return;
                                                             onSwitchTeam(t.id, p || undefined);
-                                                        }} title="Log in as this coach to manage roster and trades." style={{ ...btnStyle, fontSize: '0.8rem', padding: '6px 12px' }}>SWITCH</button>
+                                                        }} title="Log in as this team" style={{ ...btnStyle, fontSize: '0.68rem', padding: '4px 10px', background: 'rgba(234,179,8,0.15)', border: '1px solid rgba(234,179,8,0.3)', color: '#eab308' }}>LOG IN</button>
                                                     )}
                                                     {isAdmin && (
                                                         <button onClick={async () => {
                                                             if (await showConfirm(`Permanently delete "${t.name}"? This cannot be undone.`, "Delete Franchise", "DELETE")) {
                                                                 onDeleteTeam(t.id);
                                                             }
-                                                        }} title="Permanently remove this franchise from the league." style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', padding: '5px' }}><Trash2 size={16} /></button>
+                                                        }} title="Delete franchise" style={{ ...compactIconBtn, color: '#ef4444' }}><Trash2 size={13} /></button>
                                                     )}
                                                 </div>
                                             </div>
-                                        </>
-                                    )}
-                                </div>
-                            );
-                        })}
-                        <div onClick={() => setIsCreating(true)} style={{ border: '2px dashed rgba(255,255,255,0.1)', borderRadius: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', height: '140px', color: '#6b7280', transition: 'all 0.2s' }}
-                            onMouseEnter={e => { e.currentTarget.style.borderColor = '#eab308'; e.currentTarget.style.color = '#eab308'; }}
-                            onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#6b7280'; }}
-                        >
-                            <Plus size={32} />
-                            <div style={{ fontWeight: 800, marginTop: '10px' }}>ADD FRANCHISE</div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                            {/* Add franchise row */}
+                            <div
+                                onClick={() => setIsCreating(true)}
+                                style={{ border: '2px dashed rgba(255,255,255,0.1)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', height: '46px', color: '#6b7280', gap: '8px', transition: 'all 0.2s' }}
+                                onMouseEnter={e => { e.currentTarget.style.borderColor = '#eab308'; e.currentTarget.style.color = '#eab308'; }}
+                                onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#6b7280'; }}
+                            >
+                                <Plus size={18} />
+                                <div style={{ fontWeight: 800, fontSize: '0.85rem' }}>ADD FRANCHISE</div>
+                            </div>
                         </div>
-                    </div>
-                </section>
+                    </section>
 
-                {/* ── Push Notifications ───────────────────────────────────────────── */}
-                <section style={cardStyle}>
-                    <div style={headerStyle}>
-                        <Bell size={22} color="#eab308" />
-                        <h2 style={titleStyle}>Push Notifications</h2>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                        {(
-                            [
-                                { key: 'trade_offer',    label: 'Trade Offer Received',    desc: 'Another manager wants to buy one of your players' },
-                                { key: 'trade_accepted', label: 'Trade Accepted',           desc: 'Your outgoing offer was accepted by the seller' },
-                                { key: 'trade_declined', label: 'Trade Declined',           desc: 'Your outgoing offer was declined' },
-                                { key: 'peer_connect',   label: 'Peer Connect / Disconnect',desc: 'A league peer comes online or goes offline' },
-                                { key: 'gameday_lock',   label: 'Gameday Lock',             desc: 'NFL teams lock when their game kicks off' },
-                            ] as { key: NotifEvent; label: string; desc: string }[]
-                        ).map(({ key, label, desc }) => (
-                            <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', padding: '14px 16px', gap: '16px' }}>
+                    {/* 3. Dynasty Mode — admin only */}
+                    {isAdmin && (
+                        <section style={cardStyle}>
+                            <div style={headerStyle}>
+                                <Star size={20} color="#eab308" />
+                                <h2 style={titleStyle}>Dynasty Mode</h2>
+                            </div>
+                            <p style={{ margin: '0 0 12px', color: '#9ca3af', fontSize: '0.8rem', lineHeight: 1.6 }}>
+                                Season-to-season roster continuity. Managers designate keepers before each new season; all others return to the free agent pool.
+                            </p>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', padding: '10px 14px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
                                 <div>
-                                    <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{label}</div>
-                                    <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '2px' }}>{desc}</div>
+                                    <div style={{ fontWeight: 700, color: '#f3f4f6', fontSize: '0.85rem' }}>Dynasty Mode</div>
+                                    <div style={{ fontSize: '0.72rem', color: '#6b7280', marginTop: 1 }}>Enables Dynasty page and keeper selection</div>
                                 </div>
-                                {/* Toggle pill */}
                                 <button
-                                    onClick={() => toggleNotif(key)}
-                                    title={notifPrefs[key] ? `Disable ${label} notifications` : `Enable ${label} notifications`}
+                                    onClick={() => onUpdateDynastySettings({
+                                        ...(league.settings?.dynastySettings ?? { enabled: false, maxKeepers: 3, contractYearsEnabled: false }),
+                                        enabled: !(league.settings?.dynastySettings?.enabled ?? false),
+                                    })}
                                     style={{
-                                        flexShrink: 0,
-                                        width: '48px', height: '26px', borderRadius: '13px', border: 'none', cursor: 'pointer',
-                                        background: notifPrefs[key] ? '#10b981' : 'rgba(255,255,255,0.12)',
-                                        position: 'relative', transition: 'background 0.2s',
+                                        padding: '5px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: '0.78rem',
+                                        background: league.settings?.dynastySettings?.enabled ? '#16a34a' : 'rgba(255,255,255,0.1)',
+                                        color: league.settings?.dynastySettings?.enabled ? '#fff' : '#9ca3af', transition: 'all 0.2s',
                                     }}
                                 >
-                                    <span style={{
-                                        position: 'absolute', top: '3px', width: '20px', height: '20px',
-                                        borderRadius: '50%', background: 'white', transition: 'left 0.2s',
-                                        left: notifPrefs[key] ? '25px' : '3px',
-                                    }} />
+                                    {league.settings?.dynastySettings?.enabled ? 'ENABLED' : 'DISABLED'}
                                 </button>
                             </div>
-                        ))}
-                        <div style={{ fontSize: '0.72rem', color: '#6b7280', marginTop: '4px' }}>
-                            Notifications use native OS alerts (Tauri) or browser notifications as a fallback.
-                            Your OS may prompt for permission on first use.
-                        </div>
-                    </div>
-                </section>
+                            {league.settings?.dynastySettings?.enabled && (
+                                <>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px', padding: '10px 14px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ fontWeight: 700, color: '#f3f4f6', fontSize: '0.82rem' }}>Max Keepers Per Team</div>
+                                            <div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: 1 }}>Players each team can retain per off-season</div>
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <button onClick={() => onUpdateDynastySettings({ ...league.settings!.dynastySettings!, maxKeepers: Math.max(1, (league.settings?.dynastySettings?.maxKeepers ?? 3) - 1) })} style={{ width: 26, height: 26, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.4)', color: '#fff', cursor: 'pointer', fontWeight: 900, fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>-</button>
+                                            <span style={{ minWidth: '2rem', textAlign: 'center', fontWeight: 800, color: '#eab308', fontSize: '1rem' }}>{league.settings?.dynastySettings?.maxKeepers ?? 3}</span>
+                                            <button onClick={() => onUpdateDynastySettings({ ...league.settings!.dynastySettings!, maxKeepers: Math.min(10, (league.settings?.dynastySettings?.maxKeepers ?? 3) + 1) })} style={{ width: 26, height: 26, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.4)', color: '#fff', cursor: 'pointer', fontWeight: 900, fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+                                        </div>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                        <div>
+                                            <div style={{ fontWeight: 700, color: '#f3f4f6', fontSize: '0.82rem' }}>3-Year Contract Limit</div>
+                                            <div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: 1 }}>Players expire after 3 seasons and return to free agency</div>
+                                        </div>
+                                        <button
+                                            onClick={() => onUpdateDynastySettings({ ...league.settings!.dynastySettings!, contractYearsEnabled: !league.settings?.dynastySettings?.contractYearsEnabled })}
+                                            style={{
+                                                padding: '5px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: '0.78rem',
+                                                background: league.settings?.dynastySettings?.contractYearsEnabled ? '#1d4ed8' : 'rgba(255,255,255,0.1)',
+                                                color: league.settings?.dynastySettings?.contractYearsEnabled ? '#fff' : '#9ca3af', transition: 'all 0.2s',
+                                            }}
+                                        >
+                                            {league.settings?.dynastySettings?.contractYearsEnabled ? 'ON' : 'OFF'}
+                                        </button>
+                                    </div>
+                                </>
+                            )}
+                        </section>
+                    )}
+                </div>
 
-                {/* ── Data Operations ──────────────────────────────────────────────── */}
-                {/* Import is always available; Factory Reset requires admin confirmation */}
-                <section style={cardStyle}>
-                    <div style={headerStyle}>
-                        <HardDrive size={22} color="#eab308" />
-                        <h2 style={titleStyle}>Data Operations</h2>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                        <button onClick={() => fileInputRef.current?.click()} title="Restore league data from a previously exported .tff file." style={{ ...btnStyle, background: '#3b82f6', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <Upload size={18} /> IMPORT DATA FROM FILE (.TFF)
-                        </button>
+                {/* ── RIGHT COLUMN: Franchises · Notifications · Data ── */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', overflowY: 'auto', paddingBottom: '12px' }}>
+
+                    {/* 4. Scoring Format */}
+                    <section style={cardStyle}>
+                        <div style={headerStyle}>
+                            <Sliders size={20} color="#eab308" />
+                            <h2 style={titleStyle}>Scoring Format</h2>
+                        </div>
+                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '12px' }}>
+                            {(Object.keys(SCORING_PRESETS) as Array<keyof typeof SCORING_PRESETS>).map(key => {
+                                const active = draftRuleset.presetKey === key;
+                                return (
+                                    <button
+                                        key={key}
+                                        disabled={!isAdmin}
+                                        onClick={() => setDraftRuleset({ ...SCORING_PRESETS[key] })}
+                                        style={{
+                                            padding: '5px 12px', borderRadius: '6px', fontSize: '0.75rem',
+                                            fontFamily: "'Orbitron', sans-serif", cursor: isAdmin ? 'pointer' : 'default',
+                                            border: active ? '2px solid #eab308' : '1px solid rgba(255,255,255,0.15)',
+                                            background: active ? 'rgba(234,179,8,0.15)' : 'rgba(255,255,255,0.05)',
+                                            color: active ? '#eab308' : '#9ca3af',
+                                        }}
+                                    >
+                                        {SCORING_PRESETS[key].name}
+                                    </button>
+                                );
+                            })}
+                            {draftRuleset.presetKey === 'Custom' && (
+                                <span style={{ padding: '5px 12px', borderRadius: '6px', fontSize: '0.75rem', fontFamily: "'Orbitron', sans-serif", border: '2px solid #a78bfa', background: 'rgba(167,139,250,0.15)', color: '#a78bfa' }}>CUSTOM</span>
+                            )}
+                        </div>
+                        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', fontSize: '0.75rem', color: '#9ca3af', marginBottom: '10px' }}>
+                            <span>Reception: <b style={{ color: '#f3f4f6' }}>{draftRuleset.receptionPoints} pt</b></span>
+                            <span>Pass TD: <b style={{ color: '#f3f4f6' }}>{draftRuleset.passingTDPoints} pts</b></span>
+                            <span>Rush/Rec TD: <b style={{ color: '#f3f4f6' }}>{draftRuleset.rushingTDPoints} pts</b></span>
+                            {draftRuleset.tepBonus > 0 && <span>TEP Bonus: <b style={{ color: '#a78bfa' }}>+{draftRuleset.tepBonus} pts/TE catch</b></span>}
+                            {draftRuleset.passing300YardBonus > 0 && <span>300-yd Bonus: <b style={{ color: '#34d399' }}>+{draftRuleset.passing300YardBonus}</b></span>}
+                        </div>
                         {isAdmin && (
-                            <button onClick={async () => {
-                                // Double-confirm to prevent accidental wipes — no undo possible
-                                if (await showConfirm("WARNING: This will permanently erase all teams, rosters, and settings. This cannot be undone.", "Factory Reset", "ERASE EVERYTHING")) {
-                                    localStorage.clear();
-                                    window.location.reload();
-                                }
-                            }} title="Wipe all local data, clear cache, and start fresh (Irreversible)." style={{ ...btnStyle, background: 'rgba(239, 68, 68, 0.1)', border: '1px solid #ef4444', color: '#ef4444', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <RefreshCw size={18} /> FACTORY RESET APP
+                            <button
+                                onClick={() => setScoringExpanded(v => !v)}
+                                style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: '0.78rem', marginBottom: scoringExpanded ? '14px' : 0 }}
+                            >
+                                <Sliders size={13} /> {scoringExpanded ? '▲ Hide custom weights' : '▼ Edit custom weights'}
                             </button>
                         )}
-                    </div>
-                </section>
-
-                {/* CREATE FRANCHISE MODAL */}
-                {isCreating && (
-                    <div style={{
-                        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(5px)',
-                        zIndex: 2000, display: 'flex', justifyContent: 'center', alignItems: 'center'
-                    }}>
-                        <div style={{ ...cardStyle, width: '450px', maxWidth: '90%' }}>
-                            <div style={headerStyle}>
-                                <Plus size={24} color="#eab308" />
-                                <h2 style={titleStyle}>Establish New Franchise</h2>
+                        {scoringExpanded && isAdmin && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                                {([
+                                    { label: 'PASSING', fields: [
+                                        ['Pass yards per pt', 'passingYardsPerPoint'],
+                                        ['Pass TD pts', 'passingTDPoints'],
+                                        ['INT pts', 'passingINTPoints'],
+                                        ['300-yd bonus', 'passing300YardBonus'],
+                                        ['400-yd bonus', 'passing400YardBonus'],
+                                    ]},
+                                    { label: 'RUSHING', fields: [
+                                        ['Rush yards per pt', 'rushingYardsPerPoint'],
+                                        ['Rush TD pts', 'rushingTDPoints'],
+                                        ['100-yd bonus', 'rushing100YardBonus'],
+                                        ['200-yd bonus', 'rushing200YardBonus'],
+                                    ]},
+                                    { label: 'RECEIVING', fields: [
+                                        ['Rec yards per pt', 'receivingYardsPerPoint'],
+                                        ['Rec TD pts', 'receivingTDPoints'],
+                                        ['Reception pts', 'receptionPoints'],
+                                        ['TE bonus/catch', 'tepBonus'],
+                                        ['100-yd bonus', 'receiving100YardBonus'],
+                                        ['200-yd bonus', 'receiving200YardBonus'],
+                                    ]},
+                                    { label: 'MISC', fields: [['Fumble lost pts', 'fumbleLostPoints']]},
+                                    { label: 'KICKER', fields: [
+                                        ['FG under 40', 'fgUnder40Points'],
+                                        ['FG 40–49', 'fg40to49Points'],
+                                        ['FG 50+', 'fg50plusPoints'],
+                                        ['XP', 'xpPoints'],
+                                        ['Missed XP', 'missedXPPoints'],
+                                    ]},
+                                    { label: 'D/ST', fields: [
+                                        ['Sack', 'dstSackPoints'],
+                                        ['INT', 'dstINTPoints'],
+                                        ['TD', 'dstTDPoints'],
+                                        ['Safety', 'dstSafetyPoints'],
+                                        ['Fumble rec', 'dstFumbleRecPoints'],
+                                    ]},
+                                    { label: 'IDP', fields: [
+                                        ['Solo tackle', 'soloTacklePoints'],
+                                        ['Assisted tackle', 'assistedTacklePoints'],
+                                        ['Sack', 'idpSackPoints'],
+                                        ['TFL', 'tflPoints'],
+                                        ['Pass deflection', 'passDefPoints'],
+                                        ['QB hit', 'qbHitPoints'],
+                                        ['Forced fumble', 'ffPoints'],
+                                        ['Blocked kick', 'blockedKickPoints'],
+                                    ]},
+                                ] as { label: string; fields: [string, keyof ScoringRuleset][] }[]).map(({ label, fields }) => (
+                                    <div key={label}>
+                                        <div style={{ fontSize: '0.68rem', fontFamily: "'Orbitron', sans-serif", color: '#eab308', letterSpacing: '1px', marginBottom: '6px' }}>{label}</div>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '6px' }}>
+                                            {fields.map(([fieldLabel, key]) => (
+                                                <label key={key} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                                    <span style={{ fontSize: '0.66rem', color: '#6b7280' }}>{fieldLabel}</span>
+                                                    <input
+                                                        type="number" step="0.5"
+                                                        value={draftRuleset[key] as number}
+                                                        onChange={e => setDraftRuleset(prev => ({ ...prev, presetKey: 'Custom', name: 'Custom', [key]: parseFloat(e.target.value) || 0 }))}
+                                                        style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '4px', color: '#f3f4f6', padding: '3px 6px', fontSize: '0.8rem', width: '100%' }}
+                                                    />
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
+                        )}
+                        {isAdmin && (
+                            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '14px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                                <button
+                                    onClick={() => onUpdateRuleset(draftRuleset)}
+                                    style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'rgba(234,179,8,0.15)', border: '1px solid #eab308', color: '#eab308', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.75rem', fontFamily: "'Orbitron', sans-serif" }}
+                                >
+                                    SAVE FORMAT
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        const blob = new Blob([JSON.stringify(draftRuleset, null, 2)], { type: 'application/json' });
+                                        const a = document.createElement('a');
+                                        a.href = URL.createObjectURL(blob);
+                                        a.download = `${draftRuleset.name.replace(/\s+/g, '_')}.tffr`;
+                                        a.click();
+                                        URL.revokeObjectURL(a.href);
+                                    }}
+                                    style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', color: '#9ca3af', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.75rem' }}
+                                >
+                                    <Download size={13} /> Export .tffr
+                                </button>
+                                <button
+                                    onClick={() => rulesetFileRef.current?.click()}
+                                    style={{ display: 'flex', alignItems: 'center', gap: '5px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', color: '#9ca3af', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.75rem' }}
+                                >
+                                    <Upload size={13} /> Import .tffr
+                                </button>
+                                <input
+                                    ref={rulesetFileRef}
+                                    type="file" accept=".tffr,.json" style={{ display: 'none' }}
+                                    onChange={async e => {
+                                        const file = e.target.files?.[0];
+                                        if (!file) return;
+                                        try {
+                                            const text = await file.text();
+                                            const parsed = JSON.parse(text) as ScoringRuleset;
+                                            // Basic validation — must have the key fields
+                                            if (typeof parsed.receptionPoints !== 'number') throw new Error('Invalid .tffr file');
+                                            setDraftRuleset(parsed);
+                                        } catch { alert('Could not import ruleset — invalid .tffr file.'); }
+                                        e.target.value = '';
+                                    }}
+                                />
+                            </div>
+                        )}
+                    </section>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                                <div>
-                                    <label style={{ display: 'block', color: '#9ca3af', marginBottom: '8px', fontSize: '0.9rem', fontWeight: 700 }}>TEAM NAME</label>
-                                    <input type="text" placeholder="e.g. Gotham Knights" value={newName} onChange={e => setNewName(e.target.value)} style={{ ...inputStyle, width: '100%' }} />
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', color: '#9ca3af', marginBottom: '8px', fontSize: '0.9rem', fontWeight: 700 }}>COACH NAME</label>
-                                    <input type="text" placeholder="e.g. Bruce Wayne" value={newOwner} onChange={e => setNewOwner(e.target.value)} style={{ ...inputStyle, width: '100%' }} />
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', color: '#9ca3af', marginBottom: '8px', fontSize: '0.9rem', fontWeight: 700 }}>SECURITY PASSWORD</label>
-                                    <input type="password" placeholder="Set a strong password..." value={newPass} onChange={e => setNewPass(e.target.value)} style={{ ...inputStyle, width: '100%' }} />
-                                </div>
-
-                                <div style={{ display: 'flex', gap: '15px', marginTop: '10px' }}>
+                    {/* 5. Push Notifications */}
+                    <section style={cardStyle}>
+                        <div style={headerStyle}>
+                            <Bell size={20} color="#eab308" />
+                            <h2 style={titleStyle}>Push Notifications</h2>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            {(
+                                [
+                                    { key: 'trade_offer',    label: 'Trade Offer Received',     desc: 'Another manager wants to buy one of your players' },
+                                    { key: 'trade_accepted', label: 'Trade Accepted',            desc: 'Your outgoing offer was accepted' },
+                                    { key: 'trade_declined', label: 'Trade Declined',            desc: 'Your outgoing offer was declined' },
+                                    { key: 'peer_connect',   label: 'Peer Connect / Disconnect', desc: 'A league peer comes online or goes offline' },
+                                    { key: 'gameday_lock',   label: 'Gameday Lock',              desc: 'NFL teams lock when their game kicks off' },
+                                ] as { key: NotifEvent; label: string; desc: string }[]
+                            ).map(({ key, label, desc }) => (
+                                <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '8px', padding: '10px 14px', gap: '12px' }}>
+                                    <div>
+                                        <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>{label}</div>
+                                        <div style={{ fontSize: '0.7rem', color: '#9ca3af', marginTop: '1px' }}>{desc}</div>
+                                    </div>
+                                    {/* Toggle pill */}
                                     <button
-                                        onClick={async () => {
-                                            if (!newName || !newOwner || !newPass) {
-                                                await showAlert("Team Name, Coach Name, and Password are all required.", "Required Fields");
-                                                return;
-                                            }
-                                            onCreateTeam(newName, newOwner, newPass);
-                                            setIsCreating(false);
-                                            setNewName(''); setNewOwner(''); setNewPass('');
+                                        onClick={() => toggleNotif(key)}
+                                        title={notifPrefs[key] ? `Disable ${label} notifications` : `Enable ${label} notifications`}
+                                        style={{
+                                            flexShrink: 0, width: '44px', height: '24px', borderRadius: '12px', border: 'none', cursor: 'pointer',
+                                            background: notifPrefs[key] ? '#10b981' : 'rgba(255,255,255,0.12)',
+                                            position: 'relative', transition: 'background 0.2s',
                                         }}
-                                        style={{ ...btnStyle, flex: 1, background: '#eab308', color: 'black' }}
                                     >
-                                        ESTABLISH FRANCHISE
-                                    </button>
-                                    <button onClick={() => setIsCreating(false)} style={{ ...btnStyle, background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: '#9ca3af' }}>
-                                        CANCEL
+                                        <span style={{
+                                            position: 'absolute', top: '2px', width: '20px', height: '20px',
+                                            borderRadius: '50%', background: 'white', transition: 'left 0.2s',
+                                            left: notifPrefs[key] ? '22px' : '2px',
+                                        }} />
                                     </button>
                                 </div>
+                            ))}
+                            <div style={{ fontSize: '0.68rem', color: '#6b7280', marginTop: '2px' }}>
+                                Native OS alerts (Tauri) or browser notifications as fallback. OS may prompt for permission on first use.
+                            </div>
+                        </div>
+                    </section>
+
+                </div>
+            </div>
+
+            {/* CREATE FRANCHISE MODAL */}
+            {isCreating && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(5px)', zIndex: 2000, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    <div style={{ ...cardStyle, width: '420px', maxWidth: '90%' }}>
+                        <div style={headerStyle}>
+                            <Plus size={22} color="#eab308" />
+                            <h2 style={titleStyle}>Establish New Franchise</h2>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            <div>
+                                <label style={{ display: 'block', color: '#9ca3af', marginBottom: '6px', fontSize: '0.85rem', fontWeight: 700 }}>TEAM NAME</label>
+                                <input type="text" placeholder="e.g. Gotham Knights" value={newName} onChange={e => setNewName(e.target.value)} style={{ ...inputStyle, width: '100%' }} />
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', color: '#9ca3af', marginBottom: '6px', fontSize: '0.85rem', fontWeight: 700 }}>COACH NAME</label>
+                                <input type="text" placeholder="e.g. Bruce Wayne" value={newOwner} onChange={e => setNewOwner(e.target.value)} style={{ ...inputStyle, width: '100%' }} />
+                            </div>
+                            <div>
+                                <label style={{ display: 'block', color: '#9ca3af', marginBottom: '6px', fontSize: '0.85rem', fontWeight: 700 }}>SECURITY PASSWORD</label>
+                                <input type="password" placeholder="Set a strong password..." value={newPass} onChange={e => setNewPass(e.target.value)} style={{ ...inputStyle, width: '100%' }} />
+                            </div>
+                            <div style={{ display: 'flex', gap: '12px', marginTop: '6px' }}>
+                                <button
+                                    onClick={async () => {
+                                        if (!newName || !newOwner || !newPass) { await showAlert("Team Name, Coach Name, and Password are all required.", "Required Fields"); return; }
+                                        onCreateTeam(newName, newOwner, newPass);
+                                        setIsCreating(false);
+                                        setNewName(''); setNewOwner(''); setNewPass('');
+                                    }}
+                                    style={{ ...btnStyle, flex: 1, background: '#eab308', color: 'black' }}
+                                >
+                                    ESTABLISH FRANCHISE
+                                </button>
+                                <button onClick={() => setIsCreating(false)} style={{ ...btnStyle, background: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: '#9ca3af' }}>
+                                    CANCEL
+                                </button>
                             </div>
                         </div>
                     </div>
-                )}
-
-            </div>
+                </div>
+            )}
 
             {/* Hidden file input — triggered programmatically by the Import button */}
             <input type="file" ref={fileInputRef} style={{ display: 'none' }} accept=".tff,.json" onChange={handleImportFile} />
@@ -1003,4 +855,20 @@ const actionBtnStyle: React.CSSProperties = {
     fontSize: '0.8rem',
     fontWeight: 700,
     cursor: 'pointer'
+};
+
+// compactIconBtn — small icon-only ghost button used in compact franchise rows.
+const compactIconBtn: React.CSSProperties = {
+    background: 'rgba(255,255,255,0.06)',
+    border: '1px solid rgba(255,255,255,0.1)',
+    borderRadius: '6px',
+    color: '#9ca3af',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '28px',
+    height: '28px',
+    cursor: 'pointer',
+    padding: 0,
+    flexShrink: 0,
 };

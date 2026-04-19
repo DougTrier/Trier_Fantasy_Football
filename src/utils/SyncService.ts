@@ -27,12 +27,12 @@
  *
  * @module SyncService
  */
-import type { FantasyTeam } from '../types';
+import type { FantasyTeam, League } from '../types';
 
 const SYNC_CHANNEL = 'trier_fantasy_sideband';
 
 export interface SidebandMessage {
-    type: 'PING' | 'PONG' | 'SYNC_TEAMS' | 'CHAT';
+    type: 'PING' | 'PONG' | 'SYNC_TEAMS' | 'SYNC_LEAGUE' | 'CHAT';
     senderId: string;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     payload?: any;
@@ -68,7 +68,8 @@ class SidebandSyncService {
         P2PService.onData((msg: any) => {
             // Treat P2P messages same as local tab messages
             const sMsg = msg as SidebandMessage;
-            if (sMsg.senderId !== this.instanceId && (sMsg.type === 'SYNC_TEAMS' || sMsg.type === 'PING')) {
+            const handled: SidebandMessage['type'][] = ['SYNC_TEAMS', 'SYNC_LEAGUE', 'PING'];
+            if (sMsg.senderId !== this.instanceId && handled.includes(sMsg.type)) {
                 console.log('[Sync] Received P2P update from', sMsg.senderId);
                 this.onMessageListeners.forEach(l => l(sMsg));
             }
@@ -88,6 +89,17 @@ class SidebandSyncService {
             type: 'SYNC_TEAMS',
             senderId: this.instanceId,
             payload: teams,
+            timestamp: Date.now()
+        });
+    }
+
+    // Syncs league settings — including commPasswordHash — to all connected peers.
+    // Receivers merge fields rather than replacing wholesale (see App.tsx SYNC_LEAGUE handler).
+    public syncLeague(league: Partial<League>) {
+        this.sendMessage({
+            type: 'SYNC_LEAGUE',
+            senderId: this.instanceId,
+            payload: league,
             timestamp: Date.now()
         });
     }

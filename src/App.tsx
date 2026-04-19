@@ -158,7 +158,7 @@ export const applyRosterMoveEvent = (teams: FantasyTeam[], event: EventLogEntry)
 };
 const formatInitialTeam = (): FantasyTeam => ({
   id: 'user-team',
-  name: "Trier's Titans",
+  name: "Default Team",
   ownerName: 'You',
   roster: {
     qb: null,
@@ -279,6 +279,22 @@ export default function App() {
           console.log("[Sideband] Received sync from peer", msg.senderId);
           setUserTeams(incomingTeams);
         }
+      } else if (msg.type === 'SYNC_LEAGUE') {
+        // Merge incoming league settings from peer.
+        // commPasswordHash: accept only if we have none — prevents members from
+        // overwriting the commissioner's hash that already synced to us.
+        const incoming = msg.payload as Partial<League>;
+        if (incoming) {
+          setLeague(prev => ({
+            ...prev,
+            ...(incoming.name               && { name: incoming.name }),
+            ...(incoming.settings           && { settings: incoming.settings }),
+            ...(incoming.schedule           && { schedule: incoming.schedule }),
+            ...(typeof incoming.currentWeek === 'number' && { currentWeek: incoming.currentWeek }),
+            ...(typeof incoming.numWeeks    === 'number' && { numWeeks:    incoming.numWeeks }),
+            ...(!prev.commPasswordHash && incoming.commPasswordHash && { commPasswordHash: incoming.commPasswordHash }),
+          }));
+        }
       } else if (msg.type === 'CHAT' && activeViewRef.current !== 'league') {
         // Show toast for incoming chat messages when not on the League page
         const p = msg.payload as { sender: string; text: string };
@@ -301,8 +317,10 @@ export default function App() {
     // Auto-Sync on Verified Connect (fires only after mutual handshake completes)
     const unsubConn = P2PService.onConnectionStatus(({ status, peerId }) => {
       if (status === 'VERIFIED') {
-        console.log(`[App] Peer ${peerId} verified. Auto-syncing teams + requesting delta events...`);
+        console.log(`[App] Peer ${peerId} verified. Auto-syncing teams + league + requesting delta events...`);
         SyncService.syncTeams(teamRef);
+        // Sync league settings (including commPasswordHash) so the new peer gets the commissioner's hash
+        SyncService.syncLeague(leagueRef.current);
         // Delta sync: send our vector so the peer can fill in any events we missed
         P2PService.sendData(peerId, {
           type: 'SYNC_REQUEST',
@@ -534,8 +552,11 @@ export default function App() {
   useEffect(() => { userTeamsRef.current = userTeams; }, [userTeams]);
 
   // Handle window close via X button (Tauri) or tab close (browser).
-  // Data is already continuously saved above; this handler just does the logout
-  // (clears activeTeamId) so the next session starts on the team-select screen.
+  // Data is already continuously saved above; this handler clears activeTeamId
+  // so the next cold launch starts on the team-select screen.
+  // NOTE: beforeunload fires on both close AND reload — so we never call doLogout
+  // from beforeunload. Tauri uses CLOSE_REQUESTED for real closes; the browser
+  // only saves team data on unload so a reload keeps the user logged in.
   useEffect(() => {
     const doLogout = () => {
       const lid = MultiLeagueService.getActiveId() || '';
@@ -544,11 +565,15 @@ export default function App() {
       sessionStorage.removeItem('trier_fantasy_active_id');
     };
 
-    // Browser: beforeunload fires on tab/window close
-    const handleBeforeUnload = () => doLogout();
+    // Save teams on unload (both close and reload) but don't clear the session —
+    // that would sign the user out on every Ctrl+R / right-click reload.
+    const handleBeforeUnload = () => {
+      const lid = MultiLeagueService.getActiveId() || '';
+      if (lid) localStorage.setItem(leagueKey.teams(lid), JSON.stringify(userTeamsRef.current));
+    };
     window.addEventListener('beforeunload', handleBeforeUnload);
 
-    // Tauri: CLOSE_REQUESTED is emitted by main.rs (close is already prevented)
+    // Tauri: CLOSE_REQUESTED is the real close signal — log out and exit here.
     let unlisten: (() => void) | null = null;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const win = window as any;
@@ -719,60 +744,16 @@ export default function App() {
 
   // ─────────────────────────────────────────────────────────────────────────────
   // ADMIN / SECURITY
-  // Admin mode is session-only (not persisted). The password hash is stored in
-  // localStorage as "pbkdf2:<salt>:<hash>" — never as plaintext.
-  // Legacy sha256: and plain: entries are migrated to PBKDF2 on mount.
+  // Admin mode is session-only (not persisted). The password hash lives in
+  // league.commPasswordHash so it syncs to all P2P members via SYNC_LEAGUE.
+  // Members can only admin if they know the original plaintext password.
   // ─────────────────────────────────────────────────────────────────────────────
   const [isAdmin, setIsAdmin] = useState(false);
-  // Holds the PBKDF2 hash of the admin password (never the plaintext).
-  const adminPasswordHash = useRef<string>('');
 
   // Brute-force protection: tracks failed login attempts and lockout expiry.
-  // Stored in sessionStorage so it resets on app restart (not persisted to disk).
+  // Stored in refs (session-only) so it resets on app restart.
   const adminLoginAttempts = useRef<number>(0);
   const adminLockoutUntil  = useRef<number>(0);
-
-  // On mount: load the stored admin password hash and migrate legacy formats.
-  useEffect(() => {
-    const migrateAdminPassword = async () => {
-      const { IdentityService } = await import('./services/IdentityService');
-      const raw = localStorage.getItem('trier_admin_pass');
-
-      if (!raw) {
-        // First run — no password yet. Admin login handler will guide setup.
-        adminPasswordHash.current = '';
-        return;
-      }
-
-      if (raw.startsWith('pbkdf2:')) {
-        // Current format — load as-is.
-        adminPasswordHash.current = raw;
-        return;
-      }
-
-      // Legacy sha256: or plain: — re-hash using PBKDF2 if possible.
-      // We can only do this if we have the plaintext, which is only available
-      // for the plain: format. sha256: hashes cannot be upgraded without re-login.
-      if (raw.startsWith('plain:')) {
-        const plaintext = raw.slice(6);
-        try {
-          const upgraded = await IdentityService.hashPassword(plaintext);
-          localStorage.setItem('trier_admin_pass', upgraded);
-          adminPasswordHash.current = upgraded;
-          console.warn('[App] Admin password upgraded from plain: to PBKDF2.');
-        } catch {
-          // crypto.subtle unavailable — keep legacy hash in memory only
-          adminPasswordHash.current = raw;
-        }
-        return;
-      }
-
-      // sha256: format — accept for this session but can only fully migrate on next login
-      adminPasswordHash.current = raw;
-      console.log('[App] Admin password is sha256: — will migrate to PBKDF2 on next login.');
-    };
-    migrateAdminPassword();
-  }, []);
 
   // Strips HTML tags and control characters from free-text user inputs, and caps length.
   // React JSX already escapes on render; this is a defense-in-depth boundary at the storage layer.
@@ -805,6 +786,20 @@ export default function App() {
     if (userTeams.length <= 1) {
       showAlert("Cannot delete the only team in the league. Create another team first.", "Cannot Delete");
       return;
+    }
+    // Return all rostered and bench players back to the free agent pool before removing the team
+    const target = userTeams.find(t => t.id === teamId);
+    if (target) {
+      const releasedPlayers = [
+        ...Object.values(target.roster).filter(Boolean) as Player[],
+        ...target.bench,
+      ];
+      if (releasedPlayers.length > 0) {
+        setAvailablePlayers(prev => {
+          const existingIds = new Set(prev.map(p => p.id));
+          return [...prev, ...releasedPlayers.filter(p => !existingIds.has(p.id))];
+        });
+      }
     }
     setUserTeams(prev => {
       if (prev.length <= 1) {
@@ -1014,13 +1009,28 @@ export default function App() {
   // League State (Standings + H2H Schedule)
   const [league, setLeague] = useState<League>(() => {
     const lid = MultiLeagueService.getActiveId() || '';
+    let loaded: League;
     try {
       const saved = localStorage.getItem(leagueKey.league(lid));
-      if (saved) return JSON.parse(saved) as League;
-    } catch { /* fall through */ }
-    const slotName = MultiLeagueService.getRegistry().find(s => s.id === lid)?.name || "My League";
-    return { id: lid || 'league-1', name: slotName, teams: [], history: [] };
+      loaded = saved ? JSON.parse(saved) as League
+                     : { id: lid || 'league-1', name: MultiLeagueService.getRegistry().find(s => s.id === lid)?.name || 'My League', teams: [], history: [] };
+    } catch {
+      loaded = { id: lid || 'league-1', name: MultiLeagueService.getRegistry().find(s => s.id === lid)?.name || 'My League', teams: [], history: [] };
+    }
+    // One-time migration: move the standalone trier_admin_pass key into league.commPasswordHash.
+    // The password now lives in the league object so it syncs to members via SYNC_LEAGUE.
+    if (!loaded.commPasswordHash) {
+      const legacy = localStorage.getItem('trier_admin_pass');
+      if (legacy) {
+        loaded = { ...loaded, commPasswordHash: legacy };
+        localStorage.removeItem('trier_admin_pass');
+      }
+    }
+    return loaded;
   });
+  // Keep a ref so the VERIFIED callback always sees the latest league (avoids stale closure)
+  const leagueRef = useRef(league);
+  useEffect(() => { leagueRef.current = league; }, [league]);
   // Persist league and keep ScoringEngine in sync with the active ruleset.
   useEffect(() => {
     if (activeLeagueId) {
@@ -1197,10 +1207,10 @@ export default function App() {
       const wasInBench = filteredBench.length !== prev.bench.length;
 
       if (removed || wasInBench) {
-        // Add back to pool
+        // Add back to pool — clear ownerId so the player is a clean free agent
         setAvailablePlayers(aprev => {
           if (aprev.find(p => p.id === player.id)) return aprev;
-          return [...aprev, player];
+          return [...aprev, { ...player, ownerId: undefined }];
         });
 
         recordTransaction('DROP', `Released ${player.firstName} ${player.lastName} `, `${player.firstName} ${player.lastName} `);
@@ -1779,7 +1789,10 @@ export default function App() {
                   if (t.password && !isAdmin) {
                     const p = await showPrompt(`Enter the password for ${t.name}:`, t.name);
                     if (p === null) return; // cancelled
-                    if (p === t.password) setActiveTeamId(t.id);
+                    // Always verify via PBKDF2 — t.password is a hash, never plaintext
+                    const { IdentityService } = await import('./services/IdentityService');
+                    const ok = await IdentityService.verifyPassword(p, t.password);
+                    if (ok) setActiveTeamId(t.id);
                     else showAlert("Incorrect password. Access denied.", "Wrong Password");
                   } else {
                     setActiveTeamId(t.id);
@@ -2122,7 +2135,6 @@ export default function App() {
             const { IdentityService } = await import('./services/IdentityService');
 
             // ── Lockout check ──────────────────────────────────────────────
-            // Block login if currently in a backoff period from failed attempts.
             const now = Date.now();
             if (adminLockoutUntil.current > now) {
               const secsLeft = Math.ceil((adminLockoutUntil.current - now) / 1000);
@@ -2130,10 +2142,13 @@ export default function App() {
               return;
             }
 
-            // First run — no password has ever been set. Guide commissioner through setup.
-            if (!adminPasswordHash.current) {
+            // Commissioner password lives in the league object and syncs to members.
+            // An empty hash means no commissioner has set one for this league yet.
+            const storedHash = league.commPasswordHash || '';
+
+            if (!storedHash) {
               await showAlert(
-                "No Commissioner password is set. You'll create one now.",
+                "No Commissioner password is set for this league. You'll create one now.",
                 "First-Time Setup"
               );
               const newPass = await showPrompt("Create a Commissioner password:", "Set Password", { placeholder: "Choose a strong password" });
@@ -2144,9 +2159,9 @@ export default function App() {
                 return;
               }
               const hashed = await IdentityService.hashPassword(newPass);
-              localStorage.setItem('trier_admin_pass', hashed);
-              adminPasswordHash.current = hashed;
-              // Successful setup counts as a clean slate
+              // Save into league so it persists + syncs to all connected peers
+              setLeague(prev => ({ ...prev, commPasswordHash: hashed }));
+              SyncService.syncLeague({ ...league, commPasswordHash: hashed });
               adminLoginAttempts.current = 0;
               adminLockoutUntil.current  = 0;
               setIsAdmin(true);
@@ -2157,23 +2172,22 @@ export default function App() {
             const code = await showPrompt("Enter the Commissioner password:", "Commissioner Login", { placeholder: "Password" });
             if (!code) return;
 
-            const ok = await IdentityService.verifyPassword(code, adminPasswordHash.current);
+            const ok = await IdentityService.verifyPassword(code, storedHash);
             if (ok) {
-              // Success — reset attempt counter and migrate hash to PBKDF2 if still on legacy format
               adminLoginAttempts.current = 0;
               adminLockoutUntil.current  = 0;
-              if (!adminPasswordHash.current.startsWith('pbkdf2:')) {
-                // Opportunistic migration: re-hash with PBKDF2 now that we have the plaintext
+              // Opportunistic PBKDF2 upgrade if still on a legacy hash format
+              if (!storedHash.startsWith('pbkdf2:')) {
                 try {
                   const upgraded = await IdentityService.hashPassword(code);
-                  localStorage.setItem('trier_admin_pass', upgraded);
-                  adminPasswordHash.current = upgraded;
-                  console.log('[App] Admin password migrated to PBKDF2.');
-                } catch { /* non-fatal — old hash still works */ }
+                  setLeague(prev => ({ ...prev, commPasswordHash: upgraded }));
+                  SyncService.syncLeague({ ...league, commPasswordHash: upgraded });
+                  console.log('[App] Commissioner password migrated to PBKDF2 in league object.');
+                } catch { /* non-fatal */ }
               }
               setIsAdmin(true);
             } else {
-              // Failure — apply exponential backoff: 5s, 30s, 5min for attempts 1/2/3+
+              // Exponential backoff: 5s → 30s → 5min for repeated failures
               adminLoginAttempts.current += 1;
               const attempt = adminLoginAttempts.current;
               const delayMs = attempt >= 3 ? 300_000 : attempt === 2 ? 30_000 : 5_000;
@@ -2227,6 +2241,17 @@ export default function App() {
           onUpdateRuleset={handleUpdateRuleset}
           league={league}
           onUpdateDynastySettings={handleUpdateDynastySettings}
+          onChangeCommPassword={async () => {
+            const { IdentityService } = await import('./services/IdentityService');
+            const newPass = await showPrompt("Enter new Commissioner password:", "Change Password", { placeholder: "New password..." });
+            if (!newPass || !newPass.trim()) return;
+            const confirm = await showPrompt("Confirm new password:", "Confirm Password", { placeholder: "Re-enter password" });
+            if (newPass !== confirm) { showAlert("Passwords don't match.", "Mismatch"); return; }
+            const hashed = await IdentityService.hashPassword(newPass);
+            setLeague(prev => ({ ...prev, commPasswordHash: hashed }));
+            SyncService.syncLeague({ ...league, commPasswordHash: hashed });
+            showAlert("Commissioner password updated.", "Password Changed");
+          }}
         />
       )}
 
@@ -2257,6 +2282,19 @@ export default function App() {
               owningTeam={userTeams.find(t => [...Object.values(t.roster), ...t.bench].some(p => p && p.id === activePlayerCard.id))}
               onClose={() => setActivePlayerCard(null)}
               onDraft={async () => {
+                // Physical ownership check comes first — a stale ownerId should never block release
+                const isOwnedByMe = Object.values(myTeam?.roster || {}).concat(myTeam?.bench || []).some(p => p && p.id === activePlayerCard.id);
+                if (isOwnedByMe) {
+                  if (isPlayerLocked(activePlayerCard, lockedNFLTeams)) {
+                    await showAlert("Cannot modify roster — this player's game is in progress.", "Player Locked");
+                    return;
+                  }
+                  RemoveFromRoster(activePlayerCard);
+                  setActivePlayerCard(null);
+                  setRecruitingSlot(null);
+                  return;
+                }
+                // Not on this team — check if owned by a different team before allowing draft
                 if (activePlayerCard.ownerId && activePlayerCard.ownerId !== myTeam?.id) {
                   await showAlert("This player is owned by another coach. Use 'Make Trade Offer' instead.", "Player Owned");
                   return;
@@ -2265,12 +2303,7 @@ export default function App() {
                   await showAlert("Cannot modify roster — this player's game is in progress.", "Player Locked");
                   return;
                 }
-                const isOwnedByMe = Object.values(myTeam?.roster || {}).concat(myTeam?.bench || []).some(p => p && p.id === activePlayerCard.id);
-                if (isOwnedByMe) {
-                  RemoveFromRoster(activePlayerCard);
-                } else {
-                  addToRoster(activePlayerCard, recruitingSlot || 'bench-0');
-                }
+                addToRoster(activePlayerCard, recruitingSlot || 'bench-0');
                 setActivePlayerCard(null);
                 setRecruitingSlot(null);
               }}
