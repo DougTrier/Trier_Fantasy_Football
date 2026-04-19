@@ -196,17 +196,15 @@ Season-to-season roster continuity — a completely different long-term game.
 - ⏭ Rookie draft simulator — deferred (DraftSimulator can be reused in a future pass)
 - ⏭ Aging curves on projections — deferred (requires actuarial data model)
 
-### 4.6 Football Mini-Game (League Page — Below Ticker)
+### 4.6 Football Mini-Game (League Page — Below Ticker) ✅
 A fun, football-themed interactive game embedded at the bottom of the League page,
 below the scoring ticker. Meant to keep managers engaged between score updates.
-- **Field Goal Kicker** — aim with arrow keys, power bar charges on hold, release to kick
-- Wind direction and speed shown as a flag animation above the uprights
-- Progressive difficulty: uprights narrow as you chain successful kicks
-- Leaderboard stored locally — best streak shown next to your team name in standings
-- Additional mini-games to consider: QB accuracy challenge, punt distance meter
-- Runs only when ticker is visible (gameday); shows a "check back on gameday" placeholder off-season
-
-*⚠️ Build this last — all other roadmap items ship first.*
+- ✅ **Field Goal Kicker** — aim with arrow keys, power bar charges on hold, release to kick
+- ✅ Wind direction and speed shown above the uprights (color-coded by intensity)
+- ✅ Progressive difficulty: uprights narrow as you chain successful kicks
+- ✅ Best streak stored locally (`trier_fg_streak`); shown in game header next to team name
+- ⏭ Additional mini-games (QB accuracy challenge, punt distance meter) — deferred
+- ✅ Runs only on gameday (Sun/Mon/Thu); shows "check back on gameday" placeholder off-season
 
 ### 4.8 Mobile Companion (Read-Only)
 Full Tauri desktop stays the primary experience. A lightweight mobile companion for on-the-go.
