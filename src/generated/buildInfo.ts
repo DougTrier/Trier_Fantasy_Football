@@ -3,5 +3,5 @@
 export const BUILD_INFO = {
     timestamp: 1776611305742,
     hash: 'c580d290a63c6337',
-    version: '3.3.0'
+    version: '3.3.1'
 };
