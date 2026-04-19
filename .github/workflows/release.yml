@@ -11,16 +11,7 @@ permissions:
 jobs:
   build-tauri:
     name: Build Tauri App
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - platform: windows-latest
-            args: --bundles msi,nsis
-          - platform: ubuntu-20.04
-            args: --bundles deb,appimage
-
-    runs-on: ${{ matrix.platform }}
+    runs-on: windows-latest
 
     steps:
       - uses: actions/checkout@v4
@@ -39,12 +30,6 @@ jobs:
         with:
           workspaces: './src-tauri -> target'
 
-      - name: Install Linux system dependencies
-        if: matrix.platform == 'ubuntu-20.04'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf
-
       - name: Install frontend dependencies
         run: npm ci
 
@@ -61,4 +46,4 @@ jobs:
           releaseBody: 'See CHANGELOG or commits for details.'
           releaseDraft: true
           prerelease: false
-          args: ${{ matrix.args }}
+          args: --bundles msi,nsis
