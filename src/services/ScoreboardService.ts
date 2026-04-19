@@ -118,6 +118,19 @@ export interface GameDetail {
     scoringPlays: ScoringPlay[];
 }
 
+// A single item shown in the bottom ticker — scoring plays, big plays, and red zone alerts
+export interface TickerEvent {
+    gameId: string;
+    homeTeam: string;
+    awayTeam: string;
+    homeScore: number;
+    awayScore: number;
+    teamAbbr: string;   // team that made/has the play
+    text: string;       // human-readable description
+    label: string;      // badge text: "TOUCHDOWN", "47 YDS", "RED ZONE", etc.
+    type: 'score' | 'bigplay' | 'redzone';
+}
+
 // ─── Cache ────────────────────────────────────────────────────────────────────
 
 const RECORDS_TTL  = 60 * 60 * 1000;  // 1 hour — standings don't change often
@@ -134,6 +147,7 @@ let gamesLastFetch = 0;
 
 const snapshotCache: Record<string, { data: TeamSnapshot; ts: number }> = {};
 const gameDetailCache: Record<string, { data: GameDetail; ts: number }> = {};
+const tickerEventsCache: Record<string, { events: TickerEvent[]; ts: number }> = {};
 
 // ─── Subscribers ──────────────────────────────────────────────────────────────
 
@@ -428,12 +442,83 @@ export const ScoreboardService = {
                     awayScore:    play?.awayScore ?? 0,
                 });
             }
+
+            // Build ticker events: scoring plays + big plays + red zone alert
+            const tickerEvents: TickerEvent[] = [];
+
+            for (const sp of detail.scoringPlays) {
+                tickerEvents.push({
+                    gameId: eventId,
+                    homeTeam: base.homeTeam, awayTeam: base.awayTeam,
+                    homeScore: sp.homeScore, awayScore: sp.awayScore,
+                    teamAbbr: sp.teamAbbr, text: sp.text,
+                    label: sp.type || 'SCORE', type: 'score',
+                });
+            }
+
+            // Walk the most recent 5 drives for big plays (≥20 yds) and red zone
+            const recentDrives: any[] = (data?.drives?.previous ?? []).slice(-5);
+            const currentDrive: any   = data?.drives?.current ?? null;
+            const allDrives: any[]    = currentDrive ? [...recentDrives, currentDrive] : recentDrives;
+
+            for (const drive of allDrives) {
+                const isRedZone: boolean = drive?.isRedZone ?? false;
+                for (const play of (drive?.plays ?? []) as any[]) {
+                    if (play?.scoringPlay) continue; // already captured above
+                    const yardage: number = play?.statYardage ?? 0;
+                    const teamAbbr: string = play?.team?.abbreviation?.toUpperCase() ?? '';
+                    const playText: string = play?.text ?? '';
+                    if (!playText || !teamAbbr) continue;
+
+                    if (yardage >= 20) {
+                        tickerEvents.push({
+                            gameId: eventId,
+                            homeTeam: base.homeTeam, awayTeam: base.awayTeam,
+                            homeScore: detail.homeScore, awayScore: detail.awayScore,
+                            teamAbbr, text: playText,
+                            label: `${yardage} YDS`, type: 'bigplay',
+                        });
+                    } else if (isRedZone && drive === currentDrive && play === (drive.plays ?? []).at(-1)) {
+                        // Only emit one red zone alert per current drive (its latest play)
+                        tickerEvents.push({
+                            gameId: eventId,
+                            homeTeam: base.homeTeam, awayTeam: base.awayTeam,
+                            homeScore: detail.homeScore, awayScore: detail.awayScore,
+                            teamAbbr, text: playText,
+                            label: 'RED ZONE', type: 'redzone',
+                        });
+                    }
+                }
+            }
+
+            tickerEventsCache[eventId] = { events: tickerEvents, ts: Date.now() };
+            notify(); // wake the ticker so new play data surfaces immediately
         } catch (e) {
             console.warn(`[ScoreboardService] Game detail fetch failed for ${eventId}:`, e);
         }
 
         gameDetailCache[eventId] = { data: detail, ts: Date.now() };
         return detail;
+    },
+
+    /**
+     * Returns notable play events (scoring, big plays, red zone) for all live games.
+     * Fires background detail fetches for any live game not yet cached; returns
+     * whatever is already in cache synchronously so the ticker renders immediately.
+     */
+    getTickerItems(): TickerEvent[] {
+        const liveGames = gamesCache.filter(g => g.status === 'in');
+        for (const game of liveGames) {
+            const cached = tickerEventsCache[game.id];
+            // Kick off a background fetch if the cache is cold or stale
+            if (!cached || Date.now() - cached.ts > DETAIL_TTL_LIVE) {
+                this.getGameDetail(game.id);
+            }
+        }
+        // Cap at 12 events total so the ticker doesn't bloat on busy gamedays
+        return liveGames
+            .flatMap(game => tickerEventsCache[game.id]?.events ?? [])
+            .slice(-12);
     },
 
     /** Full team name for display. */

@@ -558,6 +558,7 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
                     maxWidth: '1400px',
                     margin: '0 auto',
                     height: '100%',
+                    boxSizing: 'border-box',
                     display: 'flex',
                     flexDirection: 'column'
                 }}>

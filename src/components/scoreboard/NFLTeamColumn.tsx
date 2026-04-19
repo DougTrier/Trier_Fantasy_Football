@@ -8,6 +8,8 @@
  *
  * Gameday: rows with an active game pulse red and show the live score.
  * Off-season / no games: rows show only records — still fully interactive.
+ * Both AFC and NFC render identically: logo-left rows centered under each
+ * division header.
  */
 import React from 'react';
 import { type LiveGame, type TeamRecord, ScoreboardService } from '../../services/ScoreboardService';
@@ -20,18 +22,17 @@ interface NFLTeamColumnProps {
     divisions: Record<string, string[]>;   // division name → team abbreviations
     selectedTeam: string | null;           // currently selected team abbr
     onTeamClick: (abbr: string) => void;
-    align: 'left' | 'right';              // column position — affects text alignment
+    align: 'left' | 'right';              // column position — used for snapshot overlay placement
 }
 
-// Row for a single team
+// Row for a single team — always logo-left, text-left, natural width
 const TeamRow: React.FC<{
     abbr: string;
     record: TeamRecord;
     liveGame: LiveGame | null;
     isSelected: boolean;
-    align: 'left' | 'right';
     onClick: () => void;
-}> = ({ abbr, record, liveGame, isSelected, align, onClick }) => {
+}> = ({ abbr, record, liveGame, isSelected, onClick }) => {
     const theme = getTeamTheme(abbr);
     const isLive = liveGame?.status === 'in';
     const recLabel = record.ties > 0
@@ -51,28 +52,28 @@ const TeamRow: React.FC<{
             onClick={onClick}
             title={ScoreboardService.getFullName(abbr)}
             style={{
-                display: 'flex',
+                display: 'inline-flex',
                 alignItems: 'center',
-                gap: '7px',
-                padding: '7px 7px',
-                borderRadius: '7px',
+                gap: '4px',
+                padding: '4px 6px',
+                borderRadius: '4px',
                 cursor: 'pointer',
-                marginBottom: '3px',
-                flexDirection: 'row', // logo always left so division label center matches visual center
+                marginBottom: '1px',
                 background: isSelected
-                    ? `rgba(${hexToRgb(theme.primary)}, 0.18)`
-                    : isLive ? 'rgba(239,68,68,0.08)' : 'transparent',
+                    ? `rgba(${hexToRgb(theme.primary)}, 0.25)`
+                    : isLive ? 'rgba(239,68,68,0.20)' : 'rgba(0,0,0,0.72)',
+                backdropFilter: 'blur(6px)',
                 border: isSelected
                     ? `1px solid ${theme.primary}60`
                     : '1px solid transparent',
                 transition: 'background 0.15s',
             }}
             onMouseEnter={e => {
-                if (!isSelected) (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.06)';
+                if (!isSelected) (e.currentTarget as HTMLDivElement).style.background = 'rgba(0,0,0,0.85)';
             }}
             onMouseLeave={e => {
                 if (!isSelected) (e.currentTarget as HTMLDivElement).style.background =
-                    isLive ? 'rgba(239,68,68,0.08)' : 'transparent';
+                    isLive ? 'rgba(239,68,68,0.20)' : 'rgba(0,0,0,0.72)';
             }}
         >
             {/* Team logo — ESPN CDN, same source as player cards */}
@@ -80,7 +81,7 @@ const TeamRow: React.FC<{
                 src={theme.logoUrl}
                 alt={abbr}
                 style={{
-                    width: 32, height: 32,
+                    width: 22, height: 22,
                     objectFit: 'contain',
                     flexShrink: 0,
                     filter: isLive ? `drop-shadow(0 0 5px ${theme.primary})` : 'none',
@@ -89,27 +90,27 @@ const TeamRow: React.FC<{
                 }}
             />
 
-            {/* Name + record stacked vertically — record sits tight under the abbr */}
-            <div style={{ flex: 1, minWidth: 0 }}>
+            {/* Name + record stacked vertically */}
+            <div style={{ minWidth: '28px' }}>
                 <div style={{
-                    fontSize: '0.76rem', fontWeight: 800,
+                    fontSize: '0.50rem', fontWeight: 800,
                     color: isSelected ? '#fff' : '#e5e7eb',
                     letterSpacing: '0.5px', lineHeight: 1,
-                    textAlign: align === 'right' ? 'right' : 'left',
+                    textAlign: 'left',
                 }}>
                     {abbr}
                 </div>
                 <div style={{
-                    fontSize: '0.61rem',
+                    fontSize: '0.41rem',
                     color: isLive ? '#ef4444' : '#6b7280',
                     fontWeight: isLive ? 700 : 500,
                     lineHeight: 1, marginTop: '2px',
-                    textAlign: align === 'right' ? 'right' : 'left',
+                    textAlign: 'left',
                 }}>
                     {isLive && scoreLabel ? scoreLabel : recLabel}
                     {/* Quarter status on a second micro-line when live */}
                     {isLive && liveGame && (
-                        <span style={{ display: 'block', fontSize: '0.58rem', color: '#ef4444', marginTop: '1px' }}>
+                        <span style={{ display: 'block', fontSize: '0.38rem', color: '#ef4444', marginTop: '1px' }}>
                             {liveGame.statusDetail}
                         </span>
                     )}
@@ -135,22 +136,16 @@ export const NFLTeamColumn: React.FC<NFLTeamColumnProps> = ({
     conference, divisions, selectedTeam, onTeamClick, align,
 }) => {
     return (
-        // height: 100% fills the stretched grid cell; flex column lets logo stay fixed
-        // while the divisions area grows to fill remaining space
-        // overflowY: auto lets the column scroll if 16 teams exceed the 85% height cap
         <div style={{
             width: '100%',
             maxWidth: '200px',
-            marginLeft: align === 'right' ? 'auto' : undefined,
-            marginRight: align === 'left'  ? 'auto' : undefined,
-            height: '100%',
+            height: 'auto',
             display: 'flex',
             flexDirection: 'column',
             overflowX: 'hidden',
-            overflowY: 'auto',
-            scrollbarWidth: 'none', // hide scrollbar — content still scrollable
+            overflowY: 'visible',
         }}>
-            {/* Conference logo — 10% smaller than original to give teams room to fit */}
+            {/* Conference logo centered at top */}
             <div style={{
                 marginBottom: '8px',
                 textAlign: 'center',
@@ -159,20 +154,19 @@ export const NFLTeamColumn: React.FC<NFLTeamColumnProps> = ({
                 <img
                     src={conference === 'AFC' ? afcLogo : nfcLogo}
                     alt={conference}
-                    style={{ height: '45px', width: 'auto', objectFit: 'contain', opacity: 0.9 }}
+                    style={{ height: '29px', width: 'auto', objectFit: 'contain', opacity: 0.9 }}
                 />
             </div>
 
-            {/* Divisions fill remaining height; space-evenly when content fits, visible overflow otherwise */}
+            {/* Divisions stacked with consistent spacing */}
             <div style={{
-                flex: 1,
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'space-evenly',
+                gap: '6px',
             }}>
                 {Object.entries(divisions).map(([divName, teams]) => (
                     <div key={divName}>
-                        {/* Division header: full-width flex row so label centers over the teams */}
+                        {/* Division header centered */}
                         <div style={{
                             display: 'flex',
                             justifyContent: 'center',
@@ -180,9 +174,8 @@ export const NFLTeamColumn: React.FC<NFLTeamColumnProps> = ({
                             marginBottom: '4px',
                         }}>
                             <span style={{
-                                fontSize: '0.8rem',
+                                fontSize: '0.52rem',
                                 fontWeight: 900,
-                                // AFC = neon red, NFC = neon blue
                                 color: conference === 'AFC' ? '#ff3333' : '#00d4ff',
                                 letterSpacing: '1.5px',
                                 textTransform: 'uppercase',
@@ -191,7 +184,6 @@ export const NFLTeamColumn: React.FC<NFLTeamColumnProps> = ({
                                 textUnderlineOffset: '3px',
                                 whiteSpace: 'nowrap',
                                 textShadow: conference === 'AFC' ? '0 0 8px rgba(255,51,51,0.6)' : '0 0 8px rgba(0,212,255,0.55)',
-                                // dark pill ensures readability over the chalk background
                                 background: 'rgba(0,0,0,0.65)',
                                 padding: '2px 10px',
                                 borderRadius: '4px',
@@ -200,18 +192,19 @@ export const NFLTeamColumn: React.FC<NFLTeamColumnProps> = ({
                             </span>
                         </div>
 
-                        {/* Team rows */}
-                        {teams.map(abbr => (
-                            <TeamRow
-                                key={abbr}
-                                abbr={abbr}
-                                record={ScoreboardService.getRecord(abbr)}
-                                liveGame={ScoreboardService.getLiveGame(abbr)}
-                                isSelected={selectedTeam === abbr}
-                                align={align}
-                                onClick={() => onTeamClick(abbr)}
-                            />
-                        ))}
+                        {/* Team rows centered as a block under the division header */}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                            {teams.map(abbr => (
+                                <TeamRow
+                                    key={abbr}
+                                    abbr={abbr}
+                                    record={ScoreboardService.getRecord(abbr)}
+                                    liveGame={ScoreboardService.getLiveGame(abbr)}
+                                    isSelected={selectedTeam === abbr}
+                                    onClick={() => onTeamClick(abbr)}
+                                />
+                            ))}
+                        </div>
                     </div>
                 ))}
             </div>

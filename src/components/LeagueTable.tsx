@@ -37,6 +37,7 @@ import { NFLTeamColumn } from './scoreboard/NFLTeamColumn';
 import { TeamSnapshotPanel } from './scoreboard/TeamSnapshotPanel';
 import { LiveScoreboardStrip } from './scoreboard/LiveScoreboardStrip';
 import { GameDetailModal } from './scoreboard/GameDetailModal';
+import { ScoringTicker } from './scoreboard/ScoringTicker';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 // ChatMessage is local-only — it's never stored in League state or synced.
@@ -70,6 +71,19 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({ league, myTeamName }) 
     const [selectedConf, setSelectedConf] = useState<'AFC' | 'NFC' | null>(null);
     const [snapshot, setSnapshot] = useState<TeamSnapshot | null>(null);
     const [snapshotLoading, setSnapshotLoading] = useState(false);
+    // Scale factor so all content fits the window without scrolling or clipping.
+    // 1440×860 is the baseline design resolution; scale proportionally from there.
+    const [scale, setScale] = useState(1);
+    useEffect(() => {
+        const recalc = () => {
+            const s = Math.min(window.innerWidth / 1440, window.innerHeight / 860);
+            setScale(Math.max(0.4, s));
+        };
+        recalc();
+        window.addEventListener('resize', recalc);
+        return () => window.removeEventListener('resize', recalc);
+    }, []);
+
     // scoreboardTick increments on every ScoreboardService notification,
     // forcing re-renders so live score badges stay current.
     const [scoreboardTick, setScoreboardTick] = useState(0);
@@ -227,22 +241,25 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({ league, myTeamName }) 
     };
 
     return (
-        <>
+        // Outer shell: fills <main> exactly via absolute positioning so no content
+        // ever overflows into <main>'s scroll area. Zoom scales everything together.
+        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
         <div className="responsive-container" style={{
             background: 'transparent',
             display: 'grid',
-            gridTemplateColumns: '1fr min-content 4px min-content 1fr', // Symmetrically centered with tight 4px gap
+            gridTemplateColumns: 'min-content min-content 4px min-content min-content',
             columnGap: '0',
+            justifyContent: 'center', // center the column group within the full-width grid
             width: '100%',
             height: '100%',
-            flex: 1,
             overflowX: 'hidden',
+            overflowY: 'hidden',
             padding: '20px 40px',
-            alignItems: 'start'
+            alignItems: 'start',
+            zoom: scale,
         }}>
             {/* --- COLUMN 1: AFC INTELLIGENCE PANEL --- */}
-            {/* height:85% matches the standings/trophy panels so teams stop at the same bottom edge */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', height: '85%', position: 'relative', paddingTop: '4px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', height: 'auto', position: 'relative', paddingTop: '4px' }}>
                 <NFLTeamColumn
                     conference="AFC"
                     divisions={AFC_DIVISIONS}
@@ -273,7 +290,7 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({ league, myTeamName }) 
             }}>
                 <div style={{
                     position: 'relative',
-                    width: 'clamp(320px, 22vw, 450px)',
+                    width: 'clamp(160px, 11vw, 225px)',
                     aspectRatio: '1/1',
                     display: 'flex',
                     flexDirection: 'column',
@@ -293,13 +310,13 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({ league, myTeamName }) 
 
                 {/* ── League Chat ─────────────────────────────────────────── */}
                 <div style={{
-                    width: 'clamp(320px, 22vw, 450px)',
-                    marginTop: '12px',
+                    width: 'clamp(160px, 11vw, 225px)',
+                    marginTop: '0',
                     flex: 1,        // fill all remaining height below the trophy
                     minHeight: 0,   // required for flex children to shrink/scroll correctly
                     background: 'rgba(0,0,0,0.72)',
                     border: '1px solid rgba(234,179,8,0.25)',
-                    borderRadius: '16px',
+                    borderRadius: '0 0 16px 16px',
                     boxShadow: '0 8px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06)',
                     backdropFilter: 'blur(10px)',
                     overflow: 'hidden',
@@ -331,10 +348,10 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({ league, myTeamName }) 
                         flex: 1,
                         minHeight: 0,
                         overflowY: 'auto',
-                        padding: '10px 12px',
+                        padding: '6px 8px',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '6px',
+                        gap: '3px',
                         scrollbarWidth: 'thin',
                         scrollbarColor: '#eab308 rgba(0,0,0,0.2)'
                     }}>
@@ -368,19 +385,19 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({ league, myTeamName }) 
                                     }}
                                 >
                                     <div style={{
-                                        fontSize: '0.55rem',
+                                        fontSize: '0.46rem',
                                         color: '#6b7280',
                                         fontWeight: 700,
                                         textTransform: 'uppercase',
-                                        marginBottom: '2px',
+                                        marginBottom: '1px',
                                         letterSpacing: '0.5px'
                                     }}>
                                         {msg.isMe ? 'You' : msg.sender}
                                     </div>
                                     <div style={{
-                                        maxWidth: '85%',
-                                        padding: '6px 10px',
-                                        borderRadius: msg.isMe ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
+                                        maxWidth: '90%',
+                                        padding: '3px 7px',
+                                        borderRadius: msg.isMe ? '8px 8px 2px 8px' : '8px 8px 8px 2px',
                                         background: msg.isMe
                                             ? 'linear-gradient(135deg, rgba(234,179,8,0.25), rgba(234,179,8,0.12))'
                                             : 'rgba(255,255,255,0.07)',
@@ -388,8 +405,8 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({ league, myTeamName }) 
                                             ? '1px solid rgba(234,179,8,0.35)'
                                             : '1px solid rgba(255,255,255,0.1)',
                                         color: msg.isMe ? '#fde68a' : '#e5e7eb',
-                                        fontSize: '0.78rem',
-                                        lineHeight: 1.4,
+                                        fontSize: '0.62rem',
+                                        lineHeight: 1.3,
                                         wordBreak: 'break-word'
                                     }}>
                                         {msg.text}
@@ -585,8 +602,7 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({ league, myTeamName }) 
             </div>
 
             {/* --- COLUMN 5: NFC INTELLIGENCE PANEL --- */}
-            {/* height:85% mirrors column 1 exactly — both columns share the same bottom edge */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', height: '85%', position: 'relative', paddingTop: '4px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', height: 'auto', position: 'relative', paddingTop: '4px' }}>
                 <NFLTeamColumn
                     conference="NFC"
                     divisions={NFC_DIVISIONS}
@@ -605,14 +621,21 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({ league, myTeamName }) 
                     </div>
                 )}
             </div>
+            {/* Ticker — row 2, spans trophy+divider+standings columns, pulled up 135px */}
+            <div style={{ gridColumn: '2 / 5', gridRow: 2, marginTop: '-125px' }}>
+                <ScoringTicker
+                    games={ScoreboardService.getLiveGames()}
+                    events={ScoreboardService.getTickerItems()}
+                />
+            </div>
         </div>
-        {/* Game detail modal — fixed overlay, rendered outside the grid */}
+        {/* Game detail modal — fixed overlay, sits outside the zoomed grid */}
         {selectedGameId && (
             <GameDetailModal
                 eventId={selectedGameId}
                 onClose={() => setSelectedGameId(null)}
             />
         )}
-        </>
+        </div>
     );
 };

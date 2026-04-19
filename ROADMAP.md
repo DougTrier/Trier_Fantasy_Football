@@ -44,10 +44,12 @@ AFC/NFC team columns flanking the League Standings page. Live records, scores, a
 - `TeamSnapshotPanel` — last game result, next game, "View on NFL.com" button
 - Columns sized to match League Standings panel height exactly
 
+**Completed ✅ (continued)**
+- Scoreboard strip — 3-column game cards with live scores, quarter, dark overlay
+- Game detail modal — box score, scoring plays, ESPN deep link
+- Fantasy dot indicators on standing rows (green = scoring now, yellow = pregame)
+
 **Remaining:**
-- Scoreboard strip showing all active games (score / quarter / time) above the standings
-- Game detail modal — box score, scoring summary, YouTube highlights
-- Fantasy dot indicators on standing rows (green = scoring now, yellow = active, grey = bye)
 - "Last scoring play" ticker
 
 ### 2.2 Draft Simulator

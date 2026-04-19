@@ -169,3 +169,15 @@ button:focus-visible {
   border-color: rgba(239, 68, 68, 0.8) !important;
   box-shadow: 0 0 18px rgba(239, 68, 68, 0.5) !important;
 }
+
+/* Live score pulse — used on team logo and live dot indicators */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+/* Bottom ticker scroll — content is doubled so it loops seamlessly */
+@keyframes tickerScroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
