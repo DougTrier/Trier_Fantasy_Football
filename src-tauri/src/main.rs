@@ -4,7 +4,7 @@
   windows_subsystem = "windows"
 )]
 
-use tauri::{Manager, State};
+use tauri::{Manager, State, SystemTray, SystemTrayMenu, SystemTrayMenuItem, CustomMenuItem, SystemTrayEvent};
 use mdns_sd::{ServiceDaemon, ServiceInfo};
 use serde::{Serialize, Deserialize};
 use warp::Filter;
@@ -312,8 +312,46 @@ fn p2p_refresh_discovery(state: State<'_, AppState>) {
     println!("[Rust] Discovery Refreshed. Peer list cleared.");
 }
 
+/// Updates the "Pending Trades" tray menu item text when the frontend trade state changes.
+/// Called from React whenever hasNewOffers flips or the trade count changes.
+#[tauri::command]
+fn update_tray_badge(app_handle: tauri::AppHandle, has_offers: bool) {
+    let title = if has_offers {
+        "Pending Trade Offers ●"
+    } else {
+        "No Pending Trades"
+    };
+    // Silently ignore errors — tray may not be available on all platforms
+    let _ = app_handle.tray_handle().get_item("trades").set_title(title);
+}
+
+/// Builds the system tray menu shown on right-click.
+fn build_tray_menu() -> SystemTrayMenu {
+    let show      = CustomMenuItem::new("show",       "Show App");
+    let trades    = CustomMenuItem::new("trades",     "No Pending Trades").disabled();
+    let lock_all  = CustomMenuItem::new("lock_all",   "Lock All Teams");
+    let unlock_all= CustomMenuItem::new("unlock_all", "Unlock All Teams");
+    let quit      = CustomMenuItem::new("quit",       "Quit");
+
+    SystemTrayMenu::new()
+        .add_item(show)
+        .add_native_item(SystemTrayMenuItem::Separator)
+        .add_item(trades)
+        .add_native_item(SystemTrayMenuItem::Separator)
+        .add_item(lock_all)
+        .add_item(unlock_all)
+        .add_native_item(SystemTrayMenuItem::Separator)
+        .add_item(quit)
+}
+
 fn main() {
+  // Build the system tray with tooltip and right-click menu
+  let tray = SystemTray::new()
+      .with_tooltip("Trier Fantasy Football")
+      .with_menu(build_tray_menu());
+
   tauri::Builder::default()
+    .system_tray(tray)
     .manage(AppState {
         peers: Arc::new(Mutex::new(HashMap::new())),
         p2p_started: Arc::new(Mutex::new(false)),
@@ -327,10 +365,36 @@ fn main() {
         get_ntp_time,
         get_local_ip,
         p2p_refresh_discovery,
-        run_network_diagnostics
+        run_network_diagnostics,
+        update_tray_badge
     ])
     .setup(|app| {
         Ok(())
+    })
+    // Left-click on tray icon shows and focuses the main window
+    .on_system_tray_event(|app, event| match event {
+        SystemTrayEvent::LeftClick { .. } => {
+            if let Some(w) = app.get_window("main") {
+                let _ = w.show();
+                let _ = w.set_focus();
+            }
+        },
+        SystemTrayEvent::MenuItemClick { id, .. } => match id.as_str() {
+            // Bring the window to front
+            "show" => {
+                if let Some(w) = app.get_window("main") {
+                    let _ = w.show();
+                    let _ = w.set_focus();
+                }
+            },
+            // Emit to the frontend — React handles state update
+            "lock_all"   => { let _ = app.emit_all("TRAY_LOCK_ALL",   ()); },
+            "unlock_all" => { let _ = app.emit_all("TRAY_UNLOCK_ALL", ()); },
+            // Route quit through the graceful-shutdown flow (frontend logs out first)
+            "quit" => { let _ = app.emit_all("CLOSE_REQUESTED", ()); },
+            _ => {}
+        },
+        _ => {}
     })
     // Intercept the OS window-close (X button / Alt-F4 / Cmd-Q).
     // We prevent the immediate close and instead tell the frontend, which

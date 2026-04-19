@@ -20,7 +20,15 @@
             "process": {
                 "relaunch": true,
                 "exit": true
+            },
+            "notification": {
+                "all": true
             }
+        },
+        "systemTray": {
+            "iconPath": "icons/32x32.png",
+            "iconAsTemplate": false,
+            "menuOnLeftClick": false
         },
         "bundle": {
             "active": true,

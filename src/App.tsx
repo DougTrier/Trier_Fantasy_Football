@@ -405,6 +405,31 @@ export default function App() {
     return () => unsubConn();
   }, []);
 
+  // Fire a system notification when a peer connects or disconnects
+  const prevConnectedRef = useRef<string[]>([]);
+  useEffect(() => {
+    const win = window as any;
+    if (!win.__TAURI__) return;
+    const prev = prevConnectedRef.current;
+    const added   = connectedPeers.filter(id => !prev.includes(id));
+    const removed = prev.filter(id => !connectedPeers.includes(id));
+    if (added.length === 0 && removed.length === 0) return;
+
+    import('@tauri-apps/api/notification').then(({ isPermissionGranted, requestPermission, sendNotification }) => {
+      const notify = async (title: string, body: string) => {
+        let granted = await isPermissionGranted();
+        if (!granted) {
+          const perm = await requestPermission();
+          granted = perm === 'granted';
+        }
+        if (granted) sendNotification({ title, body });
+      };
+      added.forEach(id => notify('Peer Connected', `${id} is now online and verified.`));
+      removed.forEach(id => notify('Peer Disconnected', `${id} has gone offline.`));
+    });
+    prevConnectedRef.current = connectedPeers;
+  }, [connectedPeers]);
+
   // Dynamic Discovery Identity Update
   // CRITICAL: We only update identity once the signaling port is confirmed from Rust.
   // This prevents Instance 2 from using Instance 1's "15432" identity temporarily.
@@ -520,6 +545,28 @@ export default function App() {
       unlisten?.();
     };
   }, []); // Register once — reads latest state via userTeamsRef
+
+  // System tray event listeners — wired to Rust tray menu items
+  useEffect(() => {
+    const win = window as any;
+    if (!win.__TAURI__) return;
+    const unlisteners: (() => void)[] = [];
+    import('@tauri-apps/api/event').then(({ listen }) => {
+      // Lock All / Unlock All from tray right-click menu
+      listen<void>('TRAY_LOCK_ALL',   () => setLockedNFLTeams([...NFL_TEAMS])).then(fn => unlisteners.push(fn));
+      listen<void>('TRAY_UNLOCK_ALL', () => setLockedNFLTeams([])).then(fn => unlisteners.push(fn));
+    });
+    return () => unlisteners.forEach(fn => fn());
+  }, []);
+
+  // Keep the tray badge in sync with pending trade offer state
+  useEffect(() => {
+    const win = window as any;
+    if (!win.__TAURI__) return;
+    import('@tauri-apps/api/tauri').then(({ invoke }) => {
+      invoke('update_tray_badge', { hasOffers: hasNewOffers }).catch(() => {});
+    });
+  }, [hasNewOffers]);
 
   // Persist locked NFL teams across sessions
   useEffect(() => {
