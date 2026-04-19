@@ -43,6 +43,7 @@ import { PlayerSelector } from './components/PlayerSelector';
 import { PlayerTradingCard } from './components/PlayerTradingCard';
 import { PlayersPage } from './components/PlayersPage';
 import { SeasonProjectionsDashboard } from './components/SeasonProjectionsDashboard';
+import { SeasonArchivePage } from './components/SeasonArchivePage';
 import { RulesPage } from './components/RulesPage';
 import { SettingsPage } from './components/SettingsPage';
 import { H2HPage } from './components/H2HPage';
@@ -1818,6 +1819,16 @@ export default function App() {
       )}
 
       {activeView === 'projections' && <SeasonProjectionsDashboard />}
+
+      {activeView === 'archive' && (
+        <SeasonArchivePage
+          league={displayLeague}
+          allTeams={userTeams}
+          players={availablePlayers}
+          isAdmin={isAdmin}
+          onLeagueChange={setLeague}
+        />
+      )}
 
       {activeView === 'network' && (
         <NetworkPage />

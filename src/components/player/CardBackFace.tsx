@@ -1,5 +1,5 @@
 import React from 'react';
-import { TrendingUp, Shield, History, Download, Wallet } from 'lucide-react';
+import { TrendingUp, Shield, History, Download, Wallet, Star } from 'lucide-react';
 import type { Player, Transaction, FantasyTeam } from '../../types';
 import { ScoringEngine } from '../../utils/ScoringEngine';
 import { getTeamTheme } from '../../utils/teamThemes';
@@ -227,7 +227,14 @@ export const CardBackFace: React.FC<CardBackFaceProps> = ({
                                 <span style={{ color: theme.primary }}>{player.position}</span>
                             </div>
 
-                            {(!player.historicalStats || player.historicalStats.length === 0) ? (
+                            {/* Best season = year with highest fantasyPoints */}
+                            {(() => {
+                                const bestYear = player.historicalStats?.reduce((best, s) =>
+                                    (s.fantasyPoints ?? 0) > (best?.fantasyPoints ?? 0) ? s : best
+                                , player.historicalStats?.[0]);
+                                const bestSeason = bestYear;
+
+                                return (!player.historicalStats || player.historicalStats.length === 0) ? (
                                 <div style={{ textAlign: 'center', padding: '20px 0', color: '#999', fontStyle: 'italic', fontSize: '0.65rem' }}>
                                     No official NFL career stats available.<br />(Rookie / No prior experience)
                                 </div>
@@ -260,37 +267,43 @@ export const CardBackFace: React.FC<CardBackFaceProps> = ({
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {player.historicalStats?.map(s => (
-                                            <tr key={s.year} style={{ borderBottom: '1px solid #eee' }}>
-                                                <td style={{ fontWeight: 800 }}>{s.year}</td>
-                                                <td style={{ fontSize: '0.65rem', color: '#666', fontWeight: 700 }}>{s.team}</td>
-                                                <td>{s.gamesPlayed}</td>
-                                                {player.position === 'QB' && (
-                                                    <>
-                                                        <td>{s.passingYards || 0}</td>
-                                                        <td style={{ color: '#059669', fontWeight: 700 }}>{s.passingTDs || 0}</td>
-                                                    </>
-                                                )}
-                                                {(player.position === 'WR' || player.position === 'TE') && (
-                                                    <>
-                                                        <td>{s.receivingYards || 0}</td>
-                                                        <td style={{ color: '#059669', fontWeight: 700 }}>{s.receivingTDs || 0}</td>
-                                                    </>
-                                                )}
-                                                {player.position === 'RB' && (
-                                                    <>
-                                                        <td>{s.rushingYards || 0}</td>
-                                                        <td style={{ color: '#059669', fontWeight: 700 }}>{s.rushingTDs || 0}</td>
-                                                    </>
-                                                )}
-                                                <td style={{ background: '#fefce8', fontWeight: 800 }}>
-                                                    {s.year === CURRENT_SEASON
-                                                        ? (ScoringEngine.calculatePoints(player).total ?? 0).toFixed(1)
-                                                        : (((s.fantasyPoints || 0) % 1 === 0) ? (s.fantasyPoints || 0) : (s.fantasyPoints || 0).toFixed(1))
-                                                    }
-                                                </td>
-                                            </tr>
-                                        ))}
+                                        {player.historicalStats?.map(s => {
+                                            const isBest = bestSeason && s.year === bestSeason.year;
+                                            return (
+                                                <tr key={s.year} style={{ borderBottom: '1px solid #eee', background: isBest ? '#fefce8' : 'transparent' }}>
+                                                    <td style={{ fontWeight: 800, display: 'flex', alignItems: 'center', gap: '2px', paddingTop: '3px' }}>
+                                                        {isBest && <Star size={9} color="#ca8a04" fill="#ca8a04" />}
+                                                        {s.year}
+                                                    </td>
+                                                    <td style={{ fontSize: '0.65rem', color: '#666', fontWeight: 700 }}>{s.team}</td>
+                                                    <td>{s.gamesPlayed}</td>
+                                                    {player.position === 'QB' && (
+                                                        <>
+                                                            <td>{s.passingYards || 0}</td>
+                                                            <td style={{ color: '#059669', fontWeight: 700 }}>{s.passingTDs || 0}</td>
+                                                        </>
+                                                    )}
+                                                    {(player.position === 'WR' || player.position === 'TE') && (
+                                                        <>
+                                                            <td>{s.receivingYards || 0}</td>
+                                                            <td style={{ color: '#059669', fontWeight: 700 }}>{s.receivingTDs || 0}</td>
+                                                        </>
+                                                    )}
+                                                    {player.position === 'RB' && (
+                                                        <>
+                                                            <td>{s.rushingYards || 0}</td>
+                                                            <td style={{ color: '#059669', fontWeight: 700 }}>{s.rushingTDs || 0}</td>
+                                                        </>
+                                                    )}
+                                                    <td style={{ background: isBest ? '#fef08a' : '#fefce8', fontWeight: 800, color: isBest ? '#92400e' : undefined }}>
+                                                        {s.year === CURRENT_SEASON
+                                                            ? (ScoringEngine.calculatePoints(player).total ?? 0).toFixed(1)
+                                                            : (((s.fantasyPoints || 0) % 1 === 0) ? (s.fantasyPoints || 0) : (s.fantasyPoints || 0).toFixed(1))
+                                                        }
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
                                         {/* TOTALS ROW */}
                                         <tr style={{ background: '#000', color: '#fff', fontWeight: 900, borderTop: '2px solid #333' }}>
                                             <td style={{ padding: '4px' }}>CAREER</td>
@@ -325,7 +338,8 @@ export const CardBackFace: React.FC<CardBackFaceProps> = ({
                                         </tr>
                                     </tbody>
                                 </table>
-                            )}
+                            );
+                            })()}
                         </div>
                     </>
                 ) : backPage === 'combine' ? (

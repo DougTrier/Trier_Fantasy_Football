@@ -130,12 +130,13 @@ Deeper data features that make Trier stand out as a research platform.
 - ✅ PlayersPage position filter tabs: ALL QB RB WR TE K DST LB DL DB
 - ✅ Roster.tsx IDP slot rendering + checkPos eligibility for LB/DL/DB
 
-### 3.4 Season Archive Browser
-- Browse all past seasons stored in the League history array
-- Champion banner with winning team, record, and top scorer
-- Season-by-season standings table with sortable columns
-- Per-player "best season" career stat in the player card back face
-- Export a season summary as a shareable image
+### 3.4 Season Archive Browser ✅
+- ✅ Browse all past seasons stored in the League history array
+- ✅ Champion banner with winning team, record, and top scorer
+- ✅ Season-by-season standings table with rank medals (🥇🥈🥉)
+- ✅ Per-player "best season" row highlighted (gold star) in the card back career stats
+- ✅ Export a season summary as a shareable PNG (html-to-image)
+- ✅ Admin: Archive Current Season button captures live standings snapshot into history
 
 ### 3.5 Expanded Scouting Intel
 The IntelligenceStore has curated reports for ~20 players. Extend coverage.

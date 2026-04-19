@@ -300,5 +300,24 @@ export interface League {
         year: number;
         champion: string;
         points: number;
+        // Extended fields populated when admin archives a completed season
+        championOwner?: string;
+        championRecord?: string;      // e.g. "12-2-0"
+        championPoints?: number;      // total season fantasy points
+        topScorer?: {
+            playerName: string;
+            position: string;
+            points: number;
+            teamAbbr: string;
+        };
+        standings?: {
+            rank: number;
+            teamName: string;
+            ownerName: string;
+            wins: number;
+            losses: number;
+            ties: number;
+            totalPoints: number;
+        }[];
     }[];
 }
