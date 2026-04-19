@@ -49,16 +49,6 @@ export const NetworkPage: React.FC = () => {
     // Right-column active tab
     const [activeTab, setActiveTab] = useState<'peers' | 'advanced'>('peers');
 
-    // Peer ID copy feedback
-    const [uuidCopied, setUuidCopied] = useState(false);
-    const uuidCopyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const handleCopyUuid = useCallback(() => {
-        navigator.clipboard.writeText(myPeerUuid);
-        setUuidCopied(true);
-        if (uuidCopyTimer.current) clearTimeout(uuidCopyTimer.current);
-        uuidCopyTimer.current = setTimeout(() => setUuidCopied(false), 2000);
-    }, [myPeerUuid]);
-
     // TURN config state
     const [turnUrl, setTurnUrl] = useState('');
     const [turnUser, setTurnUser] = useState('');
@@ -74,6 +64,16 @@ export const NetworkPage: React.FC = () => {
     // Friends system
     const [myPeerUuid, setMyPeerUuid] = useState('');
     const [friends, setFriends] = useState<FriendEntry[]>([]);
+
+    // Peer ID copy feedback — declared after myPeerUuid to avoid temporal dead zone
+    const [uuidCopied, setUuidCopied] = useState(false);
+    const uuidCopyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const handleCopyUuid = useCallback(() => {
+        navigator.clipboard.writeText(myPeerUuid);
+        setUuidCopied(true);
+        if (uuidCopyTimer.current) clearTimeout(uuidCopyTimer.current);
+        uuidCopyTimer.current = setTimeout(() => setUuidCopied(false), 2000);
+    }, [myPeerUuid]);
 
     // Invite UI State
     const [showInviteModal, setShowInviteModal] = useState(false);
