@@ -210,7 +210,7 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player, onAction, action
                     flexShrink: 0
                 }}>
                     {player.photoUrl ? (
-                        <img src={player.photoUrl} alt={player.lastName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <img src={player.photoUrl} alt={player.lastName} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.currentTarget.style.display = 'none'; }} />
                     ) : (
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', background: '#e5e7eb', borderRadius: '50%' }}>
                             <span style={{ fontSize: isLarge ? '1.2rem' : '0.7rem', fontWeight: 800, color: '#9ca3af' }}>{player.firstName[0]}{player.lastName[0]}</span>

@@ -92,6 +92,7 @@ export const MiniPlayerCard: React.FC<MiniPlayerCardProps> = ({ player, slotLabe
                                 filter: 'drop-shadow(0 0 5px rgba(0,0,0,0.5)) contrast(1.1)',
                                 maskImage: 'linear-gradient(to bottom, black 90%, transparent 100%)'
                             }}
+                            onError={e => { e.currentTarget.style.display = 'none'; }}
                         />
                     ) : (
                         <Shield size={28} color="#fff" style={{ marginBottom: '12px', opacity: 0.6 }} />
