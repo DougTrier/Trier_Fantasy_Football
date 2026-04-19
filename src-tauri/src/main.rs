@@ -368,7 +368,7 @@ fn main() {
         run_network_diagnostics,
         update_tray_badge
     ])
-    .setup(|app| {
+    .setup(|_app| {
         Ok(())
     })
     // Left-click on tray icon shows and focuses the main window
