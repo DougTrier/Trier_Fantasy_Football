@@ -213,6 +213,13 @@ export const DiscoveryService = {
     INVITE_TTL_MS: 10 * 60 * 1000,
 
     async generateInvite(): Promise<string> {
+        const { isTauri } = await import('../utils/tauriEnv');
+        if (!isTauri()) {
+            throw new Error('Invite codes require the Trier desktop app — P2P features are unavailable in browser mode.');
+        }
+        if (!P2PService.isPortAssigned) {
+            throw new Error('P2P services are still starting up. Wait a moment and try again.');
+        }
         const ip = await invoke<string>('get_local_ip');
         const port = P2PService.port;
         const id = P2PService.myId;

@@ -309,8 +309,8 @@ export const NetworkPage: React.FC = () => {
             setInviteCode(code);
             setInviteExpiresAt(Date.now() + DiscoveryService.INVITE_TTL_MS);
             setShowInviteModal(true);
-        } catch {
-            showAlert("Failed to generate invite. Check your network connection.", "Invite Error");
+        } catch (e) {
+            showAlert(e instanceof Error ? e.message : "Failed to generate invite. Check your network connection.", "Invite Error");
         }
     };
 
