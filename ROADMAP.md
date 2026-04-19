@@ -51,16 +51,23 @@ Show live NFL game scores directly on the League Standings page so managers can 
 all active games without leaving the app. Ties directly into the existing gameday lock
 system and fantasy scoring pipeline.
 
-**Data sources — decided:**
-- **Primary: Sleeper API** — officially documented, already integrated in the stats
-  pipeline, returns live game scores and player box scores with consistent schema
-- **Fallback: ESPN unofficial scoreboard endpoint**
-  (`site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard`) — no API key
-  required, returns live scores, quarter, time remaining, and team stats; used only
-  when Sleeper returns an error or empty response
-- `ScoreboardService` tries Sleeper first; on failure logs a warning and retries via
-  ESPN; if both fail the scoreboard shows last-known data with a "data unavailable" badge
+**Four-tier fallback chain — decided:**
+
+| Tier | Source | Type | Notes |
+|------|--------|------|-------|
+| 1 | **Sleeper API** | Automatic | Official, already in pipeline — tried first every poll |
+| 2 | **ESPN scoreboard endpoint** | Automatic | Unofficial but rock-solid; no API key; tried on Sleeper failure |
+| 3 | **TheSportsDB free API** | Automatic | Documented public API; independent of Sleeper/ESPN; tried if both fail |
+| 4 | **Commissioner manual entry** | Manual | Score input grid; optional screenshot attached as visual reference; broadcasts to all peers via P2P sync |
+| ∞ | **"View on NFL.com" button** | Link | Always visible; `shell.open()` launches NFL.com scores in the default browser — already permitted in `tauri.conf.json` allowlist, zero extra code |
+
+`ScoreboardService` waterfall: tries each automatic source in order, stopping at the
+first success. If all three fail, shows last-known data with a timestamp and a
+"data unavailable" banner. The manual entry panel and NFL.com link are always accessible
+regardless of auto-source status — managers are never left without a path to scores.
+
 - Fetched via the **Tauri Rust HTTP client** — no CORS restrictions, clean 60-second polling
+- Manual refresh button triggers an immediate out-of-cycle poll of all three sources
 
 **Scoreboard strip** (above or alongside the standings panel):
 - Each active game shows: home team / away team / score / quarter + time remaining
