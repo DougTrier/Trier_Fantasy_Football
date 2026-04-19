@@ -184,13 +184,17 @@ Currently PPR / Half-PPR / Standard. Let commissioners go deeper.
 - ✅ IDP scoring weight editor
 - ✅ Save and share custom rulesets as `.tffr` files
 
-### 4.5 Dynasty Mode 🚧 *In Progress*
+### 4.5 Dynasty Mode ✅
 Season-to-season roster continuity — a completely different long-term game.
-- Keepers: retain up to N players into next season
-- Prospect tracking: college players added to the pool pre-draft
-- Rookie draft each season (after NFL draft)
-- Contract years and aging curves applied to projections
-- Dynasty trade market: trading future draft picks
+- ✅ Keepers: designate up to N players per team to retain each season
+- ✅ Contract years: 3-year limit when enabled; Year badge on each player (green/yellow/red)
+- ✅ DynastyService: rolloverRosters() preserves keepers, releases the rest to free agent pool
+- ✅ Draft picks: per-team pick inventory with traded-pick tracking
+- ✅ DynastyPage: Keepers tab + Draft Picks tab in dedicated sidebar page
+- ✅ Settings: dynasty enable/disable toggle, max keepers stepper, contract years toggle
+- ⏭ Prospect tracking (college players) — requires external data pipeline
+- ⏭ Rookie draft simulator — deferred (DraftSimulator can be reused in a future pass)
+- ⏭ Aging curves on projections — deferred (requires actuarial data model)
 
 ### 4.6 Football Mini-Game (League Page — Below Ticker)
 A fun, football-themed interactive game embedded at the bottom of the League page,
