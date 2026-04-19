@@ -677,6 +677,7 @@ export default function App() {
   const sanitizeInput = (value: string, maxLength = 60): string =>
     value
       .replace(/<[^>]*>/g, '')          // strip any HTML tags
+      // eslint-disable-next-line no-control-regex
       .replace(/[\x00-\x1F\x7F]/g, '') // strip control characters
       .trim()
       .slice(0, maxLength);
