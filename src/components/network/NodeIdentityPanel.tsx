@@ -1,10 +1,9 @@
 import React, { useRef, useState } from 'react';
-import { Shield, Activity, X, Wifi, Users, UserPlus, Copy, Download, Upload, Check, Star, RotateCcw, Trash2 } from 'lucide-react';
+import { Shield, Activity, X, Wifi, Users, UserPlus, Download, Upload, Star, Trash2 } from 'lucide-react';
 import { useDialog } from '../AppDialog';
 import { DiscoveryService, type DiscoveredPeer } from '../../services/DiscoveryService';
 import { BackupService } from '../../services/BackupService';
 import { type ConnectionState } from '../../services/P2PService';
-import leatherTexture from '../../assets/leather_texture.png';
 
 export interface FriendEntry {
     uuid: string;
@@ -15,8 +14,6 @@ export interface FriendEntry {
 
 interface Props {
     myPeerUuid: string;
-    myId: string;
-    eventCount: number;
     friends: FriendEntry[];
     peers: DiscoveredPeer[];
     onFriendsChange: (updated: FriendEntry[]) => void;
@@ -30,8 +27,6 @@ interface Props {
 
 export const NodeIdentityPanel: React.FC<Props> = ({
     myPeerUuid,
-    myId,
-    eventCount,
     friends,
     peers,
     onFriendsChange,
@@ -43,9 +38,6 @@ export const NodeIdentityPanel: React.FC<Props> = ({
     handleConnect,
 }) => {
     const { showAlert, showConfirm } = useDialog();
-    const [uuidCopied, setUuidCopied] = useState(false);
-    const uuidCopyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
     const [showAddFriend, setShowAddFriend] = useState(false);
     const [friendUuidInput, setFriendUuidInput] = useState('');
     const [friendNicknameInput, setFriendNicknameInput] = useState('');
@@ -78,13 +70,6 @@ export const NodeIdentityPanel: React.FC<Props> = ({
     const handleRemoveFriend = (uuid: string) => {
         import('../../services/DHTService').then(m => m.DHTService.stopWatchingFriend(uuid));
         saveFriends(friends.filter(f => f.uuid !== uuid));
-    };
-
-    const handleCopyUuid = () => {
-        navigator.clipboard.writeText(myPeerUuid);
-        setUuidCopied(true);
-        if (uuidCopyTimer.current) clearTimeout(uuidCopyTimer.current);
-        uuidCopyTimer.current = setTimeout(() => setUuidCopied(false), 2000);
     };
 
     const handleClearCache = async () => {
@@ -131,66 +116,6 @@ export const NodeIdentityPanel: React.FC<Props> = ({
             }}>
                 <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 6px #4ade80' }} />
                 <span style={{ fontWeight: 900, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px', color: '#d1d5db' }}>P2P Network Node</span>
-            </div>
-
-            {/* ── YOUR PEER ID CARD ── */}
-            <div style={{
-                background: 'rgba(23, 37, 84, 0.85)',
-                border: '1px solid rgba(96, 165, 250, 0.4)',
-                borderRadius: '12px',
-                padding: '0.85rem 1.1rem',
-                width: '100%', boxSizing: 'border-box',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
-            }}>
-                <div style={{ fontSize: '0.7rem', color: '#60a5fa', fontWeight: 900, letterSpacing: '0.15em', marginBottom: '0.5rem', textTransform: 'uppercase' }}>
-                    Your Peer ID — share this to let friends find you
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <code style={{
-                        flex: 1, fontFamily: 'monospace', fontSize: '0.95rem',
-                        color: '#93c5fd', letterSpacing: '0.05em',
-                        wordBreak: 'break-all',
-                    }}>
-                        {myPeerUuid || '...'}
-                    </code>
-                    <button
-                        onClick={handleCopyUuid}
-                        title="Copy Peer ID to clipboard"
-                        style={{
-                            background: uuidCopied ? 'rgba(74,222,128,0.2)' : 'rgba(96,165,250,0.15)',
-                            border: `1px solid ${uuidCopied ? '#4ade80' : 'rgba(96,165,250,0.4)'}`,
-                            color: uuidCopied ? '#4ade80' : '#93c5fd',
-                            borderRadius: '8px', padding: '0.5rem 0.9rem',
-                            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem',
-                            fontWeight: 'bold', fontSize: '0.8rem', whiteSpace: 'nowrap',
-                            transition: 'background 0.2s, border-color 0.2s, color 0.2s',
-                        }}
-                    >
-                        {uuidCopied ? <><Check size={14} /> Copied!</> : <><Copy size={14} /> Copy</>}
-                    </button>
-                </div>
-                <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '0.75rem', color: '#6b7280' }}>
-                    <span><Activity size={12} style={{ display: 'inline', marginRight: 4 }} />{eventCount} events</span>
-                    <span style={{ opacity: 0.5 }}>|</span>
-                    <span style={{ fontFamily: 'monospace', fontSize: '0.7rem' }}>{myId}</span>
-                    <span style={{ opacity: 0.5 }}>|</span>
-                    <button
-                        onClick={async () => {
-                            if (!await showConfirm('Rotate your cryptographic keypair? This generates a new identity key — all peers will need to re-verify. This cannot be undone.', 'Rotate Keypair', 'ROTATE')) return;
-                            const { IdentityService } = await import('../../services/IdentityService');
-                            await IdentityService.rotateKeys();
-                            showAlert('Keypair rotated. Reconnect to peers to re-establish trust.', 'Keys Rotated');
-                        }}
-                        title="Generate a new ECDSA keypair (lost device / key compromise recovery)"
-                        style={{
-                            background: 'none', border: 'none', color: '#6b7280',
-                            cursor: 'pointer', display: 'flex', alignItems: 'center',
-                            gap: '0.3rem', fontSize: '0.7rem', padding: 0,
-                        }}
-                    >
-                        <RotateCcw size={11} /> Rotate Keys
-                    </button>
-                </div>
             </div>
 
             {/* ── FRIENDS PANEL ── */}

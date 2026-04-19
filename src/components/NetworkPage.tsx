@@ -11,7 +11,8 @@
  * but not yet VERIFIED (handshake incomplete). Only VERIFIED peers exchange
  * game data. See P2PService.ts for the full state machine.
  */
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Copy, Check, Activity, RotateCcw } from 'lucide-react';
 import { useDialog } from './AppDialog';
 import { IdentityService } from '../services/IdentityService';
 import { DiscoveryService, type DiscoveredPeer } from '../services/DiscoveryService';
@@ -47,6 +48,16 @@ export const NetworkPage: React.FC = () => {
 
     // Right-column active tab
     const [activeTab, setActiveTab] = useState<'peers' | 'advanced'>('peers');
+
+    // Peer ID copy feedback
+    const [uuidCopied, setUuidCopied] = useState(false);
+    const uuidCopyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const handleCopyUuid = useCallback(() => {
+        navigator.clipboard.writeText(myPeerUuid);
+        setUuidCopied(true);
+        if (uuidCopyTimer.current) clearTimeout(uuidCopyTimer.current);
+        uuidCopyTimer.current = setTimeout(() => setUuidCopied(false), 2000);
+    }, [myPeerUuid]);
 
     // TURN config state
     const [turnUrl, setTurnUrl] = useState('');
@@ -346,8 +357,6 @@ export const NetworkPage: React.FC = () => {
             <div style={{ width: '340px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '0.75rem', overflowY: 'auto' }}>
                 <NodeIdentityPanel
                     myPeerUuid={myPeerUuid}
-                    myId={myId}
-                    eventCount={eventCount}
                     friends={friends}
                     peers={peers}
                     onFriendsChange={setFriends}
@@ -372,12 +381,47 @@ export const NetworkPage: React.FC = () => {
                 {/* Tab content — inner scroll only */}
                 <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
                     {activeTab === 'peers' ? (
-                        <DiscoveredPeersGrid
-                            peers={peers}
-                            getState={getState}
-                            handleConnect={handleConnect}
-                            handleTerminate={handleTerminate}
-                        />
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <DiscoveredPeersGrid
+                                peers={peers}
+                                getState={getState}
+                                handleConnect={handleConnect}
+                                handleTerminate={handleTerminate}
+                            />
+                            {/* YOUR PEER ID — below the scanning grid so it's contextually grouped with discovery */}
+                            <div style={{ background: 'rgba(23,37,84,0.85)', border: '1px solid rgba(96,165,250,0.4)', borderRadius: '12px', padding: '0.85rem 1.1rem', boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }}>
+                                <div style={{ fontSize: '0.7rem', color: '#60a5fa', fontWeight: 900, letterSpacing: '0.15em', marginBottom: '0.5rem', textTransform: 'uppercase' }}>
+                                    Your Peer ID — share this to let friends find you
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                    <code style={{ flex: 1, fontFamily: 'monospace', fontSize: '0.9rem', color: '#93c5fd', letterSpacing: '0.05em', wordBreak: 'break-all' }}>
+                                        {myPeerUuid || '...'}
+                                    </code>
+                                    <button onClick={handleCopyUuid} title="Copy Peer ID to clipboard"
+                                        style={{ background: uuidCopied ? 'rgba(74,222,128,0.2)' : 'rgba(96,165,250,0.15)', border: `1px solid ${uuidCopied ? '#4ade80' : 'rgba(96,165,250,0.4)'}`, color: uuidCopied ? '#4ade80' : '#93c5fd', borderRadius: '8px', padding: '0.45rem 0.85rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 'bold', fontSize: '0.78rem', whiteSpace: 'nowrap', transition: 'all 0.2s' }}>
+                                        {uuidCopied ? <><Check size={13} /> Copied!</> : <><Copy size={13} /> Copy</>}
+                                    </button>
+                                </div>
+                                <div style={{ marginTop: '0.4rem', display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '0.72rem', color: '#6b7280', flexWrap: 'wrap' }}>
+                                    <span><Activity size={11} style={{ display: 'inline', marginRight: 3 }} />{eventCount} events</span>
+                                    <span style={{ opacity: 0.4 }}>|</span>
+                                    <span style={{ fontFamily: 'monospace', fontSize: '0.68rem' }}>{myId}</span>
+                                    <span style={{ opacity: 0.4 }}>|</span>
+                                    <button
+                                        title="Generate a new ECDSA keypair (lost device / key compromise recovery)"
+                                        style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.7rem', padding: 0 }}
+                                        onClick={async () => {
+                                            if (!await showConfirm('Rotate your cryptographic keypair? All peers will need to re-verify. This cannot be undone.', 'Rotate Keypair', 'ROTATE')) return;
+                                            const { IdentityService } = await import('../services/IdentityService');
+                                            await IdentityService.rotateKeys();
+                                            showAlert('Keypair rotated. Reconnect to peers to re-establish trust.', 'Keys Rotated');
+                                        }}
+                                    >
+                                        <RotateCcw size={11} /> Rotate Keys
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                             {/* Custom relay URL */}
