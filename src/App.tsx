@@ -554,109 +554,6 @@ export default function App() {
     return () => unlisteners.forEach(fn => fn());
   }, []);
 
-  // Commissioner dashboard event listeners — actions triggered from http://localhost:15434
-  useEffect(() => {
-    const win = window as any;
-    if (!win.__TAURI__) return;
-    const unlisteners: (() => void)[] = [];
-    import('@tauri-apps/api/event').then(({ listen }) => {
-
-      // Lock grid change from dashboard
-      listen<{ set: string[] }>('COMM_SET_LOCKS', e => {
-        setLockedNFLTeams(e.payload.set ?? []);
-      }).then(fn => unlisteners.push(fn));
-
-      // Trade approve / decline from dashboard
-      listen<{ offerId: string; action: 'approve' | 'decline' }>('COMM_TRADE_ACTION', e => {
-        const { offerId, action } = e.payload;
-        // Locate the offer across all teams; the team that owns it is the buyer
-        let foundOffer: Transaction | null = null;
-        let offeringTeam: FantasyTeam | null = null;
-        setUserTeams(prev => {
-          for (const t of prev) {
-            const match = (t.transactions ?? []).find(tx => tx.id === offerId && tx.type === 'TRADE_OFFER');
-            if (match) { foundOffer = match; offeringTeam = t; break; }
-          }
-          return prev; // no state change yet — just reading
-        });
-        if (foundOffer && offeringTeam) {
-          if (action === 'approve') handleAcceptOffer(foundOffer, offeringTeam);
-          else handleDeclineOffer(foundOffer, offeringTeam);
-        }
-      }).then(fn => unlisteners.push(fn));
-
-      // Announcement broadcast from dashboard — show locally and forward to P2P peers
-      listen<{ text: string }>('COMM_ANNOUNCE', e => {
-        const text = e.payload.text ?? '';
-        showAlert(text, '📢 Commissioner Announcement');
-        P2PService.broadcast({ type: 'COMMISSIONER_ANNOUNCEMENT', payload: { text } });
-      }).then(fn => unlisteners.push(fn));
-
-      // Advance current week from dashboard — same logic as SchedulePage's Complete Week button
-      listen<void>('COMM_ADVANCE_WEEK', () => {
-        setLeague(prev => {
-          setUserTeams(teams => {
-            const result = completeWeek(prev, teams, prev.currentWeek ?? 1);
-            // setLeague is called indirectly by returning a new league inside setUserTeams callback
-            // Use a timeout to escape the nested setState constraint
-            setTimeout(() => {
-              setLeague(result.league);
-              setUserTeams(result.teams);
-            }, 0);
-            return teams; // temporary no-op; real update fires in setTimeout
-          });
-          return prev;
-        });
-      }).then(fn => unlisteners.push(fn));
-
-    });
-    return () => unlisteners.forEach(fn => fn());
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Push league state snapshot to Rust every 5 s while admin is active,
-  // so the commissioner dashboard at localhost:15434 always has fresh data.
-  useEffect(() => {
-    const win = window as any;
-    if (!win.__TAURI__ || !isAdmin) return;
-
-    const push = () => {
-      const teamSummaries = userTeams.map(t => ({
-        id: t.id,
-        name: t.name,
-        owner: t.owner,
-        wins: t.wins ?? 0,
-        losses: t.losses ?? 0,
-        totalPts: t.total_production_pts ?? 0,
-      }));
-      const pendingOffers = userTeams.flatMap(t =>
-        (t.transactions ?? [])
-          .filter(tx => tx.type === 'TRADE_OFFER')
-          .map(tx => ({ ...tx, fromTeamId: t.id }))
-      );
-      import('@tauri-apps/api/tauri').then(({ invoke }) => {
-        invoke('sync_commissioner_state', {
-          data: {
-            teams_json: JSON.stringify(teamSummaries),
-            trades_json: JSON.stringify(pendingOffers),
-            league_json: JSON.stringify({
-              currentWeek: league.currentWeek ?? 1,
-              numWeeks: league.numWeeks ?? 14,
-              schedule: league.schedule ?? [],
-            }),
-            locked_teams: lockedNFLTeams,
-            ruleset_name: (league.settings?.ruleset ?? SCORING_PRESETS.PPR).name,
-            league_name: league.name,
-          },
-        }).catch(() => {});
-      });
-    };
-
-    push(); // immediate push on admin login or state change
-    const interval = setInterval(push, 5000);
-    return () => clearInterval(interval);
-  }, [isAdmin, userTeams, league, lockedNFLTeams]);
-
   // Keep the tray badge in sync with pending trade offer state
   useEffect(() => {
     const win = window as any;
@@ -1592,6 +1489,7 @@ export default function App() {
   };
 
   const handleAdminForceCancel = (offerId: string, offeringTeamId: string) => {
+    // (declaration must stay here — referenced by JSX below)
     setUserTeams(prev => prev.map(t => {
       if (t.id !== offeringTeamId) return t;
       const offer = (t.transactions || []).find(tx => tx.id === offerId);
@@ -1603,6 +1501,99 @@ export default function App() {
       };
     }));
   };
+
+  // Commissioner dashboard event listeners — actions triggered from http://localhost:15434.
+  // Placed here (after handleAcceptOffer/handleDeclineOffer) to avoid TDZ errors.
+  useEffect(() => {
+    const win = window as any;
+    if (!win.__TAURI__) return;
+    const unlisteners: (() => void)[] = [];
+    import('@tauri-apps/api/event').then(({ listen }) => {
+
+      // Lock grid change from dashboard
+      listen<{ set: string[] }>('COMM_SET_LOCKS', e => {
+        setLockedNFLTeams(e.payload.set ?? []);
+      }).then(fn => unlisteners.push(fn));
+
+      // Trade approve / decline from dashboard — locate offer by ID, delegate to existing handlers
+      listen<{ offerId: string; action: 'approve' | 'decline' }>('COMM_TRADE_ACTION', e => {
+        const { offerId, action } = e.payload;
+        let foundOffer: Transaction | null = null;
+        let offeringTeam: FantasyTeam | null = null;
+        setUserTeams(prev => {
+          for (const t of prev) {
+            const match = (t.transactions ?? []).find(tx => tx.id === offerId && tx.type === 'TRADE_OFFER');
+            if (match) { foundOffer = match; offeringTeam = t; break; }
+          }
+          return prev;
+        });
+        if (foundOffer && offeringTeam) {
+          if (action === 'approve') handleAcceptOffer(foundOffer, offeringTeam);
+          else handleDeclineOffer(foundOffer, offeringTeam);
+        }
+      }).then(fn => unlisteners.push(fn));
+
+      // Announcement broadcast — show locally and forward to P2P peers
+      listen<{ text: string }>('COMM_ANNOUNCE', e => {
+        const text = e.payload.text ?? '';
+        showAlert(text, '📢 Commissioner Announcement');
+        P2PService.broadcast({ type: 'COMMISSIONER_ANNOUNCEMENT', payload: { text } });
+      }).then(fn => unlisteners.push(fn));
+
+      // Advance current week — same logic as SchedulePage's Complete Week button
+      listen<void>('COMM_ADVANCE_WEEK', () => {
+        setLeague(prev => {
+          const result = completeWeek(prev, userTeams, prev.currentWeek ?? 1);
+          setTimeout(() => {
+            setLeague(result.league);
+            setUserTeams(result.teams);
+          }, 0);
+          return prev;
+        });
+      }).then(fn => unlisteners.push(fn));
+
+    });
+    return () => unlisteners.forEach(fn => fn());
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Push league state snapshot to Rust every 5 s while admin is active.
+  useEffect(() => {
+    const win = window as any;
+    if (!win.__TAURI__ || !isAdmin) return;
+
+    const push = () => {
+      const teamSummaries = userTeams.map(t => ({
+        id: t.id, name: t.name, owner: t.owner,
+        wins: t.wins ?? 0, losses: t.losses ?? 0,
+        totalPts: t.total_production_pts ?? 0,
+      }));
+      const pendingOffers = userTeams.flatMap(t =>
+        (t.transactions ?? []).filter(tx => tx.type === 'TRADE_OFFER')
+          .map(tx => ({ ...tx, fromTeamId: t.id }))
+      );
+      import('@tauri-apps/api/tauri').then(({ invoke }) => {
+        invoke('sync_commissioner_state', {
+          data: {
+            teams_json: JSON.stringify(teamSummaries),
+            trades_json: JSON.stringify(pendingOffers),
+            league_json: JSON.stringify({
+              currentWeek: league.currentWeek ?? 1,
+              numWeeks: league.numWeeks ?? 14,
+              schedule: league.schedule ?? [],
+            }),
+            locked_teams: lockedNFLTeams,
+            ruleset_name: (league.settings?.ruleset ?? SCORING_PRESETS.PPR).name,
+            league_name: league.name,
+          },
+        }).catch(() => {});
+      });
+    };
+
+    push();
+    const interval = setInterval(push, 5000);
+    return () => clearInterval(interval);
+  }, [isAdmin, userTeams, league, lockedNFLTeams]);
 
   return (
     <>
