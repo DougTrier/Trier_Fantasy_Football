@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ReactDOM from 'react-dom';
 import { useDialog } from './AppDialog';
 import type { Player, Transaction, FantasyTeam } from '../types';
 import { ScoringEngine } from '../utils/ScoringEngine';
@@ -302,8 +303,9 @@ export const PlayerTradingCard: React.FC<PlayerTradingCardProps> = ({
                 onScoutingReport={() => setShowScoutingReport(true)}
             />
 
-            {/* Scouting Report Modal — single-player mode (no rival) */}
-            {showScoutingReport && (
+            {/* Portal to document.body — escapes the perspective/preserve-3d stacking context
+                that would otherwise break position:fixed inside the card's transform tree */}
+            {showScoutingReport && ReactDOM.createPortal(
                 <ScoutingReportModal
                     matchup={{
                         primaryPlayer: player,
@@ -313,7 +315,8 @@ export const PlayerTradingCard: React.FC<PlayerTradingCardProps> = ({
                     }}
                     isOpen={showScoutingReport}
                     onClose={() => setShowScoutingReport(false)}
-                />
+                />,
+                document.body
             )}
         </div>
     );
