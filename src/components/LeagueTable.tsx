@@ -252,8 +252,8 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({ league, myTeamName }) 
             justifyContent: 'center', // center the column group within the full-width grid
             width: '100%',
             height: '100%',
-            overflowX: 'hidden',
-            overflowY: 'hidden',
+            overflowX: 'visible',
+            overflowY: 'visible',
             padding: '20px 40px',
             alignItems: 'start',
             zoom: scale,
@@ -267,9 +267,9 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({ league, myTeamName }) 
                     onTeamClick={abbr => handleTeamClick(abbr, 'AFC')}
                     align="left"
                 />
-                {/* Snapshot overlays the team list; position absolute keeps column full-height */}
+                {/* Snapshot floats to the LEFT of the AFC column, hugged against it */}
                 {selectedConf === 'AFC' && selectedTeam && (
-                    <div style={{ position: 'absolute', top: '64px', left: 0, right: 0, zIndex: 10, padding: '0 4px' }}>
+                    <div style={{ position: 'absolute', right: 'calc(100% + 4px)', top: '240px', zIndex: 20 }}>
                         <TeamSnapshotPanel
                             snapshot={snapshotLoading ? null : snapshot}
                             align="left"
@@ -610,9 +610,9 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({ league, myTeamName }) 
                     onTeamClick={abbr => handleTeamClick(abbr, 'NFC')}
                     align="right"
                 />
-                {/* Snapshot overlays the team list; right:0 keeps it aligned to the NFC column */}
+                {/* Snapshot floats to the RIGHT of the NFC column, hugged against it */}
                 {selectedConf === 'NFC' && selectedTeam && (
-                    <div style={{ position: 'absolute', top: '64px', left: 0, right: 0, zIndex: 10, padding: '0 4px', display: 'flex', justifyContent: 'flex-end' }}>
+                    <div style={{ position: 'absolute', left: 'calc(100% + 4px)', top: '240px', zIndex: 20 }}>
                         <TeamSnapshotPanel
                             snapshot={snapshotLoading ? null : snapshot}
                             align="right"

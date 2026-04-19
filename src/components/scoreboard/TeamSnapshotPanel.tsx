@@ -13,6 +13,21 @@ import { X, ExternalLink, Loader } from 'lucide-react';
 import { type TeamSnapshot } from '../../services/ScoreboardService';
 import { getTeamTheme } from '../../utils/teamThemes';
 
+// Ensures a hex color is bright enough to read on a dark background.
+// If luminance is too low (dark team colors like Cowboys navy, Raiders black),
+// blend toward white so text stays legible without losing team identity.
+function readableOnDark(hex: string): string {
+    const h = hex.replace('#', '');
+    if (h.length !== 6) return '#ffffff';
+    const r = parseInt(h.slice(0, 2), 16);
+    const g = parseInt(h.slice(2, 4), 16);
+    const b = parseInt(h.slice(4, 6), 16);
+    const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    if (lum > 0.28) return hex;
+    const mix = (c: number) => Math.round(c + (255 - c) * 0.55);
+    return `#${mix(r).toString(16).padStart(2,'0')}${mix(g).toString(16).padStart(2,'0')}${mix(b).toString(16).padStart(2,'0')}`;
+}
+
 // ESPN team page slug — maps abbr to the URL path segment
 const ESPN_SLUGS: Record<string, string> = {
     ARI:'arizona-cardinals', ATL:'atlanta-falcons',    BAL:'baltimore-ravens',
@@ -101,7 +116,7 @@ export const TeamSnapshotPanel: React.FC<TeamSnapshotPanelProps> = ({ snapshot, 
                             </div>
                             <div style={{
                                 fontSize: '1rem', fontWeight: 900,
-                                color: theme.primary, marginTop: '2px',
+                                color: readableOnDark(theme.primary), marginTop: '2px',
                             }}>
                                 {snapshot.record}
                             </div>
@@ -172,7 +187,7 @@ export const TeamSnapshotPanel: React.FC<TeamSnapshotPanelProps> = ({ snapshot, 
                             width: '100%', padding: '5px 8px',
                             background: `${theme.primary}20`,
                             border: `1px solid ${theme.primary}40`,
-                            borderRadius: '6px', color: theme.primary,
+                            borderRadius: '6px', color: readableOnDark(theme.primary),
                             fontSize: '0.62rem', fontWeight: 700,
                             cursor: 'pointer', letterSpacing: '0.5px',
                             display: 'flex', alignItems: 'center',

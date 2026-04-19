@@ -42,7 +42,7 @@ const TEAM_NAMES: Record<string, string> = {
     KC:'Kansas City Chiefs',  LAC:'LA Chargers',        LAR:'LA Rams',
     LV:'Las Vegas Raiders',   MIA:'Miami Dolphins',     MIN:'Minnesota Vikings',
     NE:'New England Patriots',NO:'New Orleans Saints',  NYG:'NY Giants',
-    NYJ:'NY Jets',            PHI:'Philadelphia Eagles',PIT:'Pittsburgh Steelers',
+    NYJ:'New York Jets',            PHI:'Philadelphia Eagles',PIT:'Pittsburgh Steelers',
     SF:'San Francisco 49ers', SEA:'Seattle Seahawks',   TB:'Tampa Bay Buccaneers',
     TEN:'Tennessee Titans',   WAS:'Washington Commanders',
 };
