@@ -1,7 +1,7 @@
 # Trier Fantasy Football — Product Roadmap
 
 > Last updated: 2026-04-19  
-> Current release: v1.4.0
+> Current release: v2.0.0-dev
 
 This roadmap is organized into four phases based on complexity and dependency order.
 Items marked **[Partial]** have architecture already in place — they just need completion.
@@ -152,34 +152,45 @@ Deeper data features that make Trier stand out as a research platform.
 
 Larger architectural investments that expand who can use the app and how.
 
-### 4.1 Multi-League Support
+### 4.1 Multi-League Support ✅
 Currently one active league per install. Expand to manage multiple leagues simultaneously.
-- League switcher in the sidebar (similar to Discord server list)
-- Per-league identity — different nodeId and team per league
-- Separate EventStore per league (no cross-contamination)
-- "Guest view" — join a league as observer without a roster
+- ✅ League switcher in the sidebar (compact dropdown below logo)
+- ✅ Per-league data storage — separate teams, league object, and event log per slot
+- ✅ Separate EventStore per league (setLeagueId() switches partition)
+- ✅ One-time migration from legacy single-league keys
+- ✅ Create / delete leagues with confirmation
+- ⏭ Per-league identity (different nodeId per league) — deferred; requires P2PService re-init
+- ⏭ "Guest view" — join as observer without a roster
 
-### 4.2 Commissioner Web Dashboard
+### 4.2 Commissioner Web Dashboard ✅
 A lightweight web companion (could be a simple hosted page or local server) for the commissioner.
-- View all team rosters and standings without needing the desktop app
-- Approve/veto trades from a browser
-- Send league-wide announcements
-- Schedule management and lock overrides
-- Exposes a local-only HTTP API via Tauri; accessible only from localhost
+- ✅ View all team rosters and standings without needing the desktop app
+- ✅ Approve/veto trades from a browser
+- ✅ Send league-wide announcements
+- ✅ Schedule management and lock overrides
+- ✅ Exposes a local-only HTTP API via Tauri; accessible only from localhost:15434
 
-### 4.3 Federated Relay Network
+### 4.3 Federated Relay Network ✅
 Currently one default relay server at Railway. Federate it.
-- Self-hosted relay — single `docker run` command that anyone can deploy
-- Relay discovery — clients can find nearby relays by region for lower latency
-- Relay health monitoring in the Network page
-- Fallback chain: custom relay → default relay → DHT only
+- ✅ Self-hosted relay — single `docker run` command (Dockerfile in relay-server/)
+- ✅ Relay discovery — health grid with latency badges, add custom relays
+- ✅ Relay health monitoring in the Network page (Relay Network section)
+- ✅ Fallback chain: pinned URL → best-health relay → default built-in
 
-### 4.4 Custom Scoring Formats
+### 4.4 Custom Scoring Formats ✅
 Currently PPR / Half-PPR / Standard. Let commissioners go deeper.
-- Fully custom per-stat weights (e.g., 6-pt passing TDs, bonus for 300-yard games)
-- TEP (Tight End Premium) scoring
-- IDP scoring weight editor
-- Save and share custom rulesets as `.tffr` files
+- ✅ Fully custom per-stat weights (e.g., 6-pt passing TDs, bonus for 300-yard games)
+- ✅ TEP (Tight End Premium) scoring
+- ✅ IDP scoring weight editor
+- ✅ Save and share custom rulesets as `.tffr` files
+
+### 4.5 Dynasty Mode 🚧 *In Progress*
+Season-to-season roster continuity — a completely different long-term game.
+- Keepers: retain up to N players into next season
+- Prospect tracking: college players added to the pool pre-draft
+- Rookie draft each season (after NFL draft)
+- Contract years and aging curves applied to projections
+- Dynasty trade market: trading future draft picks
 
 ### 4.6 Football Mini-Game (League Page — Below Ticker)
 A fun, football-themed interactive game embedded at the bottom of the League page,
@@ -193,15 +204,7 @@ below the scoring ticker. Meant to keep managers engaged between score updates.
 
 *⚠️ Build this last — all other roadmap items ship first.*
 
-### 4.5 Dynasty Mode
-Season-to-season roster continuity — a completely different long-term game.
-- Keepers: retain up to N players into next season
-- Prospect tracking: college players added to the pool pre-draft
-- Rookie draft each season (after NFL draft)
-- Contract years and aging curves applied to projections
-- Dynasty trade market: trading future draft picks
-
-### 4.6 Mobile Companion (Read-Only)
+### 4.8 Mobile Companion (Read-Only)
 Full Tauri desktop stays the primary experience. A lightweight mobile companion for on-the-go.
 - View roster, standings, and live scores from a phone
 - Approve/decline trade offers on mobile
