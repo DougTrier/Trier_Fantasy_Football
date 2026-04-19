@@ -6,9 +6,7 @@
  *  1. Commissioner Center — toggle admin mode, create test franchises,
  *     manage Game Day locks per NFL team, configure YouTube API key.
  *
- *  2. Sideband Network — shows discovered and connected P2P peers.
- *
- *  3. Team Management — edit team name/owner/password, export/import .tff
+ *  2. Team Management — edit team name/owner/password, export/import .tff
  *     backup files (AES-encrypted via SecurityService), delete teams.
  *
  * GAME DAY LOCKS:
@@ -27,15 +25,13 @@ import React, { useRef, useState, useEffect } from 'react';
 import { useDialog } from './AppDialog';
 import {
     Settings, Shield, Users, Lock, Download, Upload,
-    Trash2, RefreshCw, Globe, HardDrive, Plus, Edit2, Youtube, Radio, Bell, Sliders, Star
+    Trash2, RefreshCw, HardDrive, Plus, Edit2, Youtube, Radio, Bell, Sliders, Star
 } from 'lucide-react';
 import { getNotifPrefs, setNotifPref, type NotifEvent } from '../services/NotificationService';
 import type { FantasyTeam, ScoringRuleset, DynastySettings, League } from '../types';
 import { SCORING_PRESETS } from '../types';
 // SecurityService wraps AES-GCM encryption/decryption for .tff backup files.
 import { SecurityService } from '../utils/SecurityService';
-// NetworkHealth renders real-time P2P diagnostics inside the Sideband panel.
-import { NetworkHealth } from './diagnostics/NetworkHealth';
 // NFL_TEAMS is a complete list of 32 abbreviations used for the lock grid.
 import { NFL_TEAMS } from '../utils/gamedayLogic';
 import leatherTexture from '../assets/leather_texture.png';
@@ -50,8 +46,6 @@ interface SettingsPageProps {
     onDeleteTeam: (teamId: string) => void;
     onUpdateDetails: (teamId: string, name: string, owner: string, password?: string) => void;
     onCreateTeam: (name: string, owner: string, password?: string) => void;
-    peers: string[];         // Discovered but not yet connected peers
-    connectedPeers: string[]; // VERIFIED WebRTC connections with full game-data access
     onImportTeam: (team: FantasyTeam) => void;
     lockedNFLTeams: string[];
     onToggleLock: (team: string) => void;
@@ -675,58 +669,6 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     </div>
                 </section>
                 )}
-
-                {/* 3. Sideband Status */}
-                <section style={cardStyle}>
-                    <div style={headerStyle}>
-                        <Globe size={22} color="#eab308" />
-                        <h2 style={titleStyle}>Sideband Network</h2>
-                    </div>
-                    {/* ... existing code ... */}
-                    <div style={{ background: 'rgba(0,0,0,0.3)', padding: '20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '15px' }}>
-                            <div style={{ width: 12, height: 12, borderRadius: '50%', background: connectedPeers.length > 0 ? '#10b981' : '#6b7280', boxShadow: connectedPeers.length > 0 ? '0 0 10px #10b981' : 'none' }} />
-                            <span style={{ fontWeight: 800, fontSize: '1rem' }}>{connectedPeers.length > 0 ? 'CONNECTION ACTIVE' : 'OFFLINE / STANDALONE'}</span>
-                        </div>
-                        {/* ... */}
-                        <div style={{ fontSize: '0.9rem', color: '#9ca3af', marginBottom: '20px' }}>
-                            {connectedPeers.length > 0
-                                ? `You are connected to ${connectedPeers.length} active peers.`
-                                : `Scanning subnet... Found ${peers.length} potential peers.`}
-                        </div>
-
-                        {/* Connected Peers List */}
-                        {connectedPeers.length > 0 && (
-                            <div style={{ marginBottom: '15px' }}>
-                                <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#10b981', marginBottom: '5px' }}>CONNECTED</div>
-                                <div style={{ maxHeight: '100px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                    {connectedPeers.map(p => (
-                                        <div key={p} style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', padding: '4px 8px', borderRadius: '4px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-                                            ✓ {p}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Discovered Peers List */}
-                        <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#6b7280', marginBottom: '5px' }}>DISCOVERED (Click Network Tab to Connect)</div>
-                        <div style={{ maxHeight: '100px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                            {peers.filter(p => !connectedPeers.includes(p)).map(p => (
-                                <div key={p} style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: '#6b7280', background: 'rgba(255,255,255,0.02)', padding: '4px 8px', borderRadius: '4px' }}>
-                                    • {p}
-                                </div>
-                            ))}
-                            {peers.filter(p => !connectedPeers.includes(p)).length === 0 && (
-                                <div style={{ fontSize: '0.75rem', fontStyle: 'italic', opacity: 0.5 }}>No other peers discovered.</div>
-                            )}
-                        </div>
-
-                        <div style={{ marginTop: 20 }}>
-                            <NetworkHealth />
-                        </div>
-                    </div>
-                </section>
 
                 {/* ── Franchise Management ─────────────────────────────────────────── */}
                 {/* Spans full grid width so franchise cards don't wrap awkwardly      */}

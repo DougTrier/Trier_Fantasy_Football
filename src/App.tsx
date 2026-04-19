@@ -2207,8 +2207,6 @@ export default function App() {
           onDeleteTeam={deleteTeam}
           onUpdateDetails={updateTeamDetails}
           onCreateTeam={createNewTeam}
-          peers={peers.map(p => p.id)} // Pass ID strings as expected by SettingsPage
-          connectedPeers={connectedPeers}
           onImportTeam={handleImport}
           lockedNFLTeams={lockedNFLTeams}
           onToggleLock={(team) => setLockedNFLTeams(prev => prev.includes(team) ? prev.filter(t => t !== team) : [...prev, team])}
