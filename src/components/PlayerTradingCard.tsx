@@ -7,6 +7,7 @@ import { toPng } from 'html-to-image';
 import { CardFrontFace } from './player/CardFrontFace';
 import { CardBackFace } from './player/CardBackFace';
 import { CardActionButtons } from './player/CardActionButtons';
+import ScoutingReportModal from './ScoutingReportModal';
 
 interface PlayerTradingCardProps {
     player: Player;
@@ -42,6 +43,7 @@ export const PlayerTradingCard: React.FC<PlayerTradingCardProps> = ({
     const [backPage, setBackPage] = useState<'career' | 'fantasy' | 'combine'>('career');
     const [isExporting, setIsExporting] = useState(false);
     const [showExportMenu, setShowExportMenu] = useState(false);
+    const [showScoutingReport, setShowScoutingReport] = useState(false);
     const frontRef = React.useRef<HTMLDivElement>(null);
     const backRef = React.useRef<HTMLDivElement>(null);
 
@@ -297,7 +299,22 @@ export const PlayerTradingCard: React.FC<PlayerTradingCardProps> = ({
                 showExportMenu={showExportMenu}
                 setShowExportMenu={setShowExportMenu}
                 handleExport={handleExport}
+                onScoutingReport={() => setShowScoutingReport(true)}
             />
+
+            {/* Scouting Report Modal — single-player mode (no rival) */}
+            {showScoutingReport && (
+                <ScoutingReportModal
+                    matchup={{
+                        primaryPlayer: player,
+                        rivalPlayer: null,
+                        advantageScore: 75,
+                        metric: 'PRODUCTION'
+                    }}
+                    isOpen={showScoutingReport}
+                    onClose={() => setShowScoutingReport(false)}
+                />
+            )}
         </div>
     );
 };

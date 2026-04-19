@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Share2, History, Camera, Printer, Mail, Wallet } from 'lucide-react';
+import { Plus, Share2, History, Camera, Printer, Mail, Wallet, FileText } from 'lucide-react';
 import { exportItemStyle } from './cardUtils';
 
 interface CardActionButtonsProps {
@@ -16,6 +16,7 @@ interface CardActionButtonsProps {
     showExportMenu: boolean;
     setShowExportMenu: (show: boolean) => void;
     handleExport: (type: 'save' | 'print' | 'email') => void;
+    onScoutingReport?: () => void;
 }
 
 export const CardActionButtons: React.FC<CardActionButtonsProps> = ({
@@ -31,7 +32,8 @@ export const CardActionButtons: React.FC<CardActionButtonsProps> = ({
     isExporting,
     showExportMenu,
     setShowExportMenu,
-    handleExport
+    handleExport,
+    onScoutingReport
 }) => {
     return (
         <div style={{
@@ -137,26 +139,80 @@ export const CardActionButtons: React.FC<CardActionButtonsProps> = ({
                 </button>
             )}
 
-            {/* SHARE & EXPORT BUTTON */}
-            <div style={{ position: 'relative' }}>
+            {/* SHARE & EXPORT  |  SCOUTING REPORT — split row */}
+            <div style={{ display: 'flex', gap: '8px', position: 'relative' }}>
+
+                {/* Left: Share & Export */}
+                <div style={{ position: 'relative', flex: 1 }}>
+                    <button
+                        onClick={(e) => { e.stopPropagation(); setShowExportMenu(!showExportMenu); }}
+                        disabled={isExporting}
+                        style={{
+                            width: '100%',
+                            padding: '14px 8px',
+                            background: 'rgba(255,255,255,0.1)',
+                            color: 'white',
+                            border: '1px solid rgba(255,255,255,0.3)',
+                            borderRadius: '10px',
+                            fontSize: '0.75rem',
+                            fontWeight: 900,
+                            cursor: isExporting ? 'wait' : 'pointer',
+                            textTransform: 'uppercase',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px',
+                            boxShadow: '0 4px 10px rgba(0,0,0,0.3)',
+                            backdropFilter: 'blur(10px)',
+                            transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+                    >
+                        {isExporting ? 'Capturing...' : <><Share2 size={16} /> Share & Export</>}
+                    </button>
+
+                    {showExportMenu && (
+                        <div style={{
+                            position: 'absolute',
+                            bottom: '105%',
+                            left: 0,
+                            right: 0,
+                            background: '#1f2937',
+                            border: '1px solid rgba(255,255,255,0.2)',
+                            borderRadius: '12px',
+                            boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+                            padding: '8px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '4px',
+                            zIndex: 100
+                        }}>
+                            <button onClick={(e) => { e.stopPropagation(); handleExport('save'); }} style={exportItemStyle}><Camera size={16} /> Save to Photos</button>
+                            <button onClick={(e) => { e.stopPropagation(); handleExport('print'); }} style={exportItemStyle}><Printer size={16} /> Print Card</button>
+                            <button onClick={(e) => { e.stopPropagation(); handleExport('email'); }} style={exportItemStyle}><Mail size={16} /> Email Scout Report</button>
+                        </div>
+                    )}
+                </div>
+
+                {/* Right: Scouting Report */}
                 <button
-                    onClick={(e) => { e.stopPropagation(); setShowExportMenu(!showExportMenu); }}
-                    disabled={isExporting}
+                    onClick={(e) => { e.stopPropagation(); onScoutingReport?.(); }}
                     style={{
-                        width: '100%',
-                        padding: '14px',
+                        flex: 1,
+                        padding: '14px 8px',
                         background: 'rgba(255,255,255,0.1)',
                         color: 'white',
                         border: '1px solid rgba(255,255,255,0.3)',
                         borderRadius: '10px',
-                        fontSize: '1.1rem',
+                        fontSize: '0.75rem',
                         fontWeight: 900,
-                        cursor: isExporting ? 'wait' : 'pointer',
+                        cursor: 'pointer',
                         textTransform: 'uppercase',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        gap: '8px',
+                        gap: '6px',
                         boxShadow: '0 4px 10px rgba(0,0,0,0.3)',
                         backdropFilter: 'blur(10px)',
                         transition: 'all 0.2s'
@@ -164,32 +220,8 @@ export const CardActionButtons: React.FC<CardActionButtonsProps> = ({
                     onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
                     onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
                 >
-                    {isExporting ? 'Capturing...' : (
-                        <>Share & Export <Share2 size={20} /></>
-                    )}
+                    <FileText size={16} /> Scout Report
                 </button>
-
-                {showExportMenu && (
-                    <div style={{
-                        position: 'absolute',
-                        bottom: '105%',
-                        left: 0,
-                        right: 0,
-                        background: '#1f2937',
-                        border: '1px solid rgba(255,255,255,0.2)',
-                        borderRadius: '12px',
-                        boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
-                        padding: '8px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '4px',
-                        zIndex: 100
-                    }}>
-                        <button onClick={(e) => { e.stopPropagation(); handleExport('save'); }} style={exportItemStyle}><Camera size={16} /> Save to Photos</button>
-                        <button onClick={(e) => { e.stopPropagation(); handleExport('print'); }} style={exportItemStyle}><Printer size={16} /> Print Card</button>
-                        <button onClick={(e) => { e.stopPropagation(); handleExport('email'); }} style={exportItemStyle}><Mail size={16} /> Email Scout Report</button>
-                    </div>
-                )}
             </div>
 
             <div
