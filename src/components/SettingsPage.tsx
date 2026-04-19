@@ -27,8 +27,9 @@ import React, { useRef, useState, useEffect } from 'react';
 import { useDialog } from './AppDialog';
 import {
     Settings, Shield, Users, Lock, Download, Upload,
-    Trash2, RefreshCw, Globe, HardDrive, Plus, Edit2, Youtube, Radio
+    Trash2, RefreshCw, Globe, HardDrive, Plus, Edit2, Youtube, Radio, Bell
 } from 'lucide-react';
+import { getNotifPrefs, setNotifPref, type NotifEvent } from '../services/NotificationService';
 import type { FantasyTeam } from '../types';
 // SecurityService wraps AES-GCM encryption/decryption for .tff backup files.
 import { SecurityService } from '../utils/SecurityService';
@@ -100,6 +101,15 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     const [newName, setNewName] = useState('');
     const [newOwner, setNewOwner] = useState('');
     const [newPass, setNewPass] = useState('');
+
+    // notifPrefs — loaded from localStorage once; updates written back via setNotifPref.
+    const [notifPrefs, setNotifPrefs] = useState(getNotifPrefs);
+
+    const toggleNotif = (event: NotifEvent) => {
+        const next = !notifPrefs[event];
+        setNotifPref(event, next);
+        setNotifPrefs(prev => ({ ...prev, [event]: next }));
+    };
 
     // YouTube API key — decrypted from localStorage on mount, displayed in plaintext UI field.
     // localStorage always holds the enc1: encrypted form; plaintext only lives in React state.
@@ -541,6 +551,53 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                         >
                             <Plus size={32} />
                             <div style={{ fontWeight: 800, marginTop: '10px' }}>ADD FRANCHISE</div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* ── Push Notifications ───────────────────────────────────────────── */}
+                <section style={cardStyle}>
+                    <div style={headerStyle}>
+                        <Bell size={22} color="#eab308" />
+                        <h2 style={titleStyle}>Push Notifications</h2>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {(
+                            [
+                                { key: 'trade_offer',    label: 'Trade Offer Received',    desc: 'Another manager wants to buy one of your players' },
+                                { key: 'trade_accepted', label: 'Trade Accepted',           desc: 'Your outgoing offer was accepted by the seller' },
+                                { key: 'trade_declined', label: 'Trade Declined',           desc: 'Your outgoing offer was declined' },
+                                { key: 'peer_connect',   label: 'Peer Connect / Disconnect',desc: 'A league peer comes online or goes offline' },
+                                { key: 'gameday_lock',   label: 'Gameday Lock',             desc: 'NFL teams lock when their game kicks off' },
+                            ] as { key: NotifEvent; label: string; desc: string }[]
+                        ).map(({ key, label, desc }) => (
+                            <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '10px', padding: '14px 16px', gap: '16px' }}>
+                                <div>
+                                    <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{label}</div>
+                                    <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '2px' }}>{desc}</div>
+                                </div>
+                                {/* Toggle pill */}
+                                <button
+                                    onClick={() => toggleNotif(key)}
+                                    title={notifPrefs[key] ? `Disable ${label} notifications` : `Enable ${label} notifications`}
+                                    style={{
+                                        flexShrink: 0,
+                                        width: '48px', height: '26px', borderRadius: '13px', border: 'none', cursor: 'pointer',
+                                        background: notifPrefs[key] ? '#10b981' : 'rgba(255,255,255,0.12)',
+                                        position: 'relative', transition: 'background 0.2s',
+                                    }}
+                                >
+                                    <span style={{
+                                        position: 'absolute', top: '3px', width: '20px', height: '20px',
+                                        borderRadius: '50%', background: 'white', transition: 'left 0.2s',
+                                        left: notifPrefs[key] ? '25px' : '3px',
+                                    }} />
+                                </button>
+                            </div>
+                        ))}
+                        <div style={{ fontSize: '0.72rem', color: '#6b7280', marginTop: '4px' }}>
+                            Notifications use native OS alerts (Tauri) or browser notifications as a fallback.
+                            Your OS may prompt for permission on first use.
                         </div>
                     </div>
                 </section>

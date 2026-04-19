@@ -96,19 +96,21 @@ shrink/grow cleanly at any window size.
 - ✅ Commissioner score overrides before completing a week
 - ✅ League schedule persists to localStorage
 
-### 2.6 Trade Analyzer
-The Production Points economy is unique — give managers better tools to evaluate it.
-- Fairness score: compares player PPG vs offered price on every incoming offer
-- Historical trade log browser (all completed TRADE_ACCEPT entries across all teams)
-- "Counter offer" button directly from an incoming offer — seller sets a new price
-- No veto system — market self-regulates
+### 2.6 Trade Analyzer ✅
+*Shipped: v1.4.0*
+- ✅ Fairness score badge (GREAT/FAIR/LOW) on every incoming offer — PPG vs 4-week value benchmark
+- ✅ Fairness detail row showing PPG, 4-wk value, and % of value offered
+- ✅ Counter Offer modal — seller proposes a new price, updates buyer's offer in place
+- ✅ League Trade History panel — all TRADE_ACCEPT entries across every team
+- ✅ No veto system — market self-regulates
 
-### 2.7 Push Notifications (Tauri Native)
-- Trade offer received
-- Trade offer accepted or declined
-- Peer connection established
-- Gameday lock triggered
-- Configurable per-event in Settings
+### 2.7 Push Notifications (Tauri Native) ✅
+*Shipped: v1.4.0*
+- ✅ Trade offer received
+- ✅ Trade offer accepted or declined
+- ✅ Peer connection established
+- ✅ Gameday lock triggered
+- ✅ Configurable per-event in Settings (toggle panel in SettingsPage)
 
 ---
 
