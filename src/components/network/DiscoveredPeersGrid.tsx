@@ -36,7 +36,8 @@ export const DiscoveredPeersGrid: React.FC<Props> = ({
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         style={{
-                            background: 'rgba(255,255,255,0.03)',
+                            background: 'rgba(10,14,26,0.82)',
+                            backdropFilter: 'blur(8px)',
                             border: isConnected ? '1px solid #4ade80' : isFailed ? '1px solid #ef4444' : '1px solid rgba(255,255,255,0.1)',
                             borderRadius: '8px',
                             padding: '1.5rem',
@@ -125,11 +126,15 @@ export const DiscoveredPeersGrid: React.FC<Props> = ({
 
             {/* EMPTY STATE */}
             {peers.length === 0 && (
-                <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '4rem' }}>
-                    <div style={{ marginBottom: '1rem', color: '#000080' }}><Server size={48} /></div>
-                    <h3 style={{ color: '#000080', fontWeight: 'bold' }}>SCANNING SUBNET...</h3>
-                    <p style={{ color: '#ef4444', fontSize: '1.5rem', fontWeight: 'bold', marginTop: '1rem' }}>
-                        No other Trier Fantasy nodes detected.
+                <div style={{
+                    gridColumn: '1 / -1', textAlign: 'center', padding: '4rem',
+                    background: 'rgba(10,14,26,0.82)', backdropFilter: 'blur(8px)',
+                    border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px',
+                }}>
+                    <div style={{ marginBottom: '1rem', color: '#6b7280' }}><Server size={48} /></div>
+                    <h3 style={{ color: '#d1d5db', fontWeight: 'bold' }}>SCANNING SUBNET...</h3>
+                    <p style={{ color: '#9ca3af', fontSize: '1.1rem', marginTop: '1rem' }}>
+                        No other Trier Fantasy nodes detected on the local network.
                     </p>
                 </div>
             )}

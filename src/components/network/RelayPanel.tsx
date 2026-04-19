@@ -58,7 +58,8 @@ export const RelayPanel: React.FC<Props> = ({
                 border: '1px solid rgba(255,255,255,0.08)',
                 borderRadius: '12px',
                 overflow: 'hidden',
-                background: 'rgba(255,255,255,0.02)',
+                background: 'rgba(10,14,26,0.82)',
+                backdropFilter: 'blur(8px)',
             }}>
                 {/* Collapsible header */}
                 <button
@@ -195,7 +196,8 @@ export const RelayPanel: React.FC<Props> = ({
                 border: `1px solid ${statusColor[relayStatus]}44`,
                 borderRadius: '12px',
                 overflow: 'hidden',
-                background: 'rgba(255,255,255,0.02)',
+                background: 'rgba(10,14,26,0.82)',
+                backdropFilter: 'blur(8px)',
             }}>
                 {/* Panel header */}
                 <div style={{

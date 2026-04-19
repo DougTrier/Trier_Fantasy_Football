@@ -65,7 +65,11 @@ export const NodeIdentityPanel: React.FC<Props> = ({
             nickname: friendNicknameInput.trim() || 'Unknown Coach',
             addedAt: Date.now(),
         }]);
-        import('../../services/DHTService').then(m => m.DHTService.watchFriend(uuid));
+        // Init DHT lazily on first friend add if it wasn't started at mount
+        import('../../services/DHTService').then(m => {
+            if (!m.DHTService._ready) m.DHTService.init(myPeerUuid);
+            m.DHTService.watchFriend(uuid);
+        });
         setFriendUuidInput('');
         setFriendNicknameInput('');
         setShowAddFriend(false);
@@ -200,7 +204,8 @@ export const NodeIdentityPanel: React.FC<Props> = ({
             {/* ── FRIENDS PANEL ── */}
             <div style={{
                 maxWidth: '600px', width: '100%',
-                background: 'rgba(0,0,0,0.3)',
+                background: 'rgba(10,14,26,0.82)',
+                backdropFilter: 'blur(8px)',
                 border: '1px solid rgba(255,255,255,0.08)',
                 borderRadius: '16px',
                 overflow: 'hidden',
@@ -333,7 +338,13 @@ export const NodeIdentityPanel: React.FC<Props> = ({
                 )}
             </div>
 
-            <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+            <div style={{
+                display: 'flex', gap: '1rem', marginTop: '1rem', flexWrap: 'wrap', justifyContent: 'center',
+                background: 'rgba(10,14,26,0.82)', backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px',
+                padding: '1rem 1.5rem',
+                maxWidth: '700px', width: '100%',
+            }}>
                 <button
                     onClick={onShowInviteModal}
                     style={{
@@ -443,7 +454,12 @@ export const NodeIdentityPanel: React.FC<Props> = ({
                 </button>
             </div>
 
-            <div style={{ display: 'flex', gap: '1.5rem', marginTop: '1.5rem' }}>
+            <div style={{
+                display: 'flex', gap: '1.5rem', marginTop: '1rem',
+                background: 'rgba(10,14,26,0.82)', backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px',
+                padding: '1rem 1.5rem',
+            }}>
                 <button
                     onClick={handleExport}
                     style={{

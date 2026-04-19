@@ -107,11 +107,12 @@ export const NetworkPage: React.FC = () => {
         };
     }, []);
 
-    // Load peer UUID and friends list; start DHT presence
+    // Load peer UUID and friends list; start DHT presence only if friends exist.
+    // DHT init triggers Trystero WebSocket relay connections — skip when there are
+    // no friends so we don't flood the console with relay-failure noise for no reason.
     useEffect(() => {
         const myUuid = IdentityService.getPeerUuid();
         setMyPeerUuid(myUuid);
-        DHTService.init(myUuid);
 
         let loaded: FriendEntry[] = [];
         try {
@@ -119,8 +120,11 @@ export const NetworkPage: React.FC = () => {
             if (raw) { loaded = JSON.parse(raw); setFriends(loaded); }
         } catch { /* intentionally empty — corrupted storage is silently ignored */ }
 
-        // Start watching each known friend's room for internet discovery
-        loaded.forEach(f => DHTService.watchFriend(f.uuid));
+        // Only connect to Nostr/DHT relays when there are friends to discover
+        if (loaded.length > 0) {
+            DHTService.init(myUuid);
+            loaded.forEach(f => DHTService.watchFriend(f.uuid));
+        }
     }, []);
 
     // Load and decrypt TURN config from localStorage on mount.
@@ -341,7 +345,13 @@ export const NetworkPage: React.FC = () => {
             />
 
             {/* CUSTOM RELAY URL — optional self-hosted relay, must be wss:// */}
-            <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{
+                marginBottom: '1.5rem',
+                background: 'rgba(10,14,26,0.82)', backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(255,255,255,0.08)', borderRadius: '12px',
+                padding: '0.85rem 1.25rem',
+                display: 'flex', alignItems: 'center', gap: '0.75rem',
+            }}>
                 <label style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 'bold', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
                     RELAY URL
                 </label>
