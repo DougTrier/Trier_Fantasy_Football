@@ -175,6 +175,11 @@ export interface Player {
     total_projected_fantasy_points?: number | null;
     performance_differential?: number | null;
     ownerId?: string | null; // "Single Owner" rule — null means unowned/free agent
+
+    // Dynasty fields — set when a player is drafted in a dynasty league
+    draftedRound?: number;     // fantasy draft round (1-based)
+    draftedYear?: number;      // season year they were drafted in this fantasy league
+    contractYear?: number;     // 1 = first year; increments each season kept
 }
 
 /**
@@ -198,9 +203,26 @@ export interface WaiverBid {
     status: 'pending' | 'won' | 'lost' | 'cancelled';
 }
 
+/** Dynasty draft pick — a tradable asset representing a future draft slot. */
+export interface DraftPick {
+    id: string;
+    year: number;              // NFL season year this pick is for
+    round: number;             // 1-based round number
+    originalTeamId: string;    // team this pick originally belonged to
+    currentTeamId: string;     // current owner (may differ after trades)
+    note?: string;             // e.g. "via The Tuskers"
+}
+
+/** Dynasty mode settings stored inside league.settings. */
+export interface DynastySettings {
+    enabled: boolean;
+    maxKeepers: number;           // max players each team can retain (1–10)
+    contractYearsEnabled: boolean; // players have a 3-year max before they expire
+}
+
 export interface Transaction {
     id: string;
-    type: 'ADD' | 'DROP' | 'TRADE' | 'STASH' | 'SWAP' | 'TRADE_OFFER' | 'TRADE_ACCEPT' | 'WAIVER_WIN' | 'WAIVER_LOSS';
+    type: 'ADD' | 'DROP' | 'TRADE' | 'STASH' | 'SWAP' | 'TRADE_OFFER' | 'TRADE_ACCEPT' | 'WAIVER_WIN' | 'WAIVER_LOSS' | 'KEEPER_DESIGNATE' | 'KEEPER_RELEASE' | 'DRAFT_PICK_TRADE';
     date?: string;
     timestamp: number;
     description: string;
@@ -262,6 +284,10 @@ export interface FantasyTeam {
     faabBalance?: number;       // Free Agent Acquisition Budget (default 100)
     waiverPriority?: number;    // Lower number = higher priority; worst record gets 1
     waiverBids?: WaiverBid[];   // Pending blind bids awaiting Tuesday processing
+
+    // Dynasty fields
+    keptPlayerIds?: string[];   // IDs designated as keepers for the upcoming season
+    draftPicks?: DraftPick[];   // Future draft picks owned by this team
 }
 
 /**
@@ -412,6 +438,7 @@ export interface League {
         budget: number;
         maxPlayers: number;
         ruleset: ScoringRuleset;   // replaces legacy pointsFormat string
+        dynastySettings?: DynastySettings;
     };
     // H2H Weekly Schedule
     schedule?: Matchup[];

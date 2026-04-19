@@ -27,10 +27,10 @@ import React, { useRef, useState, useEffect } from 'react';
 import { useDialog } from './AppDialog';
 import {
     Settings, Shield, Users, Lock, Download, Upload,
-    Trash2, RefreshCw, Globe, HardDrive, Plus, Edit2, Youtube, Radio, Bell, Sliders
+    Trash2, RefreshCw, Globe, HardDrive, Plus, Edit2, Youtube, Radio, Bell, Sliders, Star
 } from 'lucide-react';
 import { getNotifPrefs, setNotifPref, type NotifEvent } from '../services/NotificationService';
-import type { FantasyTeam, ScoringRuleset } from '../types';
+import type { FantasyTeam, ScoringRuleset, DynastySettings, League } from '../types';
 import { SCORING_PRESETS } from '../types';
 // SecurityService wraps AES-GCM encryption/decryption for .tff backup files.
 import { SecurityService } from '../utils/SecurityService';
@@ -60,6 +60,8 @@ interface SettingsPageProps {
     onFetchSchedule: () => Promise<void>;
     scoringRuleset: ScoringRuleset;
     onUpdateRuleset: (ruleset: ScoringRuleset) => void;
+    league: League;
+    onUpdateDynastySettings: (settings: DynastySettings) => void;
 }
 
 /**
@@ -89,6 +91,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     onFetchSchedule,
     scoringRuleset,
     onUpdateRuleset,
+    league,
+    onUpdateDynastySettings,
 }) => {
     // fileInputRef: the hidden <input type="file"> used for .tff import clicks.
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -596,6 +600,81 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                         </div>
                     )}
                 </section>
+
+                {/* 2b. Dynasty Mode — admin only */}
+                {isAdmin && (
+                <section style={cardStyle}>
+                    <div style={headerStyle}>
+                        <Star size={22} color="#eab308" />
+                        <h2 style={titleStyle}>Dynasty Mode</h2>
+                    </div>
+                    <div style={{ padding: '0 20px 20px' }}>
+                        <p style={{ margin: '0 0 16px', color: '#9ca3af', fontSize: '0.85rem', lineHeight: 1.6 }}>
+                            Enable season-to-season roster continuity. Managers designate keepers before each new season; all other players are released back to the free agent pool.
+                        </p>
+
+                        {/* Enable / Disable toggle */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', padding: '12px 16px', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                            <div>
+                                <div style={{ fontWeight: 700, color: '#f3f4f6', fontSize: '0.9rem' }}>Dynasty Mode</div>
+                                <div style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: 2 }}>Enables the Dynasty page and keeper selection for all teams</div>
+                            </div>
+                            <button
+                                onClick={() => onUpdateDynastySettings({
+                                    ...(league.settings?.dynastySettings ?? { enabled: false, maxKeepers: 3, contractYearsEnabled: false }),
+                                    enabled: !(league.settings?.dynastySettings?.enabled ?? false),
+                                })}
+                                style={{
+                                    padding: '6px 18px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: '0.82rem',
+                                    background: league.settings?.dynastySettings?.enabled ? '#16a34a' : 'rgba(255,255,255,0.1)',
+                                    color: league.settings?.dynastySettings?.enabled ? '#fff' : '#9ca3af',
+                                    transition: 'all 0.2s',
+                                }}
+                            >
+                                {league.settings?.dynastySettings?.enabled ? 'ENABLED' : 'DISABLED'}
+                            </button>
+                        </div>
+
+                        {league.settings?.dynastySettings?.enabled && (
+                            <>
+                                {/* Max Keepers */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px', padding: '12px 16px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ fontWeight: 700, color: '#f3f4f6', fontSize: '0.85rem' }}>Max Keepers Per Team</div>
+                                        <div style={{ fontSize: '0.72rem', color: '#6b7280', marginTop: 2 }}>How many players each team can retain each off-season</div>
+                                    </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <button onClick={() => onUpdateDynastySettings({ ...league.settings!.dynastySettings!, maxKeepers: Math.max(1, (league.settings?.dynastySettings?.maxKeepers ?? 3) - 1) })} style={{ width: 28, height: 28, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.4)', color: '#fff', cursor: 'pointer', fontWeight: 900, fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>-</button>
+                                        <span style={{ minWidth: '2rem', textAlign: 'center', fontWeight: 800, color: '#eab308', fontSize: '1.1rem' }}>
+                                            {league.settings?.dynastySettings?.maxKeepers ?? 3}
+                                        </span>
+                                        <button onClick={() => onUpdateDynastySettings({ ...league.settings!.dynastySettings!, maxKeepers: Math.min(10, (league.settings?.dynastySettings?.maxKeepers ?? 3) + 1) })} style={{ width: 28, height: 28, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.4)', color: '#fff', cursor: 'pointer', fontWeight: 900, fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+                                    </div>
+                                </div>
+
+                                {/* Contract Years */}
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                    <div>
+                                        <div style={{ fontWeight: 700, color: '#f3f4f6', fontSize: '0.85rem' }}>3-Year Contract Limit</div>
+                                        <div style={{ fontSize: '0.72rem', color: '#6b7280', marginTop: 2 }}>Players can only be kept for 3 seasons before returning to the free agent pool</div>
+                                    </div>
+                                    <button
+                                        onClick={() => onUpdateDynastySettings({ ...league.settings!.dynastySettings!, contractYearsEnabled: !league.settings?.dynastySettings?.contractYearsEnabled })}
+                                        style={{
+                                            padding: '6px 18px', borderRadius: '20px', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: '0.82rem',
+                                            background: league.settings?.dynastySettings?.contractYearsEnabled ? '#1d4ed8' : 'rgba(255,255,255,0.1)',
+                                            color: league.settings?.dynastySettings?.contractYearsEnabled ? '#fff' : '#9ca3af',
+                                            transition: 'all 0.2s',
+                                        }}
+                                    >
+                                        {league.settings?.dynastySettings?.contractYearsEnabled ? 'ON' : 'OFF'}
+                                    </button>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                </section>
+                )}
 
                 {/* 3. Sideband Status */}
                 <section style={cardStyle}>

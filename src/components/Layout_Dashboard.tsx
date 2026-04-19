@@ -23,7 +23,7 @@
 // External imports — lucide-react icons are tree-shaken at build time so only
 // the imported names contribute to bundle size. Each icon is ~1KB gzipped.
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Users, Trophy, User, Settings, LogOut, BookOpen, Swords, Wallet, Zap, ArrowRightLeft, Wifi, ClipboardList, Gavel, TrendingUp, Archive, ChevronDown, Plus, Trash2 } from 'lucide-react';
+import { LayoutDashboard, Users, Trophy, User, Settings, LogOut, BookOpen, Swords, Wallet, Zap, ArrowRightLeft, Wifi, ClipboardList, Gavel, TrendingUp, Archive, ChevronDown, Plus, Trash2, Star } from 'lucide-react';
 // ScoringEngine is read-only here (getOrchestrationStatus); no mutation occurs.
 // It is imported as a module-level singleton — no React state needed for status.
 import { ScoringEngine } from '../utils/ScoringEngine';
@@ -168,6 +168,8 @@ interface LayoutDashboardProps {
     onSwitchLeague?: (id: string) => void;
     onCreateLeague?: () => void;
     onDeleteLeague?: (id: string) => void;
+    // Dynasty
+    dynastyEnabled?: boolean;
 }
 
 /**
@@ -191,6 +193,7 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
     onSwitchLeague,
     onCreateLeague,
     onDeleteLeague,
+    dynastyEnabled = false,
 }) => {
     const [leagueMenuOpen, setLeagueMenuOpen] = useState(false);
 
@@ -464,6 +467,9 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
                         onClick={() => onNavigate('trade')}
                         title="Propose and review trade offers with other teams."
                     />
+                    {dynastyEnabled && (
+                        <SidebarItem icon={<div style={{ width: 20 }}><Star size={20} /></div>} label="Dynasty" isActive={activeView === 'dynasty'} onClick={() => onNavigate('dynasty')} title="Keeper selection, draft picks, and dynasty standings." />
+                    )}
                     <SidebarItem icon={<div style={{ width: 20 }}><BookOpen size={20} /></div>} label="Rules & Info" isActive={activeView === 'rules'} onClick={() => onNavigate('rules')} title="View league constitution, scoring rules, and version info." />
                     <SidebarItem icon={<div style={{ width: 20 }}><Wifi size={20} /></div>} label="Network" isActive={activeView === 'network'} onClick={() => onNavigate('network')} title="Find and connect to other Trier Fantasy managers. Configure P2P and TURN settings." />
                 </nav>

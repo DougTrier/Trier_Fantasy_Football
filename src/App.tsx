@@ -46,6 +46,8 @@ import { SeasonProjectionsDashboard } from './components/SeasonProjectionsDashbo
 import { SeasonArchivePage } from './components/SeasonArchivePage';
 import { RulesPage } from './components/RulesPage';
 import { SettingsPage } from './components/SettingsPage';
+import { DynastyPage } from './components/DynastyPage';
+import type { DynastySettings } from './types';
 import { H2HPage } from './components/H2HPage';
 import { TradeOfferModal } from './components/TradeOfferModal';
 import { TradeCenter } from './components/TradeCenter';
@@ -1089,6 +1091,28 @@ export default function App() {
     }));
   };
 
+  // Dynasty: update the dynasty config in league.settings
+  const handleUpdateDynastySettings = (settings: DynastySettings) => {
+    setLeague(prev => ({
+      ...prev,
+      settings: { budget: prev.settings?.budget ?? 100, maxPlayers: prev.settings?.maxPlayers ?? 15, ruleset: prev.settings?.ruleset ?? SCORING_PRESETS.PPR, dynastySettings: settings },
+    }));
+  };
+
+  // Dynasty: toggle a single player's keeper status for a given team
+  const handleDesignateKeeper = (teamId: string, playerId: string, keep: boolean) => {
+    const ds = league.settings?.dynastySettings;
+    const maxK = ds?.maxKeepers ?? 3;
+    setUserTeams(prev => prev.map(t => {
+      if (t.id !== teamId) return t;
+      const current = t.keptPlayerIds ?? [];
+      const updated = keep
+        ? (current.length < maxK ? [...current.filter(id => id !== playerId), playerId] : current)
+        : current.filter(id => id !== playerId);
+      return { ...t, keptPlayerIds: updated };
+    }));
+  };
+
   // Derived League State (Merges My Team with others + Updates History Points)
   const displayLeague = useMemo(() => {
     // Calculate current team points for history display (Starting Roster ONLY)
@@ -1737,6 +1761,7 @@ export default function App() {
       onSwitchLeague={handleSwitchLeague}
       onCreateLeague={handleCreateLeague}
       onDeleteLeague={handleDeleteLeague}
+      dynastyEnabled={league.settings?.dynastySettings?.enabled ?? false}
     >
       {activeView === 'dashboard' && (
         !activeTeamId || activeTeamId === 'guest' || !myTeam ? (
@@ -2201,6 +2226,18 @@ export default function App() {
           }}
           scoringRuleset={league.settings?.ruleset ?? SCORING_PRESETS.PPR}
           onUpdateRuleset={handleUpdateRuleset}
+          league={league}
+          onUpdateDynastySettings={handleUpdateDynastySettings}
+        />
+      )}
+
+      {activeView === 'dynasty' && (
+        <DynastyPage
+          myTeam={myTeam}
+          allTeams={userTeams}
+          league={league}
+          isAdmin={isAdmin}
+          onDesignateKeeper={handleDesignateKeeper}
         />
       )}
 
