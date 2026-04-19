@@ -42,6 +42,7 @@ import { Layout_Dashboard } from './components/Layout_Dashboard';
 import { PlayerSelector } from './components/PlayerSelector';
 import { PlayerTradingCard } from './components/PlayerTradingCard';
 import { PlayersPage } from './components/PlayersPage';
+import { SeasonProjectionsDashboard } from './components/SeasonProjectionsDashboard';
 import { RulesPage } from './components/RulesPage';
 import { SettingsPage } from './components/SettingsPage';
 import { H2HPage } from './components/H2HPage';
@@ -1812,6 +1813,8 @@ export default function App() {
           onMakeOffer={handleOpenTradeOffer}
         />
       )}
+
+      {activeView === 'projections' && <SeasonProjectionsDashboard />}
 
       {activeView === 'network' && (
         <NetworkPage />

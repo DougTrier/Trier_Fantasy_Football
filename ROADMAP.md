@@ -110,12 +110,12 @@ Significant new features that build directly on the existing architecture.
 
 Deeper data features that make Trier stand out as a research platform.
 
-### 3.1 Season Projections Dashboard
-The player model already has `projectedStats` fields — surface them visually.
-- Week-by-week projected points chart for any player (line chart, current week highlighted)
-- Rest-of-season ranking by position (sortable, filterable)
-- Schedule strength overlay — remaining opponents by defensive ranking
-- "Boom/bust" variance indicator based on historical weekly spread
+### 3.1 Season Projections Dashboard ✅
+- ✅ Position filter tabs (ALL / QB / RB / WR / TE / K / DST)
+- ✅ Sortable rankings table — projected, actual, diff, inline bar, boom/bust badge
+- ✅ Projected vs Actual scatter chart — colored by position, diagonal breakeven line
+- ✅ Avg points by position bar chart (projected gold vs actual green)
+- ✅ Recharts installed for chart rendering
 
 ### 3.2 Waiver Wire Intelligence
 - AI-ranked add candidates each week based on projected points and roster need
