@@ -34,23 +34,17 @@ Items marked **[Partial]** have architecture already in place — they just need
 
 Significant new features that build directly on the existing architecture.
 
-### 2.1 NFL Intelligence Panel **[Partial]** ⭐
-AFC/NFC team columns flanking the League Standings page. Live records, scores, and per-team snapshots.
-
-**Completed ✅**
-- `ScoreboardService.ts` — ESPN standings + scoreboard APIs, subscriber pattern, 60s polling
-- AFC/NFC vertical columns with team logos, W-L records, live score badges, pulse animation
-- Division headers: neon red (AFC) / neon blue (NFC) with dark pill for readability
-- `TeamSnapshotPanel` — last game result, next game, "View on NFL.com" button
-- Columns sized to match League Standings panel height exactly
-
-**Completed ✅ (continued)**
-- Scoreboard strip — 3-column game cards with live scores, quarter, dark overlay
-- Game detail modal — box score, scoring plays, ESPN deep link
-- Fantasy dot indicators on standing rows (green = scoring now, yellow = pregame)
-
-**Remaining:**
-- "Last scoring play" ticker
+### 2.1 NFL Intelligence Panel ✅
+*Shipped: v1.4.0*
+- ✅ `ScoreboardService.ts` — ESPN standings + scoreboard APIs, subscriber pattern, 60s polling
+- ✅ AFC/NFC vertical columns with team logos, W-L records, live score badges, pulse animation
+- ✅ Division headers: neon red (AFC) / neon blue (NFC) with dark pill for readability
+- ✅ `TeamSnapshotPanel` — last game result, next game, "View on NFL.com" button
+- ✅ Columns sized to match League Standings panel height exactly
+- ✅ Scoreboard strip — 3-column game cards with live scores, quarter, dark overlay
+- ✅ Game detail modal — box score, scoring plays, ESPN deep link
+- ✅ Fantasy dot indicators on standing rows (green = scoring now, yellow = pregame)
+- ✅ `ScoringTicker` — bottom scrolling strip with live scores + scoring/big play/red zone events
 
 ### 2.1.1 Sidebar Responsive Scaling
 The sidebar currently uses fixed padding/font sizes and does not scale proportionally

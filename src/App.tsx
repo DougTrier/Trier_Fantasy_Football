@@ -54,6 +54,7 @@ import stadiumBg from './assets/stadium_bg.png';
 import leatherTexture from './assets/leather_texture.png';
 import { isPlayerLocked, NFL_TEAMS, fetchLiveGameData, isGameday } from './utils/gamedayLogic';
 import { processWaivers, ensureWaiverFields } from './services/WaiverService';
+import { NotificationService } from './services/NotificationService';
 
 import { Lock } from 'lucide-react';
 import { SyncService } from './utils/SyncService';
@@ -408,28 +409,15 @@ export default function App() {
     return () => unsubConn();
   }, []);
 
-  // Fire a system notification when a peer connects or disconnects
+  // Peer connect/disconnect notifications via NotificationService
   const prevConnectedRef = useRef<string[]>([]);
   useEffect(() => {
-    const win = window as any;
-    if (!win.__TAURI__) return;
     const prev = prevConnectedRef.current;
     const added   = connectedPeers.filter(id => !prev.includes(id));
     const removed = prev.filter(id => !connectedPeers.includes(id));
     if (added.length === 0 && removed.length === 0) return;
-
-    import('@tauri-apps/api/notification').then(({ isPermissionGranted, requestPermission, sendNotification }) => {
-      const notify = async (title: string, body: string) => {
-        let granted = await isPermissionGranted();
-        if (!granted) {
-          const perm = await requestPermission();
-          granted = perm === 'granted';
-        }
-        if (granted) sendNotification({ title, body });
-      };
-      added.forEach(id => notify('Peer Connected', `${id} is now online and verified.`));
-      removed.forEach(id => notify('Peer Disconnected', `${id} has gone offline.`));
-    });
+    added.forEach(id => NotificationService.peerConnected(id));
+    removed.forEach(id => NotificationService.peerDisconnected(id));
     prevConnectedRef.current = connectedPeers;
   }, [connectedPeers]);
 
@@ -580,8 +568,13 @@ export default function App() {
   // Keeps lockedNFLTeams and gameStatuses fresh without commissioner action.
   useEffect(() => {
     if (!isGameday()) return; // no-op on off-days
+    const prevLockedRef = { current: [] as string[] };
     const poll = async () => {
       const { lockedTeams, statuses } = await fetchLiveGameData();
+      // Notify only when new teams become locked (not on every poll)
+      const newlyLocked = lockedTeams.filter(t => !prevLockedRef.current.includes(t));
+      if (newlyLocked.length > 0) NotificationService.gamedayLock(newlyLocked.length);
+      prevLockedRef.current = lockedTeams;
       setLockedNFLTeams(lockedTeams);
       setGameStatuses(statuses);
     };
@@ -616,24 +609,29 @@ export default function App() {
     };
   }, [activeTeamId]);
 
-  // Incoming Trade Offer Notification Engine
+  // Incoming Trade Offer detection — badge + push notification on new offers
+  const prevOfferIdsRef = useRef<string[]>([]);
   useEffect(() => {
     if (!myTeam) return;
 
-    // Check if there are any incoming offers in other teams' transactions that target my players
-    const incomingOffers = userTeams.flatMap(team =>
-      (team.transactions || []).filter(tx =>
-        tx.type === 'TRADE_OFFER' &&
-        tx.targetPlayerId &&
-        [...Object.values(myTeam.roster), ...myTeam.bench].some(p => p && p.id === tx.targetPlayerId)
-      )
+    const myPlayerIds = new Set(
+      [...Object.values(myTeam.roster), ...myTeam.bench].filter(Boolean).map(p => p!.id)
     );
 
-    if (incomingOffers.length > 0 && activeView !== 'trade') {
-      setHasNewOffers(true);
-    } else {
-      setHasNewOffers(false);
-    }
+    const incomingOffers = userTeams.flatMap(team =>
+      (team.transactions || []).filter(tx =>
+        tx.type === 'TRADE_OFFER' && tx.targetPlayerId && myPlayerIds.has(tx.targetPlayerId)
+      ).map(tx => ({ tx, team }))
+    );
+
+    // Fire a notification only for offers that are genuinely new this render
+    const prevIds = prevOfferIdsRef.current;
+    incomingOffers
+      .filter(({ tx }) => !prevIds.includes(tx.id))
+      .forEach(({ tx, team }) => NotificationService.tradeOfferReceived(tx.playerName ?? 'your player', team.name));
+    prevOfferIdsRef.current = incomingOffers.map(({ tx }) => tx.id);
+
+    setHasNewOffers(incomingOffers.length > 0 && activeView !== 'trade');
   }, [userTeams, activeTeamId, activeView]);
 
   // Sync / Hydrate Data (Ensure stats are fresh)
@@ -1386,6 +1384,7 @@ export default function App() {
     }));
 
     setAvailablePlayers(prev => prev.filter(p => p.id !== playerToTrade.id));
+    NotificationService.tradeAccepted(playerToTrade.lastName, offeringTeam.name);
     showAlert(`${playerToTrade.lastName} has been traded to ${offeringTeam.name}.`, "Trade Complete");
   };
 
@@ -1400,6 +1399,7 @@ export default function App() {
     };
 
     setUserTeams(prev => prev.map(t => t.id === updatedBuyer.id ? updatedBuyer : t));
+    NotificationService.tradeDeclined(offer.playerName ?? 'player', myTeam?.name ?? 'seller');
     showAlert("Trade offer declined. Escrowed points have been returned to the buyer.", "Offer Declined");
   };
 
