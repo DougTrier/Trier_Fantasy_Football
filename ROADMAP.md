@@ -85,20 +85,23 @@ shrink/grow cleanly at any window size.
 - ✅ Optional drop player on claim submission
 - ✅ HOW TO USE help overlay
 
-### 2.5 Head-to-Head Weekly Schedule
-The H2H engine scores matchups but there's no concept of weekly opponents.
-- Commissioner generates a full-season schedule (14 or 16 regular-season weeks)
-- Each week shows your matchup opponent and live point differential
-- Win/loss record tracked on each FantasyTeam
-- Playoff bracket (top 4 teams by record, weeks 15–17)
-- Tiebreaker: total points scored (already tracked)
+### 2.5 Head-to-Head Weekly Schedule ✅
+*Shipped: v1.4.0*
+- ✅ Commissioner generates a full-season schedule (14 or 16 regular-season weeks)
+- ✅ Each week shows your matchup opponent and score differential
+- ✅ Win/loss/tie record tracked on each FantasyTeam
+- ✅ Playoff bracket (top 4 teams by record, weeks 15–17)
+- ✅ Tiebreaker: total points scored
+- ✅ Merged into Head to Head page as Scout / This Week / My Schedule / Standings / Playoffs tabs
+- ✅ Commissioner score overrides before completing a week
+- ✅ League schedule persists to localStorage
 
 ### 2.6 Trade Analyzer
 The Production Points economy is unique — give managers better tools to evaluate it.
-- Fairness score: compares points-per-game of players being traded (last 4 weeks)
-- Historical trade log browser (all completed trades in league history)
-- Trade veto system: commissioner can block a trade within 24 hours of acceptance
-- "Counter offer" button directly from an incoming offer
+- Fairness score: compares player PPG vs offered price on every incoming offer
+- Historical trade log browser (all completed TRADE_ACCEPT entries across all teams)
+- "Counter offer" button directly from an incoming offer — seller sets a new price
+- No veto system — market self-regulates
 
 ### 2.7 Push Notifications (Tauri Native)
 - Trade offer received

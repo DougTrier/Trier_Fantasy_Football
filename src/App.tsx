@@ -1821,10 +1821,18 @@ export default function App() {
         <TradeCenter
           userTeam={myTeam}
           allTeams={userTeams}
+          allPlayers={availablePlayers}
           isAdmin={isAdmin}
           onAccept={handleAcceptOffer}
           onDecline={handleDeclineOffer}
           onCancel={handleCancelMyOffer}
+          onCounterOffer={(offer, counterAmount, buyerTeam) => {
+            setUserTeams(prev => prev.map(t =>
+              t.id === buyerTeam.id
+                ? { ...t, transactions: (t.transactions || []).map(tx => tx.id === offer.id ? { ...tx, amount: counterAmount, description: `Counter: ${counterAmount} PTS for ${offer.playerName}` } : tx) }
+                : t
+            ));
+          }}
           onAdminForceAccept={handleAdminForceAccept}
           onAdminForceCancel={handleAdminForceCancel}
         />
