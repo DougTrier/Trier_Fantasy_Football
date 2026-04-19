@@ -51,12 +51,15 @@ Show live NFL game scores directly on the League Standings page so managers can 
 all active games without leaving the app. Ties directly into the existing gameday lock
 system and fantasy scoring pipeline.
 
-**Data sources (both already integrated or accessible without an API key):**
-- **Primary**: Sleeper API game scores — officially documented and already used by the
-  stats pipeline
-- **Fallback**: ESPN unofficial scoreboard endpoint
-  (`site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard`) — stable, no key
-  required, returns live scores, quarter, time remaining, and team stats
+**Data sources — decided:**
+- **Primary: Sleeper API** — officially documented, already integrated in the stats
+  pipeline, returns live game scores and player box scores with consistent schema
+- **Fallback: ESPN unofficial scoreboard endpoint**
+  (`site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard`) — no API key
+  required, returns live scores, quarter, time remaining, and team stats; used only
+  when Sleeper returns an error or empty response
+- `ScoreboardService` tries Sleeper first; on failure logs a warning and retries via
+  ESPN; if both fail the scoreboard shows last-known data with a "data unavailable" badge
 - Fetched via the **Tauri Rust HTTP client** — no CORS restrictions, clean 60-second polling
 
 **Scoreboard strip** (above or alongside the standings panel):
