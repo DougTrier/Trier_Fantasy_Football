@@ -167,6 +167,18 @@ Currently PPR / Half-PPR / Standard. Let commissioners go deeper.
 - IDP scoring weight editor
 - Save and share custom rulesets as `.tffr` files
 
+### 4.6 Football Mini-Game (League Page — Below Ticker)
+A fun, football-themed interactive game embedded at the bottom of the League page,
+below the scoring ticker. Meant to keep managers engaged between score updates.
+- **Field Goal Kicker** — aim with arrow keys, power bar charges on hold, release to kick
+- Wind direction and speed shown as a flag animation above the uprights
+- Progressive difficulty: uprights narrow as you chain successful kicks
+- Leaderboard stored locally — best streak shown next to your team name in standings
+- Additional mini-games to consider: QB accuracy challenge, punt distance meter
+- Runs only when ticker is visible (gameday); shows a "check back on gameday" placeholder off-season
+
+*⚠️ Build this last — all other roadmap items ship first.*
+
 ### 4.5 Dynasty Mode
 Season-to-season roster continuity — a completely different long-term game.
 - Keepers: retain up to N players into next season
