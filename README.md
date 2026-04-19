@@ -29,22 +29,42 @@ This is not a wrapper around ESPN or Yahoo. It is a fully self-contained league 
 <table>
   <tr>
     <td align="center">
-      <img src="docs/screenshots/league-standings.jpg" width="420" alt="League Standings"/>
-      <br/><sub><b>League Standings</b></sub>
+      <img src="docs/screenshots/players.jpg" width="420" alt="Players Page"/>
+      <br/><sub><b>Players & Free Agent Pool</b></sub>
     </td>
     <td align="center">
-      <img src="docs/screenshots/head-to-head.jpg" width="420" alt="Head to Head"/>
-      <br/><sub><b>Head to Head Matchup</b></sub>
+      <img src="docs/screenshots/draft-simulator.jpg" width="420" alt="Draft Simulator"/>
+      <br/><sub><b>Draft Simulator</b></sub>
     </td>
   </tr>
   <tr>
     <td align="center">
-      <img src="docs/screenshots/players.jpg" width="420" alt="League Players"/>
-      <br/><sub><b>League Players</b></sub>
+      <img src="docs/screenshots/trade-center.jpg" width="420" alt="Trade Center"/>
+      <br/><sub><b>Trade Center</b></sub>
     </td>
     <td align="center">
-      <img src="docs/screenshots/settings.jpg" width="420" alt="Settings & Network"/>
-      <br/><sub><b>Settings & Sideband Network</b></sub>
+      <img src="docs/screenshots/waiver-wire.jpg" width="420" alt="Waiver Wire"/>
+      <br/><sub><b>Waiver Wire & FAAB Bidding</b></sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="docs/screenshots/projections.jpg" width="420" alt="Season Projections"/>
+      <br/><sub><b>Season Projections Dashboard</b></sub>
+    </td>
+    <td align="center">
+      <img src="docs/screenshots/settings.jpg" width="420" alt="Settings & Franchise Management"/>
+      <br/><sub><b>Settings & Franchise Management</b></sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="docs/screenshots/rules-and-info.jpg" width="420" alt="Rules & Info"/>
+      <br/><sub><b>Rules, Info & Getting Started Guide</b></sub>
+    </td>
+    <td align="center">
+      <img src="docs/screenshots/head-to-head.jpg" width="420" alt="Head to Head"/>
+      <br/><sub><b>Head to Head Matchup</b></sub>
     </td>
   </tr>
 </table>
@@ -62,11 +82,13 @@ This is not a wrapper around ESPN or Yahoo. It is a fully self-contained league 
 ## Features
 
 ### League Management
-- Full roster management with drag-and-drop player swaps
+- Full roster management with starting lineup and bench slots
 - League standings, head-to-head matchup analysis with 0–100 advantage scoring
 - Trade center with Production Points economy and escrow protection
+- Waiver wire with sealed FAAB bidding — processes every Tuesday at 2AM
 - Commissioner admin mode with password-protected controls and game day lock overrides
 - Encrypted `.tff` backup files — export and import your entire league
+- Dynasty mode with keeper tracking, contract years, and draft pick trading
 
 ### Local-First P2P Networking
 - **LAN peer discovery** via Rust-backed mDNS — peers appear automatically on the same network
@@ -76,14 +98,19 @@ This is not a wrapper around ESPN or Yahoo. It is a fully self-contained league 
 - **Forward-secret session encryption** — ephemeral ECDH P-256 key exchange derives a per-connection AES-GCM-256 session key; compromising long-term identity keys cannot expose past sessions
 - **Deterministic event log** — every roster move is signed, deduplicated, and replayed identically on all peers
 
-### Security (v1.2.0)
-- **PBKDF2-SHA256** password hashing (100,000 iterations, random salt) — team passwords and commissioner password
-- **AES-GCM-256 encryption at rest** — ECDSA private key, YouTube API key, and TURN credentials are all encrypted in localStorage
-- **Hardened Content Security Policy** — `unsafe-eval` and `unsafe-inline` removed from `script-src`
+### Security (v3.3.0)
+- **PBKDF2-SHA256** password hashing (100,000 iterations, random salt) — team and commissioner passwords
+- **CSPRNG session tokens** — commissioner dashboard token uses OS cryptographic RNG via `rand::thread_rng()`
+- **AES-GCM-256 encryption at rest** — ECDSA private key, YouTube API key, and TURN credentials encrypted in localStorage
+- **Session-only secrets** — P2P restart secret lives in memory only, never written to localStorage
+- **Schema-validated P2P messages** — type guards verify all handshake fields before processing; malformed messages terminate the connection
+- **Single-handshake enforcement** — re-HANDSHAKE on a verified connection is rejected, preventing public key substitution
+- **No plaintext encryption fallback** — ECDH session key derivation failure terminates the connection rather than downgrading to plaintext
+- **Hardened Content Security Policy** — `frame-ancestors 'none'`, `object-src 'none'`, `base-uri 'self'` prevent clickjacking and plugin injection
 - **Input sanitization** — all user-supplied strings stripped of HTML and control characters before storage
 - **Admin brute-force protection** — exponential backoff (5s → 30s → 5min) after failed login attempts
 - **Relay rate limiting** — 120 messages/min per IP, 16KB message cap, nodeId ownership validation
-- Full security audit documented in [SECURITY_TASKS.md](SECURITY_TASKS.md)
+- Full security audit documented in [Code Audit.md](Code%20Audit.md)
 
 ### Player Research & Scouting
 - 1,000+ player database with projected points, ADP, combine metrics, and career stats
@@ -91,6 +118,7 @@ This is not a wrapper around ESPN or Yahoo. It is a fully self-contained league 
 - Scouting report modal with written intelligence and video highlights
 - Multi-tier YouTube video pipeline — finds game film and highlights per player automatically
 - Head-to-head matchup engine: projected points, season PPG trend, and performance differential
+- Season projections dashboard with projected vs actual comparison
 
 ### Anti-Cheat
 - **Game day locking** — players on active NFL teams cannot be moved in or out of starting lineups while their game is in progress
@@ -107,7 +135,7 @@ This is not a wrapper around ESPN or Yahoo. It is a fully self-contained league 
 | Layer | Technology |
 |---|---|
 | Desktop shell | [Tauri](https://tauri.app) v1 (Rust) |
-| Frontend | React 18 + TypeScript |
+| Frontend | React 19 + TypeScript |
 | Bundler | Vite |
 | P2P Transport | WebRTC via [simple-peer](https://github.com/feross/simple-peer) |
 | Peer Authentication | ECDSA P-256 (Web Crypto API) |
@@ -164,6 +192,13 @@ npm run tauri build
 
 > **Note:** P2P networking requires the Tauri desktop build. Running as a plain browser (`npm run dev`) disables Discovery and P2P — the UI still works in that mode for roster and UI testing.
 
+### First Run
+1. Launch the app — a **Default Team** is pre-loaded with no password required.
+2. Go to **Settings** and click the **Commissioner Mode** toggle. On first run it will prompt you to create your commissioner password.
+3. Use **Settings → Manage Franchises → ADD FRANCHISE** to create teams for each league member.
+4. Delete the Default Team once all real franchises are set up — its players return to the free agent pool automatically.
+5. Other league members connect via the **Network** page (LAN auto-discovers; internet uses the relay).
+
 ---
 
 ## Project Structure
@@ -196,22 +231,20 @@ relay-server/
 
 ---
 
-## Roadmap
+## Security
 
-See [ROADMAP.md](ROADMAP.md) for the full feature roadmap including:
-- Live NFL scoreboard on the standings page (Phase 2)
-- Draft simulator with AI opponents (Phase 2)
-- Waiver wire with FAAB bidding (Phase 2)
-- Season projections dashboard (Phase 3)
-- Dynasty mode (Phase 4)
+A full enterprise security audit was completed in v3.3.0 covering authentication, P2P trust, cryptographic key management, session security, input validation, and CSP hardening. See [Code Audit.md](Code%20Audit.md) for the complete audit log with severity ratings and regression risk analysis.
+
+To report a vulnerability, open a GitHub issue marked `[SECURITY]`.
 
 ---
 
-## Security
+## Support the Project
 
-A full enterprise security audit was completed in v1.2.0 covering 15 tasks across credential storage, authentication, CSP hardening, network security, and supply chain. See [SECURITY_TASKS.md](SECURITY_TASKS.md) for the complete audit log and penetration test findings.
+Trier Fantasy Football is built and maintained for free. If you find it useful, any support goes a long way:
 
-To report a vulnerability, open a GitHub issue marked `[SECURITY]`.
+[![Sponsor on GitHub](https://img.shields.io/badge/Sponsor-GitHub-black?logo=github)](https://github.com/sponsors/DougTrier)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-☕-orange)](https://buymeacoffee.com/dougtrier)
 
 ---
 
