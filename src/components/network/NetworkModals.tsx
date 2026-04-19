@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Copy, Check, Wifi } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { QRCodeSVG } from 'qrcode.react';
 import { type DiscoveredPeer } from '../../services/DiscoveryService';
 import { DiagnosticsRunner } from './DiagnosticsRunner';
 
@@ -9,67 +10,114 @@ import { DiagnosticsRunner } from './DiagnosticsRunner';
 interface InviteModalProps {
     show: boolean;
     inviteCode: string;
+    expiresAt: number; // Unix ms — countdown target
     onClose: () => void;
 }
 
-export const InviteModal: React.FC<InviteModalProps> = ({ show, inviteCode, onClose }) => (
-    <AnimatePresence>
-        {show && (
-            <motion.div
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                style={{
-                    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 90
-                }}
-                onClick={onClose}
-            >
-                <div style={{ background: '#1a1a1a', padding: '2rem', borderRadius: '12px', width: '500px' }} onClick={e => e.stopPropagation()}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                        <h2>Invite Friend</h2>
-                        <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer' }}><X size={20} /></button>
-                    </div>
+export const InviteModal: React.FC<InviteModalProps> = ({ show, inviteCode, expiresAt, onClose }) => {
+    // Countdown state — recalculated every second while modal is open
+    const [secondsLeft, setSecondsLeft] = useState(0);
+    const [copied, setCopied] = useState(false);
 
-                    <p style={{ opacity: 0.7, marginBottom: '1rem' }}>
-                        Share this code with a friend on the same network to let them connect to you manually.
-                    </p>
+    useEffect(() => {
+        if (!show) return;
+        // Tick every second; clear on close
+        const tick = () => setSecondsLeft(Math.max(0, Math.floor((expiresAt - Date.now()) / 1000)));
+        tick();
+        const id = setInterval(tick, 1000);
+        return () => clearInterval(id);
+    }, [show, expiresAt]);
 
-                    <div style={{
-                        background: '#000', padding: '1rem', borderRadius: '6px',
-                        border: '1px solid #333',
-                        fontFamily: 'monospace', wordBreak: 'break-all',
-                        marginBottom: '1rem',
-                        display: 'flex', gap: '1rem', alignItems: 'center'
-                    }}>
-                        <span style={{ flex: 1 }}>{inviteCode}</span>
-                        <button
-                            onClick={() => navigator.clipboard.writeText(inviteCode)}
-                            style={{ background: 'none', border: 'none', color: '#4ade80', cursor: 'pointer' }}
-                            title="Copy"
-                        >
-                            <Copy size={16} />
-                        </button>
-                    </div>
+    // Format seconds as MM:SS for display
+    const mm = String(Math.floor(secondsLeft / 60)).padStart(2, '0');
+    const ss = String(secondsLeft % 60).padStart(2, '0');
+    const isExpiringSoon = secondsLeft < 120; // Turn red under 2 minutes
+    const isExpired = secondsLeft === 0;
 
-                    <div style={{ fontSize: '0.8rem', color: '#eab308' }}>
-                        Note: Invites require both devices to be on this LAN.
+    const handleCopy = () => {
+        navigator.clipboard.writeText(inviteCode);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    return (
+        <AnimatePresence>
+            {show && (
+                <motion.div
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    style={{
+                        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 90
+                    }}
+                    onClick={onClose}
+                >
+                    <div
+                        style={{ background: '#1a1a1a', padding: '2rem', borderRadius: '12px', width: '520px' }}
+                        onClick={e => e.stopPropagation()}
+                    >
+                        {/* Header */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                            <h2>Invite Friend</h2>
+                            <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer' }}><X size={20} /></button>
+                        </div>
+
+                        <p style={{ opacity: 0.7, marginBottom: '1.25rem', fontSize: '0.85rem' }}>
+                            Share this code or have your friend scan the QR code to connect — works over LAN or internet relay.
+                        </p>
+
+                        {/* QR code — encodes the invite string directly */}
+                        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.25rem' }}>
+                            <div style={{ background: '#fff', padding: '12px', borderRadius: '8px' }}>
+                                <QRCodeSVG value={inviteCode} size={180} />
+                            </div>
+                        </div>
+
+                        {/* Text code + copy button */}
+                        <div style={{
+                            background: '#000', padding: '1rem', borderRadius: '6px',
+                            border: '1px solid #333', fontFamily: 'monospace', wordBreak: 'break-all',
+                            marginBottom: '1rem', display: 'flex', gap: '1rem', alignItems: 'center'
+                        }}>
+                            <span style={{ flex: 1, fontSize: '0.75rem', opacity: isExpired ? 0.4 : 1 }}>{inviteCode}</span>
+                            <button
+                                onClick={handleCopy}
+                                disabled={isExpired}
+                                style={{ background: 'none', border: 'none', color: copied ? '#4ade80' : '#4ade80', cursor: isExpired ? 'not-allowed' : 'pointer' }}
+                                title="Copy"
+                            >
+                                {copied ? <Check size={16} /> : <Copy size={16} />}
+                            </button>
+                        </div>
+
+                        {/* Expiry countdown */}
+                        <div style={{
+                            fontSize: '0.8rem',
+                            color: isExpired ? '#ef4444' : isExpiringSoon ? '#f59e0b' : '#6b7280',
+                            textAlign: 'center'
+                        }}>
+                            {isExpired
+                                ? 'Code expired — close and generate a new one.'
+                                : `Expires in ${mm}:${ss}`}
+                        </div>
                     </div>
-                </div>
-            </motion.div>
-        )}
-    </AnimatePresence>
-);
+                </motion.div>
+            )}
+        </AnimatePresence>
+    );
+};
 
 // ─── Join Modal ──────────────────────────────────────────────────────────────
 
 interface JoinModalProps {
     show: boolean;
     joinCode: string;
+    error?: string; // Error message from last failed redeem attempt
     onJoinCodeChange: (v: string) => void;
     onClose: () => void;
     onRedeem: () => void;
 }
 
-export const JoinModal: React.FC<JoinModalProps> = ({ show, joinCode, onJoinCodeChange, onClose, onRedeem }) => (
+export const JoinModal: React.FC<JoinModalProps> = ({ show, joinCode, error, onJoinCodeChange, onClose, onRedeem }) => (
     <AnimatePresence>
         {show && (
             <motion.div
@@ -80,23 +128,34 @@ export const JoinModal: React.FC<JoinModalProps> = ({ show, joinCode, onJoinCode
                 }}
                 onClick={onClose}
             >
-                <div style={{ background: '#1a1a1a', padding: '2rem', borderRadius: '12px', width: '400px' }} onClick={e => e.stopPropagation()}>
+                <div style={{ background: '#1a1a1a', padding: '2rem', borderRadius: '12px', width: '420px' }} onClick={e => e.stopPropagation()}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                         <h2>Join Friend</h2>
                         <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer' }}><X size={20} /></button>
                     </div>
 
-                    <label style={{ display: 'block', marginBottom: '0.5rem', opacity: 0.7 }}>Paste Invite Code</label>
+                    <label style={{ display: 'block', marginBottom: '0.5rem', opacity: 0.7, fontSize: '0.85rem' }}>
+                        Paste invite code or scan QR with your camera app
+                    </label>
                     <textarea
                         value={joinCode}
                         onChange={e => onJoinCodeChange(e.target.value)}
                         placeholder="Paste code here..."
                         style={{
                             width: '100%', padding: '0.5rem',
-                            background: '#333', border: '1px solid #555', color: '#fff', borderRadius: '4px',
-                            minHeight: '80px', marginBottom: '1rem', fontFamily: 'monospace'
+                            background: '#333', border: `1px solid ${error ? '#ef4444' : '#555'}`,
+                            color: '#fff', borderRadius: '4px',
+                            minHeight: '80px', marginBottom: '0.5rem', fontFamily: 'monospace',
+                            resize: 'vertical'
                         }}
                     />
+
+                    {/* Inline error message — shown instead of alert for better UX */}
+                    {error && (
+                        <div style={{ fontSize: '0.78rem', color: '#ef4444', marginBottom: '0.75rem', lineHeight: 1.4 }}>
+                            {error}
+                        </div>
+                    )}
 
                     <button
                         onClick={onRedeem}
@@ -241,7 +300,7 @@ export const IncomingRequestModal: React.FC<IncomingRequestModalProps> = ({ inco
                                 fontWeight: 'bold',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem'
                             }}
-        >
+                        >
                             <Check size={18} /> ACCEPT
                         </button>
                     </div>

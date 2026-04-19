@@ -209,41 +209,46 @@ export const DiscoveryService = {
         return invoke('fix_firewall_rules');
     },
 
+    // Invite TTL — codes expire after 10 minutes to limit replay window
+    INVITE_TTL_MS: 10 * 60 * 1000,
+
     async generateInvite(): Promise<string> {
         const ip = await invoke<string>('get_local_ip');
         const port = P2PService.port;
         const id = P2PService.myId;
-        const payload = JSON.stringify({ id, ip, port });
+        // Embed creation timestamp so the recipient can detect stale codes
+        const payload = JSON.stringify({ id, ip, port, ts: Date.now(), ttl: this.INVITE_TTL_MS });
         return btoa(payload);
     },
 
     redeemInvite(code: string) {
+        let parsed: { id: string; ip: string; port: number; ts?: number; ttl?: number };
         try {
-            const json = atob(code);
-            const { id, ip, port } = JSON.parse(json);
-            if (!id || !ip || !port) throw new Error("Invalid Invite Code");
-
-            console.log('[Discovery] Redeeming Invite:', id, ip, port);
-
-            // Add to peers manually
-            const peer: DiscoveredPeer = {
-                id,
-                ip,
-                port,
-                hostname: 'Invited Peer',
-                franchiseName: 'Invited Friend',
-                lastSeen: Date.now(),
-                transport: 'Invite'
-            };
-            this.addPeer(peer);
-
-            // Auto Connect? Let's just add it to list and let user click Connect.
-            // Or maybe auto-connect? The prompt says "Generate/Paste". Usually implies connection.
-            // But strict manual connection is safer.
-            // I'll leave it as "Add to List".
-        } catch (e) {
-            console.error("Invalid Invite Code", e);
-            throw e;
+            parsed = JSON.parse(atob(code.trim()));
+        } catch {
+            throw new Error('Invalid invite code — could not decode. Make sure you copied the full code.');
         }
+
+        const { id, ip, port, ts, ttl } = parsed;
+        if (!id || !ip || !port) throw new Error('Invite code is missing required fields.');
+
+        // Reject codes that have passed their TTL
+        if (ts && ttl && Date.now() - ts > ttl) {
+            throw new Error('This invite code has expired. Ask your opponent to generate a new one.');
+        }
+
+        console.log('[Discovery] Redeeming Invite:', id, ip, port);
+
+        // Add peer to known list — user clicks Connect to initiate the handshake
+        const peer: DiscoveredPeer = {
+            id,
+            ip,
+            port,
+            hostname: 'Invited Peer',
+            franchiseName: 'Invited Friend',
+            lastSeen: Date.now(),
+            transport: 'Invite'
+        };
+        this.addPeer(peer);
     }
 };

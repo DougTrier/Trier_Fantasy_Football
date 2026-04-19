@@ -64,8 +64,10 @@ export const NetworkPage: React.FC = () => {
     // Invite UI State
     const [showInviteModal, setShowInviteModal] = useState(false);
     const [inviteCode, setInviteCode] = useState('');
+    const [inviteExpiresAt, setInviteExpiresAt] = useState(0);
     const [showJoinModal, setShowJoinModal] = useState(false);
     const [joinCode, setJoinCode] = useState('');
+    const [joinError, setJoinError] = useState('');
 
     useEffect(() => {
         // Subscribe to peer updates
@@ -287,6 +289,7 @@ export const NetworkPage: React.FC = () => {
         try {
             const code = await DiscoveryService.generateInvite();
             setInviteCode(code);
+            setInviteExpiresAt(Date.now() + DiscoveryService.INVITE_TTL_MS);
             setShowInviteModal(true);
         } catch {
             showAlert("Failed to generate invite. Check your network connection.", "Invite Error");
@@ -300,9 +303,11 @@ export const NetworkPage: React.FC = () => {
             DiscoveryService.redeemInvite(joinCode);
             setShowJoinModal(false);
             setJoinCode('');
+            setJoinError('');
             showAlert("Peer added! They will appear as connectable once they come online.", "Peer Added");
-        } catch {
-            showAlert("Invalid or expired invite code. Ask your opponent to generate a new one.", "Invalid Code");
+        } catch (e) {
+            // Show error inline in the modal rather than an alert — keeps context visible
+            setJoinError(e instanceof Error ? e.message : 'Invalid invite code.');
         }
     };
 
@@ -388,14 +393,16 @@ export const NetworkPage: React.FC = () => {
             <InviteModal
                 show={showInviteModal}
                 inviteCode={inviteCode}
+                expiresAt={inviteExpiresAt}
                 onClose={() => setShowInviteModal(false)}
             />
 
             <JoinModal
                 show={showJoinModal}
                 joinCode={joinCode}
-                onJoinCodeChange={setJoinCode}
-                onClose={() => setShowJoinModal(false)}
+                error={joinError}
+                onJoinCodeChange={code => { setJoinCode(code); setJoinError(''); }}
+                onClose={() => { setShowJoinModal(false); setJoinError(''); }}
                 onRedeem={handleRedeemInvite}
             />
 
