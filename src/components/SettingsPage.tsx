@@ -245,13 +245,37 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                         </div>
 
                         {isAdmin && (
-                            <button
-                                onClick={() => onCreateTeam('Test Team #' + Math.floor(Math.random() * 100), 'Dummy Coach', '1234')}
-                                title="Generate a dummy team for testing and layout verification."
-                                style={{ ...btnStyle, background: 'rgba(255,255,255,0.05)', border: '1px dashed #eab308', color: '#eab308', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
-                            >
-                                <Plus size={18} /> CREATE TEST FRANCHISE (ADMIN ONLY)
-                            </button>
+                            <>
+                                <button
+                                    onClick={() => onCreateTeam('Test Team #' + Math.floor(Math.random() * 100), 'Dummy Coach', '1234')}
+                                    title="Generate a dummy team for testing and layout verification."
+                                    style={{ ...btnStyle, background: 'rgba(255,255,255,0.05)', border: '1px dashed #eab308', color: '#eab308', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                                >
+                                    <Plus size={18} /> CREATE TEST FRANCHISE (ADMIN ONLY)
+                                </button>
+
+                                {/* Commissioner Dashboard link — only visible when admin */}
+                                <div style={{ background: 'rgba(234,179,8,0.06)', border: '1px solid rgba(234,179,8,0.2)', borderRadius: '10px', padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div>
+                                        <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#eab308', fontFamily: "'Orbitron', sans-serif", letterSpacing: '1px', marginBottom: '4px' }}>
+                                            COMMISSIONER DASHBOARD
+                                        </div>
+                                        <div style={{ fontSize: '0.78rem', color: '#9ca3af' }}>
+                                            Browser-based control panel. Open on any browser on this machine.
+                                        </div>
+                                        <code style={{ fontSize: '0.8rem', color: '#34d399', marginTop: '4px', display: 'block' }}>
+                                            http://localhost:15434
+                                        </code>
+                                    </div>
+                                    <button
+                                        onClick={() => navigator.clipboard?.writeText('http://localhost:15434')}
+                                        title="Copy URL to clipboard"
+                                        style={{ ...btnStyle, background: 'rgba(52,211,153,0.12)', border: '1px solid rgba(52,211,153,0.3)', color: '#34d399', fontSize: '0.75rem', padding: '6px 12px' }}
+                                    >
+                                        COPY URL
+                                    </button>
+                                </div>
+                            </>
                         )}
 
                         {/* ── NFL Game Day Locks ─────────────────────────────────── */}
