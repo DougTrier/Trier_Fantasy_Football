@@ -27,10 +27,11 @@ import React, { useRef, useState, useEffect } from 'react';
 import { useDialog } from './AppDialog';
 import {
     Settings, Shield, Users, Lock, Download, Upload,
-    Trash2, RefreshCw, Globe, HardDrive, Plus, Edit2, Youtube, Radio, Bell
+    Trash2, RefreshCw, Globe, HardDrive, Plus, Edit2, Youtube, Radio, Bell, Sliders
 } from 'lucide-react';
 import { getNotifPrefs, setNotifPref, type NotifEvent } from '../services/NotificationService';
-import type { FantasyTeam } from '../types';
+import type { FantasyTeam, ScoringRuleset } from '../types';
+import { SCORING_PRESETS } from '../types';
 // SecurityService wraps AES-GCM encryption/decryption for .tff backup files.
 import { SecurityService } from '../utils/SecurityService';
 // NetworkHealth renders real-time P2P diagnostics inside the Sideband panel.
@@ -57,6 +58,8 @@ interface SettingsPageProps {
     onLockAll: () => void;
     onUnlockAll: () => void;
     onFetchSchedule: () => Promise<void>;
+    scoringRuleset: ScoringRuleset;
+    onUpdateRuleset: (ruleset: ScoringRuleset) => void;
 }
 
 /**
@@ -84,13 +87,22 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     onLockAll,
     onUnlockAll,
     onFetchSchedule,
+    scoringRuleset,
+    onUpdateRuleset,
 }) => {
     // fileInputRef: the hidden <input type="file"> used for .tff import clicks.
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const rulesetFileRef = useRef<HTMLInputElement>(null);
     const [editingId, setEditingId] = useState<string | null>(null); // Which team is being edited inline
     const [isCreating, setIsCreating] = useState(false);
     // fetchingSchedule: prevents double-clicks on the Live Schedule button.
     const [fetchingSchedule, setFetchingSchedule] = useState(false);
+
+    // Scoring editor state — a local copy of the ruleset so edits are staged before saving
+    const [draftRuleset, setDraftRuleset] = useState<ScoringRuleset>(scoringRuleset);
+    const [scoringExpanded, setScoringExpanded] = useState(false);
+    // Sync whenever parent changes (e.g. import from file)
+    useEffect(() => { setDraftRuleset(scoringRuleset); }, [scoringRuleset]);
 
     // Edit Form States — populated when editingId is set
     const [editName, setEditName] = useState('');
@@ -369,7 +381,199 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     </div>
                 </section>
 
-                {/* 2. Sideband Status */}
+                {/* 2. Scoring Format */}
+                <section style={cardStyle}>
+                    <div style={headerStyle}>
+                        <Sliders size={22} color="#eab308" />
+                        <h2 style={titleStyle}>Scoring Format</h2>
+                    </div>
+
+                    {/* Preset buttons */}
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}>
+                        {(Object.keys(SCORING_PRESETS) as Array<keyof typeof SCORING_PRESETS>).map(key => {
+                            const active = draftRuleset.presetKey === key;
+                            return (
+                                <button
+                                    key={key}
+                                    disabled={!isAdmin}
+                                    onClick={() => setDraftRuleset({ ...SCORING_PRESETS[key] })}
+                                    style={{
+                                        padding: '6px 14px', borderRadius: '6px', fontSize: '0.8rem',
+                                        fontFamily: "'Orbitron', sans-serif", cursor: isAdmin ? 'pointer' : 'default',
+                                        border: active ? '2px solid #eab308' : '1px solid rgba(255,255,255,0.15)',
+                                        background: active ? 'rgba(234,179,8,0.15)' : 'rgba(255,255,255,0.05)',
+                                        color: active ? '#eab308' : '#9ca3af',
+                                    }}
+                                >
+                                    {SCORING_PRESETS[key].name}
+                                </button>
+                            );
+                        })}
+                        {/* Custom badge — shown when user has diverged from any preset */}
+                        {draftRuleset.presetKey === 'Custom' && (
+                            <span style={{ padding: '6px 14px', borderRadius: '6px', fontSize: '0.8rem', fontFamily: "'Orbitron', sans-serif", border: '2px solid #a78bfa', background: 'rgba(167,139,250,0.15)', color: '#a78bfa' }}>
+                                CUSTOM
+                            </span>
+                        )}
+                    </div>
+
+                    {/* Current format summary */}
+                    <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', fontSize: '0.78rem', color: '#9ca3af', marginBottom: '12px' }}>
+                        <span>Reception: <b style={{ color: '#f3f4f6' }}>{draftRuleset.receptionPoints} pt</b></span>
+                        <span>Pass TD: <b style={{ color: '#f3f4f6' }}>{draftRuleset.passingTDPoints} pts</b></span>
+                        <span>Rush/Rec TD: <b style={{ color: '#f3f4f6' }}>{draftRuleset.rushingTDPoints} pts</b></span>
+                        {draftRuleset.tepBonus > 0 && <span>TEP Bonus: <b style={{ color: '#a78bfa' }}>+{draftRuleset.tepBonus} pts/TE catch</b></span>}
+                        {draftRuleset.passing300YardBonus > 0 && <span>300-yd Bonus: <b style={{ color: '#34d399' }}>+{draftRuleset.passing300YardBonus}</b></span>}
+                    </div>
+
+                    {/* Expand/collapse custom weight editor — admin-only */}
+                    {isAdmin && (
+                        <button
+                            onClick={() => setScoringExpanded(v => !v)}
+                            style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: '0.8rem', marginBottom: scoringExpanded ? '16px' : 0 }}
+                        >
+                            <Sliders size={14} /> {scoringExpanded ? '▲ Hide custom weights' : '▼ Edit custom weights'}
+                        </button>
+                    )}
+
+                    {scoringExpanded && isAdmin && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                            {/* Helper: a labeled number input row */}
+                            {([
+                                { label: 'PASSING', fields: [
+                                    ['Pass yards per pt', 'passingYardsPerPoint'],
+                                    ['Pass TD pts', 'passingTDPoints'],
+                                    ['INT pts', 'passingINTPoints'],
+                                    ['300-yd game bonus', 'passing300YardBonus'],
+                                    ['400-yd game bonus', 'passing400YardBonus'],
+                                ]},
+                                { label: 'RUSHING', fields: [
+                                    ['Rush yards per pt', 'rushingYardsPerPoint'],
+                                    ['Rush TD pts', 'rushingTDPoints'],
+                                    ['100-yd rush bonus', 'rushing100YardBonus'],
+                                    ['200-yd rush bonus', 'rushing200YardBonus'],
+                                ]},
+                                { label: 'RECEIVING', fields: [
+                                    ['Rec yards per pt', 'receivingYardsPerPoint'],
+                                    ['Rec TD pts', 'receivingTDPoints'],
+                                    ['Reception pts', 'receptionPoints'],
+                                    ['TE bonus per catch', 'tepBonus'],
+                                    ['100-yd rec bonus', 'receiving100YardBonus'],
+                                    ['200-yd rec bonus', 'receiving200YardBonus'],
+                                ]},
+                                { label: 'MISC', fields: [
+                                    ['Fumble lost pts', 'fumbleLostPoints'],
+                                ]},
+                                { label: 'KICKER', fields: [
+                                    ['FG under 40 pts', 'fgUnder40Points'],
+                                    ['FG 40–49 pts', 'fg40to49Points'],
+                                    ['FG 50+ pts', 'fg50plusPoints'],
+                                    ['XP pts', 'xpPoints'],
+                                    ['Missed XP pts', 'missedXPPoints'],
+                                ]},
+                                { label: 'D/ST', fields: [
+                                    ['Sack pts', 'dstSackPoints'],
+                                    ['INT pts', 'dstINTPoints'],
+                                    ['TD pts', 'dstTDPoints'],
+                                    ['Safety pts', 'dstSafetyPoints'],
+                                    ['Fumble rec pts', 'dstFumbleRecPoints'],
+                                ]},
+                                { label: 'IDP', fields: [
+                                    ['Solo tackle', 'soloTacklePoints'],
+                                    ['Assisted tackle', 'assistedTacklePoints'],
+                                    ['Sack', 'idpSackPoints'],
+                                    ['TFL', 'tflPoints'],
+                                    ['Pass deflection', 'passDefPoints'],
+                                    ['QB hit', 'qbHitPoints'],
+                                    ['Forced fumble', 'ffPoints'],
+                                    ['Blocked kick', 'blockedKickPoints'],
+                                ]},
+                            ] as { label: string; fields: [string, keyof ScoringRuleset][] }[]).map(({ label, fields }) => (
+                                <div key={label}>
+                                    <div style={{ fontSize: '0.7rem', fontFamily: "'Orbitron', sans-serif", color: '#eab308', letterSpacing: '1px', marginBottom: '8px' }}>{label}</div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '8px' }}>
+                                        {fields.map(([fieldLabel, key]) => (
+                                            <label key={key} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                                <span style={{ fontSize: '0.7rem', color: '#6b7280' }}>{fieldLabel}</span>
+                                                <input
+                                                    type="number"
+                                                    step="0.5"
+                                                    value={draftRuleset[key] as number}
+                                                    onChange={e => setDraftRuleset(prev => ({
+                                                        ...prev,
+                                                        presetKey: 'Custom',
+                                                        name: 'Custom',
+                                                        [key]: parseFloat(e.target.value) || 0,
+                                                    }))}
+                                                    style={{
+                                                        background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.15)',
+                                                        borderRadius: '4px', color: '#f3f4f6', padding: '4px 8px',
+                                                        fontSize: '0.85rem', width: '100%',
+                                                    }}
+                                                />
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Save / Export / Import row — commissioner-only */}
+                    {isAdmin && (
+                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '16px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+                            <button
+                                onClick={() => { onUpdateRuleset(draftRuleset); }}
+                                style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(234,179,8,0.15)', border: '1px solid #eab308', color: '#eab308', padding: '7px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', fontFamily: "'Orbitron', sans-serif" }}
+                            >
+                                SAVE FORMAT
+                            </button>
+                            {/* Export active ruleset as .tffr file */}
+                            <button
+                                onClick={() => {
+                                    const blob = new Blob([JSON.stringify(draftRuleset, null, 2)], { type: 'application/json' });
+                                    const a = document.createElement('a');
+                                    a.href = URL.createObjectURL(blob);
+                                    a.download = `${draftRuleset.name.replace(/\s+/g, '_')}.tffr`;
+                                    a.click();
+                                    URL.revokeObjectURL(a.href);
+                                }}
+                                style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', color: '#9ca3af', padding: '7px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem' }}
+                            >
+                                <Download size={14} /> Export .tffr
+                            </button>
+                            {/* Import a .tffr ruleset file */}
+                            <button
+                                onClick={() => rulesetFileRef.current?.click()}
+                                style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', color: '#9ca3af', padding: '7px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem' }}
+                            >
+                                <Upload size={14} /> Import .tffr
+                            </button>
+                            <input
+                                ref={rulesetFileRef}
+                                type="file"
+                                accept=".tffr,.json"
+                                style={{ display: 'none' }}
+                                onChange={async e => {
+                                    const file = e.target.files?.[0];
+                                    if (!file) return;
+                                    try {
+                                        const text = await file.text();
+                                        const parsed = JSON.parse(text) as ScoringRuleset;
+                                        // Basic validation — must have the key fields
+                                        if (typeof parsed.receptionPoints !== 'number') throw new Error('Invalid .tffr file');
+                                        setDraftRuleset(parsed);
+                                    } catch {
+                                        alert('Could not import ruleset — invalid .tffr file.');
+                                    }
+                                    e.target.value = '';
+                                }}
+                            />
+                        </div>
+                    )}
+                </section>
+
+                {/* 3. Sideband Status */}
                 <section style={cardStyle}>
                     <div style={headerStyle}>
                         <Globe size={22} color="#eab308" />

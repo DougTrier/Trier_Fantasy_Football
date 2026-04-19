@@ -278,6 +278,127 @@ export interface Matchup {
     completed: boolean;
 }
 
+// ── Scoring Rulesets ─────────────────────────────────────────────────────────
+
+/** All per-stat weights that define a fantasy scoring format. */
+export interface ScoringRuleset {
+    name: string;
+    presetKey: 'PPR' | 'Half PPR' | 'Standard' | 'TEP' | 'Custom';
+    // Passing
+    passingYardsPerPoint: number;     // pts per yard (e.g. 25 → 1pt/25yds)
+    passingTDPoints: number;
+    passingINTPoints: number;
+    passing300YardBonus: number;      // flat bonus for ≥300 passing yards
+    passing400YardBonus: number;      // flat bonus for ≥400 passing yards
+    // Rushing
+    rushingYardsPerPoint: number;
+    rushingTDPoints: number;
+    rushing100YardBonus: number;
+    rushing200YardBonus: number;
+    // Receiving
+    receivingYardsPerPoint: number;
+    receivingTDPoints: number;
+    receptionPoints: number;          // 1=PPR, 0.5=Half, 0=Standard
+    tepBonus: number;                 // extra pts per TE reception (TEP)
+    receiving100YardBonus: number;
+    receiving200YardBonus: number;
+    // Misc
+    fumbleLostPoints: number;
+    // Kicker
+    fgUnder40Points: number;
+    fg40to49Points: number;
+    fg50plusPoints: number;
+    xpPoints: number;
+    missedXPPoints: number;
+    // D/ST
+    dstSackPoints: number;
+    dstINTPoints: number;
+    dstTDPoints: number;
+    dstSafetyPoints: number;
+    dstFumbleRecPoints: number;
+    // IDP
+    soloTacklePoints: number;
+    assistedTacklePoints: number;
+    idpSackPoints: number;
+    tflPoints: number;
+    passDefPoints: number;
+    qbHitPoints: number;
+    ffPoints: number;
+    blockedKickPoints: number;
+}
+
+/** Built-in preset rulesets — all match legacy PPR defaults except receptionPoints/tepBonus. */
+export const SCORING_PRESETS: Record<string, ScoringRuleset> = {
+    PPR: {
+        name: 'Full PPR', presetKey: 'PPR',
+        passingYardsPerPoint: 25, passingTDPoints: 4, passingINTPoints: -2,
+        passing300YardBonus: 0, passing400YardBonus: 0,
+        rushingYardsPerPoint: 10, rushingTDPoints: 6,
+        rushing100YardBonus: 0, rushing200YardBonus: 0,
+        receivingYardsPerPoint: 10, receivingTDPoints: 6,
+        receptionPoints: 1, tepBonus: 0,
+        receiving100YardBonus: 0, receiving200YardBonus: 0,
+        fumbleLostPoints: -2,
+        fgUnder40Points: 3, fg40to49Points: 4, fg50plusPoints: 5,
+        xpPoints: 1, missedXPPoints: -1,
+        dstSackPoints: 1, dstINTPoints: 2, dstTDPoints: 6,
+        dstSafetyPoints: 2, dstFumbleRecPoints: 2,
+        soloTacklePoints: 1, assistedTacklePoints: 0.5, idpSackPoints: 2,
+        tflPoints: 1, passDefPoints: 1, qbHitPoints: 0.5, ffPoints: 2, blockedKickPoints: 3,
+    },
+    'Half PPR': {
+        name: 'Half PPR', presetKey: 'Half PPR',
+        passingYardsPerPoint: 25, passingTDPoints: 4, passingINTPoints: -2,
+        passing300YardBonus: 0, passing400YardBonus: 0,
+        rushingYardsPerPoint: 10, rushingTDPoints: 6,
+        rushing100YardBonus: 0, rushing200YardBonus: 0,
+        receivingYardsPerPoint: 10, receivingTDPoints: 6,
+        receptionPoints: 0.5, tepBonus: 0,
+        receiving100YardBonus: 0, receiving200YardBonus: 0,
+        fumbleLostPoints: -2,
+        fgUnder40Points: 3, fg40to49Points: 4, fg50plusPoints: 5,
+        xpPoints: 1, missedXPPoints: -1,
+        dstSackPoints: 1, dstINTPoints: 2, dstTDPoints: 6,
+        dstSafetyPoints: 2, dstFumbleRecPoints: 2,
+        soloTacklePoints: 1, assistedTacklePoints: 0.5, idpSackPoints: 2,
+        tflPoints: 1, passDefPoints: 1, qbHitPoints: 0.5, ffPoints: 2, blockedKickPoints: 3,
+    },
+    Standard: {
+        name: 'Standard', presetKey: 'Standard',
+        passingYardsPerPoint: 25, passingTDPoints: 4, passingINTPoints: -2,
+        passing300YardBonus: 0, passing400YardBonus: 0,
+        rushingYardsPerPoint: 10, rushingTDPoints: 6,
+        rushing100YardBonus: 0, rushing200YardBonus: 0,
+        receivingYardsPerPoint: 10, receivingTDPoints: 6,
+        receptionPoints: 0, tepBonus: 0,
+        receiving100YardBonus: 0, receiving200YardBonus: 0,
+        fumbleLostPoints: -2,
+        fgUnder40Points: 3, fg40to49Points: 4, fg50plusPoints: 5,
+        xpPoints: 1, missedXPPoints: -1,
+        dstSackPoints: 1, dstINTPoints: 2, dstTDPoints: 6,
+        dstSafetyPoints: 2, dstFumbleRecPoints: 2,
+        soloTacklePoints: 1, assistedTacklePoints: 0.5, idpSackPoints: 2,
+        tflPoints: 1, passDefPoints: 1, qbHitPoints: 0.5, ffPoints: 2, blockedKickPoints: 3,
+    },
+    TEP: {
+        name: 'TEP (TE Premium)', presetKey: 'TEP',
+        passingYardsPerPoint: 25, passingTDPoints: 4, passingINTPoints: -2,
+        passing300YardBonus: 0, passing400YardBonus: 0,
+        rushingYardsPerPoint: 10, rushingTDPoints: 6,
+        rushing100YardBonus: 0, rushing200YardBonus: 0,
+        receivingYardsPerPoint: 10, receivingTDPoints: 6,
+        receptionPoints: 1, tepBonus: 0.5,     // TEs get 1.5 pts per catch
+        receiving100YardBonus: 0, receiving200YardBonus: 0,
+        fumbleLostPoints: -2,
+        fgUnder40Points: 3, fg40to49Points: 4, fg50plusPoints: 5,
+        xpPoints: 1, missedXPPoints: -1,
+        dstSackPoints: 1, dstINTPoints: 2, dstTDPoints: 6,
+        dstSafetyPoints: 2, dstFumbleRecPoints: 2,
+        soloTacklePoints: 1, assistedTacklePoints: 0.5, idpSackPoints: 2,
+        tflPoints: 1, passDefPoints: 1, qbHitPoints: 0.5, ffPoints: 2, blockedKickPoints: 3,
+    },
+};
+
 /**
  * League — Top-level container for all teams and season configuration.
  * Settings are optional to support both the legacy roster-only mode and
@@ -290,7 +411,7 @@ export interface League {
     settings?: {
         budget: number;
         maxPlayers: number;
-        pointsFormat: 'PPR' | 'Half PPR' | 'Standard';
+        ruleset: ScoringRuleset;   // replaces legacy pointsFormat string
     };
     // H2H Weekly Schedule
     schedule?: Matchup[];

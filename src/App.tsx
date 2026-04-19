@@ -67,6 +67,8 @@ import { IdentityService } from './services/IdentityService';
 import { NetworkPage } from './components/NetworkPage';
 import { GlobalEventStore } from './services/EventStore';
 import { ScoringEngine } from './utils/ScoringEngine';
+import { SCORING_PRESETS } from './types';
+import type { ScoringRuleset } from './types';
 import type { EventLogEntry } from './types/P2P';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -981,10 +983,19 @@ export default function App() {
     } catch { /* fall through */ }
     return { id: 'league-1', name: "Trier's Fantasy League", teams: [], history: [] };
   });
-  // Persist schedule and currentWeek whenever league changes
+  // Persist league and keep ScoringEngine in sync with the active ruleset.
   useEffect(() => {
     localStorage.setItem('trier_fantasy_league_v1', JSON.stringify(league));
+    ScoringEngine.setRuleset(league.settings?.ruleset ?? SCORING_PRESETS.PPR);
   }, [league]);
+
+  // Handler passed to SettingsPage — updates league.settings.ruleset and persists.
+  const handleUpdateRuleset = (ruleset: ScoringRuleset) => {
+    setLeague(prev => ({
+      ...prev,
+      settings: { budget: prev.settings?.budget ?? 100, maxPlayers: prev.settings?.maxPlayers ?? 15, ruleset },
+    }));
+  };
 
   // Derived League State (Merges My Team with others + Updates History Points)
   const displayLeague = useMemo(() => {
@@ -1997,6 +2008,8 @@ export default function App() {
               lockedTeams.length > 0 ? 'Teams Locked' : 'No Active Games'
             );
           }}
+          scoringRuleset={league.settings?.ruleset ?? SCORING_PRESETS.PPR}
+          onUpdateRuleset={handleUpdateRuleset}
         />
       )}
 

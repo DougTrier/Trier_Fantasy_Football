@@ -1,6 +1,7 @@
 import React from 'react';
 import { Target, Users, Zap, Shield, HelpCircle, BookOpen, Lock, Wifi, ArrowLeftRight, Github, Database } from 'lucide-react';
 import leatherTexture from '../assets/leather_texture.png';
+import { ScoringEngine } from '../utils/ScoringEngine';
 
 /** Returns the NFL season year currently in focus.
  * Logic: January–mid-Feb → previous year's season (playoffs/Super Bowl).
@@ -18,6 +19,7 @@ function getDisplaySeason(): number {
 
 export const RulesPage: React.FC = () => {
     const displaySeason = getDisplaySeason();
+    const r = ScoringEngine.getRuleset();
     return (
         <div style={{
             color: 'white',
@@ -149,18 +151,25 @@ export const RulesPage: React.FC = () => {
                     ]}
                 />
 
-                {/* Scoring System */}
+                {/* Scoring System — reflects the active ruleset set by the commissioner */}
                 <RuleCard
                     icon={<Zap size={32} color="#eab308" />}
-                    title="Scoring System (Full PPR)"
+                    title={`Scoring System (${r.name})`}
                     content={[
-                        "Passing TD: 4 pts",
-                        "Rushing / Receiving TD: 6 pts",
-                        "Reception: 1 pt (Full PPR)",
-                        "Passing Yards: 1 pt per 25 yds",
-                        "Rush / Rec Yards: 1 pt per 10 yds",
-                        "Interception thrown: -2 pts",
-                        "Fumble lost: -2 pts"
+                        `Passing TD: ${r.passingTDPoints} pts`,
+                        `Rush TD: ${r.rushingTDPoints} pts`,
+                        `Rec TD: ${r.receivingTDPoints} pts`,
+                        `Reception: ${r.receptionPoints} pt`,
+                        ...(r.tepBonus > 0 ? [`TE Reception bonus: +${r.tepBonus} pt`] : []),
+                        `Passing Yards: 1 pt per ${r.passingYardsPerPoint} yds`,
+                        `Rush Yards: 1 pt per ${r.rushingYardsPerPoint} yds`,
+                        `Rec Yards: 1 pt per ${r.receivingYardsPerPoint} yds`,
+                        ...(r.passing300YardBonus > 0 ? [`300-yd game bonus: +${r.passing300YardBonus} pts`] : []),
+                        ...(r.passing400YardBonus > 0 ? [`400-yd game bonus: +${r.passing400YardBonus} pts`] : []),
+                        ...(r.rushing100YardBonus > 0 ? [`100-yd rush bonus: +${r.rushing100YardBonus} pts`] : []),
+                        ...(r.rushing200YardBonus > 0 ? [`200-yd rush bonus: +${r.rushing200YardBonus} pts`] : []),
+                        `INT thrown: ${r.passingINTPoints} pts`,
+                        `Fumble lost: ${r.fumbleLostPoints} pts`,
                     ]}
                 />
 
@@ -169,11 +178,11 @@ export const RulesPage: React.FC = () => {
                     icon={<Shield size={32} color="#eab308" />}
                     title="Defense / ST Scoring"
                     content={[
-                        "Sack: 1 pt",
-                        "Interception: 2 pts",
-                        "Fumble Recovery: 2 pts",
-                        "Safety: 2 pts",
-                        "Defensive / Return TD: 6 pts",
+                        `Sack: ${r.dstSackPoints} pt`,
+                        `Interception: ${r.dstINTPoints} pts`,
+                        `Fumble Recovery: ${r.dstFumbleRecPoints} pts`,
+                        `Safety: ${r.dstSafetyPoints} pts`,
+                        `Defensive / Return TD: ${r.dstTDPoints} pts`,
                         "0 pts allowed: +10 pts",
                         "1–6 pts allowed: +7 pts",
                         "7–13 pts allowed: +4 pts",
@@ -189,11 +198,11 @@ export const RulesPage: React.FC = () => {
                     icon={<Target size={32} color="#eab308" />}
                     title="Kicker Scoring"
                     content={[
-                        "FG 0–39 yds: 3 pts",
-                        "FG 40–49 yds: 4 pts",
-                        "FG 50+ yds: 5 pts",
-                        "Extra Point made: 1 pt",
-                        "Missed Extra Point: -1 pt"
+                        `FG 0–39 yds: ${r.fgUnder40Points} pts`,
+                        `FG 40–49 yds: ${r.fg40to49Points} pts`,
+                        `FG 50+ yds: ${r.fg50plusPoints} pts`,
+                        `Extra Point made: ${r.xpPoints} pt`,
+                        `Missed Extra Point: ${r.missedXPPoints} pt`,
                     ]}
                 />
 
