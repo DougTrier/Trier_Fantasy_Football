@@ -64,9 +64,24 @@ export type RelayStatus =
     | 'REGISTERED'      // Fully online on the relay
     | 'ERROR';
 
+/** One entry in the federated relay registry — known relays with live health data. */
+export interface RelayEndpoint {
+    url: string;
+    label: string;
+    region: string;
+    latencyMs: number | null;   // null = not yet measured or offline
+    online: boolean;
+    isBuiltIn: boolean;         // false = user-added via the Network page
+}
+
 // Default relay URL — can be overridden by the user in Network settings.
 // Stored in localStorage as 'trier_relay_url'; must be a wss:// URL.
 const DEFAULT_RELAY_URL = 'wss://trier-fantasy-relay.up.railway.app';
+
+// Known public relays — updated as the federation grows.
+const BUILT_IN_RELAYS: Array<Pick<RelayEndpoint, 'url' | 'label' | 'region'>> = [
+    { url: 'wss://trier-fantasy-relay.up.railway.app', label: 'Default (Railway)', region: 'US-East' },
+];
 
 /**
  * Reads the user-configured relay URL from localStorage, falling back to the
@@ -97,6 +112,10 @@ export const RelayService = {
     statusListeners: [] as ((status: RelayStatus, totalOnline: number) => void)[],
     lobbyListeners: [] as ((lobbies: RelayLobby[]) => void)[],
     peerListeners: [] as ((peer: RelayPeerInfo, event: 'joined' | 'left') => void)[],
+    _endpointListeners: [] as ((endpoints: RelayEndpoint[]) => void)[],
+
+    // Federation — live health data for all known relays
+    _relayEndpoints: [] as RelayEndpoint[],
 
     // Heartbeat + reconnect timers
     _pingTimer: null as ReturnType<typeof setInterval> | null,
@@ -117,8 +136,11 @@ export const RelayService = {
         this._connecting = true;
         this._intentionalDisconnect = false;
         this._clearReconnectTimer();
-        // Prefer explicit argument → user config → built-in default (always wss://)
-        this.relayUrl = url || getConfiguredRelayUrl();
+        // Fallback chain: explicit arg → pinned custom URL → best-health relay → built-in default
+        this.relayUrl = url
+            || (localStorage.getItem('trier_relay_url') ? getConfiguredRelayUrl() : null)
+            || (this._relayEndpoints.length > 0 ? this.getBestRelay() : null)
+            || DEFAULT_RELAY_URL;
         this._setStatus('CONNECTING');
         console.debug(`[Relay] Connecting to ${this.relayUrl}...`);
 
@@ -410,6 +432,91 @@ export const RelayService = {
             clearInterval(this._pingTimer);
             this._pingTimer = null;
         }
+    },
+
+    // ── Federation — relay health monitoring ──────────────────────────────────
+
+    /** Read user-added relay URLs from localStorage. */
+    _getCustomRelays(): Array<{ url: string; label: string }> {
+        try {
+            const raw = localStorage.getItem('trier_extra_relays');
+            return raw ? JSON.parse(raw) : [];
+        } catch { return []; }
+    },
+
+    /** Add a self-hosted relay to the persistent list and re-measure health. */
+    addCustomRelay(url: string, label: string) {
+        const list = this._getCustomRelays();
+        if (!list.some(r => r.url === url)) {
+            list.push({ url, label });
+            localStorage.setItem('trier_extra_relays', JSON.stringify(list));
+        }
+        this.refreshRelayHealth();
+    },
+
+    /** Remove a user-added relay by URL and update the health list. */
+    removeCustomRelay(url: string) {
+        const list = this._getCustomRelays().filter(r => r.url !== url);
+        localStorage.setItem('trier_extra_relays', JSON.stringify(list));
+        this._relayEndpoints = this._relayEndpoints.filter(e => e.url !== url);
+        this._endpointListeners.forEach(l => l([...this._relayEndpoints]));
+    },
+
+    /** Open a temporary WebSocket and measure time-to-open (proxy for RTT). */
+    measureRelayLatency(url: string): Promise<number | null> {
+        return new Promise(resolve => {
+            const start = Date.now();
+            try {
+                const ws = new WebSocket(url);
+                const timer = setTimeout(() => { try { ws.close(); } catch { /* ignore */ } resolve(null); }, 5_000);
+                ws.onopen = () => {
+                    clearTimeout(timer);
+                    const ms = Date.now() - start;
+                    try { ws.close(); } catch { /* ignore */ }
+                    resolve(ms);
+                };
+                ws.onerror = () => { clearTimeout(timer); resolve(null); };
+            } catch { resolve(null); }
+        });
+    },
+
+    /** Ping all known relays in parallel and notify endpoint listeners with results. */
+    async refreshRelayHealth() {
+        const custom = this._getCustomRelays().map(r => ({
+            url: r.url, label: r.label, region: 'Custom',
+            latencyMs: null as number | null, online: false, isBuiltIn: false,
+        }));
+        const all: RelayEndpoint[] = [
+            ...BUILT_IN_RELAYS.map(r => ({ ...r, latencyMs: null as number | null, online: false, isBuiltIn: true })),
+            ...custom,
+        ];
+
+        // Notify immediately with pending state so UI shows "measuring..."
+        this._relayEndpoints = all;
+        this._endpointListeners.forEach(l => l([...this._relayEndpoints]));
+
+        await Promise.all(all.map(async (ep, i) => {
+            const ms = await this.measureRelayLatency(ep.url);
+            all[i].latencyMs = ms;
+            all[i].online = ms !== null;
+        }));
+
+        this._relayEndpoints = all;
+        this._endpointListeners.forEach(l => l([...this._relayEndpoints]));
+    },
+
+    /** Return the URL of the lowest-latency online relay, or the default as fallback. */
+    getBestRelay(): string {
+        const online = this._relayEndpoints.filter(e => e.online && e.latencyMs !== null);
+        if (online.length === 0) return DEFAULT_RELAY_URL;
+        return online.reduce((a, b) => a.latencyMs! <= b.latencyMs! ? a : b).url;
+    },
+
+    /** Subscribe to relay endpoint health updates. Fires immediately with current state. */
+    onEndpoints(fn: (endpoints: RelayEndpoint[]) => void) {
+        this._endpointListeners.push(fn);
+        fn([...this._relayEndpoints]);
+        return () => { this._endpointListeners = this._endpointListeners.filter(l => l !== fn); };
     },
 
 };

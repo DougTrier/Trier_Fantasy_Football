@@ -19,7 +19,7 @@ import { DiscoveryService, type DiscoveredPeer } from '../services/DiscoveryServ
 import { GlobalEventStore } from '../services/EventStore';
 import { P2PService, type SignalPayload, type ConnectionState } from '../services/P2PService';
 import { DHTService } from '../services/DHTService';
-import { RelayService, type RelayStatus, type RelayLobby } from '../services/RelayService';
+import { RelayService, type RelayStatus, type RelayLobby, type RelayEndpoint } from '../services/RelayService';
 
 import { NodeIdentityPanel, type FriendEntry } from './network/NodeIdentityPanel';
 import { DiscoveredPeersGrid } from './network/DiscoveredPeersGrid';
@@ -45,6 +45,7 @@ export const NetworkPage: React.FC = () => {
     const [relayStatus, setRelayStatus] = useState<RelayStatus>('DISCONNECTED');
     const [lobbies, setLobbies] = useState<RelayLobby[]>([]);
     const [relayOnline, setRelayOnline] = useState(0);
+    const [relayEndpoints, setRelayEndpoints] = useState<RelayEndpoint[]>([]);
 
     // Right-column active tab
     const [activeTab, setActiveTab] = useState<'peers' | 'advanced'>('peers');
@@ -187,16 +188,19 @@ export const NetworkPage: React.FC = () => {
         return () => { if (turnSavedTimer.current) clearTimeout(turnSavedTimer.current); };
     }, []);
 
-    // Relay subscriptions
+    // Relay subscriptions + initial health measurement
     useEffect(() => {
         const unsubStatus = RelayService.onStatus((status, totalOnline) => {
             setRelayStatus(status);
             setRelayOnline(totalOnline);
         });
         const unsubLobbies = RelayService.onLobbies(setLobbies);
+        const unsubEndpoints = RelayService.onEndpoints(setRelayEndpoints);
+        RelayService.refreshRelayHealth();
         return () => {
             unsubStatus();
             unsubLobbies();
+            unsubEndpoints();
         };
     }, []);
 
@@ -285,6 +289,9 @@ export const NetworkPage: React.FC = () => {
             RelayService.disconnect();
         }
     };
+
+    const handleAddRelay = (url: string, label: string) => RelayService.addCustomRelay(url, label);
+    const handleRemoveRelay = (url: string) => RelayService.removeCustomRelay(url);
 
     // Persist custom relay URL (or clear it) — RelayService reads this on next connect
     const handleSaveRelayUrl = () => {
@@ -454,6 +461,10 @@ export const NetworkPage: React.FC = () => {
                                 lobbies={lobbies}
                                 peers={peers}
                                 onRelayToggle={handleRelayToggle}
+                                relayEndpoints={relayEndpoints}
+                                onRefreshHealth={() => RelayService.refreshRelayHealth()}
+                                onAddRelay={handleAddRelay}
+                                onRemoveRelay={handleRemoveRelay}
                             />
                         </div>
                     )}

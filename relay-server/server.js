@@ -35,6 +35,11 @@ const { WebSocketServer, WebSocket } = require('ws');
 const http = require('http');
 
 const PORT = process.env.PORT || 3001;
+const RELAY_REGION = process.env.RELAY_REGION || 'Global';
+// Comma-separated wss:// URLs of other relays this one knows about (for federation)
+const SIBLING_RELAYS = process.env.RELAY_PEERS
+    ? process.env.RELAY_PEERS.split(',').map(s => s.trim()).filter(Boolean)
+    : [];
 
 // ─── Rate limiting ────────────────────────────────────────────────────────────
 // Per-IP sliding-window counter. Allows burst up to RATE_LIMIT_MAX messages
@@ -130,11 +135,16 @@ function getLobbyList() {
     return Array.from(byLeague.values());
 }
 
-// ─── HTTP health check (so Railway/Render know the server is alive) ───────────
+// ─── HTTP server (health + federation discovery endpoints) ────────────────────
 const httpServer = http.createServer((req, res) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
     if (req.url === '/health') {
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ status: 'ok', peers: peers.size, uptime: process.uptime() }));
+        res.end(JSON.stringify({ status: 'ok', peers: peers.size, region: RELAY_REGION, uptime: process.uptime() }));
+    } else if (req.url === '/relays') {
+        // Federation: return known sibling relays so clients can discover the network
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ region: RELAY_REGION, siblings: SIBLING_RELAYS }));
     } else {
         res.writeHead(200, { 'Content-Type': 'text/plain' });
         res.end('Trier Fantasy Football Relay Server');

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Shield, Globe, Radio, Check, ChevronDown, ChevronUp } from 'lucide-react';
-import { type RelayStatus, type RelayLobby } from '../../services/RelayService';
+import { Shield, Globe, Radio, Check, ChevronDown, ChevronUp, RefreshCw, Plus, Trash2, Server } from 'lucide-react';
+import { type RelayStatus, type RelayLobby, type RelayEndpoint } from '../../services/RelayService';
 import { type DiscoveredPeer } from '../../services/DiscoveryService';
 
 interface Props {
@@ -20,6 +20,11 @@ interface Props {
     lobbies: RelayLobby[];
     peers: DiscoveredPeer[];
     onRelayToggle: () => void;
+    // Federation
+    relayEndpoints: RelayEndpoint[];
+    onRefreshHealth: () => void;
+    onAddRelay: (url: string, label: string) => void;
+    onRemoveRelay: (url: string) => void;
 }
 
 export const RelayPanel: React.FC<Props> = ({
@@ -37,8 +42,16 @@ export const RelayPanel: React.FC<Props> = ({
     lobbies,
     peers,
     onRelayToggle,
+    relayEndpoints,
+    onRefreshHealth,
+    onAddRelay,
+    onRemoveRelay,
 }) => {
     const [showTurnConfig, setShowTurnConfig] = useState(false);
+    const [showSelfHost, setShowSelfHost] = useState(false);
+    const [newRelayUrl, setNewRelayUrl] = useState('');
+    const [newRelayLabel, setNewRelayLabel] = useState('');
+    const [addCopied, setAddCopied] = useState(false);
 
     const statusColor: Record<RelayStatus, string> = {
         DISCONNECTED: '#6b7280',
@@ -50,8 +63,156 @@ export const RelayPanel: React.FC<Props> = ({
     const isActive = relayStatus !== 'DISCONNECTED' && relayStatus !== 'ERROR';
     const relayPeers = peers.filter(p => p.transport === 'Relay');
 
+    // Latency badge colour: green <80ms, yellow <250ms, red otherwise
+    const latencyColor = (ms: number | null, online: boolean) => {
+        if (!online || ms === null) return '#6b7280';
+        if (ms < 80) return '#4ade80';
+        if (ms < 250) return '#facc15';
+        return '#f87171';
+    };
+
+    const handleAddRelay = () => {
+        const url = newRelayUrl.trim();
+        const label = newRelayLabel.trim() || url;
+        if (!url.startsWith('wss://')) return;
+        onAddRelay(url, label);
+        setNewRelayUrl('');
+        setNewRelayLabel('');
+    };
+
+    const dockerCmd = `docker run -d -p 3001:3001 \\
+  -e RELAY_REGION=US-East \\
+  --name trier-relay \\
+  $(docker build -q .)`;
+
     return (
         <>
+            {/* ── RELAY NETWORK — federation health grid ───────────────────────── */}
+            <div style={{
+                marginBottom: '2rem',
+                border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: '12px',
+                overflow: 'hidden',
+                background: 'rgba(10,14,26,0.82)',
+                backdropFilter: 'blur(8px)',
+            }}>
+                <div style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '0.85rem 1.5rem',
+                    background: 'rgba(0,0,0,0.25)',
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                        <Server size={15} color="#60a5fa" />
+                        <span style={{ fontSize: '0.8rem', fontWeight: 'bold', letterSpacing: '0.08em', color: '#9ca3af', textTransform: 'uppercase' }}>
+                            Relay Network
+                        </span>
+                        <span style={{ fontSize: '0.7rem', color: '#6b7280' }}>
+                            — auto-selects best on GO ONLINE
+                        </span>
+                    </div>
+                    <button
+                        onClick={onRefreshHealth}
+                        title="Re-measure relay latency"
+                        style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', padding: '0.2rem 0.5rem' }}
+                    >
+                        <RefreshCw size={13} /> Refresh
+                    </button>
+                </div>
+
+                <div style={{ padding: '0.75rem 1.5rem' }}>
+                    {/* Health grid */}
+                    {relayEndpoints.length === 0 ? (
+                        <p style={{ margin: 0, color: '#6b7280', fontSize: '0.85rem' }}>Click Refresh to measure relay latency.</p>
+                    ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            {relayEndpoints.map(ep => (
+                                <div key={ep.url} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.4rem 0.6rem', background: 'rgba(255,255,255,0.03)', borderRadius: '6px' }}>
+                                    {/* Status dot */}
+                                    <div style={{
+                                        width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                                        background: latencyColor(ep.latencyMs, ep.online),
+                                        boxShadow: ep.online ? `0 0 5px ${latencyColor(ep.latencyMs, ep.online)}` : undefined,
+                                    }} />
+                                    {/* Label + region */}
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <span style={{ fontSize: '0.85rem', color: '#d1d5db', fontWeight: 600 }}>{ep.label}</span>
+                                        <span style={{ marginLeft: '0.5rem', fontSize: '0.72rem', color: '#6b7280' }}>{ep.region}</span>
+                                    </div>
+                                    {/* Latency badge */}
+                                    <span style={{ fontSize: '0.78rem', color: latencyColor(ep.latencyMs, ep.online), fontFamily: 'monospace', minWidth: '3.5rem', textAlign: 'right' }}>
+                                        {ep.latencyMs === null ? (ep.online === false && relayEndpoints.some(e => e.latencyMs !== null) ? 'offline' : '…') : `${ep.latencyMs} ms`}
+                                    </span>
+                                    {/* Remove button (custom relays only) */}
+                                    {!ep.isBuiltIn && (
+                                        <button onClick={() => onRemoveRelay(ep.url)} title="Remove relay" style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', padding: '0 0.25rem', display: 'flex', alignItems: 'center' }}>
+                                            <Trash2 size={13} />
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Add custom relay */}
+                    <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                        <input
+                            value={newRelayUrl}
+                            onChange={e => setNewRelayUrl(e.target.value)}
+                            placeholder="wss://your-relay.example.com"
+                            style={{ flex: 2, padding: '0.35rem 0.6rem', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', borderRadius: '5px', fontSize: '0.78rem', fontFamily: 'monospace' }}
+                        />
+                        <input
+                            value={newRelayLabel}
+                            onChange={e => setNewRelayLabel(e.target.value)}
+                            placeholder="Label (optional)"
+                            style={{ flex: 1, padding: '0.35rem 0.6rem', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', borderRadius: '5px', fontSize: '0.78rem' }}
+                        />
+                        <button
+                            onClick={handleAddRelay}
+                            disabled={!newRelayUrl.startsWith('wss://')}
+                            style={{ padding: '0.35rem 0.75rem', background: newRelayUrl.startsWith('wss://') ? '#1d4ed8' : 'rgba(255,255,255,0.05)', border: 'none', color: newRelayUrl.startsWith('wss://') ? '#fff' : '#4b5563', borderRadius: '5px', cursor: newRelayUrl.startsWith('wss://') ? 'pointer' : 'not-allowed', fontWeight: 'bold', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+                        >
+                            <Plus size={12} /> Add
+                        </button>
+                    </div>
+                </div>
+
+                {/* Self-hosting instructions — collapsible */}
+                <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                    <button
+                        onClick={() => setShowSelfHost(v => !v)}
+                        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.6rem 1.5rem', background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', fontSize: '0.75rem', letterSpacing: '0.06em' }}
+                    >
+                        <span>SELF-HOST YOUR OWN RELAY</span>
+                        {showSelfHost ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                    </button>
+                    {showSelfHost && (
+                        <div style={{ padding: '0.5rem 1.5rem 1rem' }}>
+                            <p style={{ margin: '0 0 0.5rem', color: '#9ca3af', fontSize: '0.82rem', lineHeight: 1.6 }}>
+                                Run the relay server from the <code style={{ color: '#60a5fa' }}>relay-server/</code> directory in the repo.
+                                Anyone can host their own — build the Docker image and deploy anywhere.
+                            </p>
+                            <div style={{ position: 'relative', background: 'rgba(0,0,0,0.5)', borderRadius: '6px', padding: '0.75rem 3rem 0.75rem 1rem' }}>
+                                <pre style={{ margin: 0, color: '#4ade80', fontFamily: 'monospace', fontSize: '0.78rem', whiteSpace: 'pre-wrap' }}>{dockerCmd}</pre>
+                                <button
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(dockerCmd);
+                                        setAddCopied(true);
+                                        setTimeout(() => setAddCopied(false), 2000);
+                                    }}
+                                    style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', background: addCopied ? 'rgba(74,222,128,0.2)' : 'rgba(255,255,255,0.08)', border: 'none', color: addCopied ? '#4ade80' : '#9ca3af', borderRadius: '4px', padding: '0.2rem 0.4rem', cursor: 'pointer', fontSize: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                                >
+                                    {addCopied ? <><Check size={11} /> Copied</> : 'Copy'}
+                                </button>
+                            </div>
+                            <p style={{ margin: '0.5rem 0 0', color: '#6b7280', fontSize: '0.75rem' }}>
+                                Set <code style={{ color: '#fbbf24' }}>RELAY_REGION</code> to your region (e.g. <code style={{ color: '#fbbf24' }}>EU-West</code>, <code style={{ color: '#fbbf24' }}>US-West</code>) and add the <code>wss://</code> URL above to share it with your league.
+                            </p>
+                        </div>
+                    )}
+                </div>
+            </div>
+
             {/* TURN SERVER CONFIG */}
             <div style={{
                 marginBottom: '2rem',
