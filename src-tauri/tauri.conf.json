@@ -8,7 +8,7 @@
     },
     "package": {
         "productName": "Trier Fantasy Football 2026",
-        "version": "1.2.0"
+        "version": "3.3.0"
     },
     "tauri": {
         "allowlist": {
