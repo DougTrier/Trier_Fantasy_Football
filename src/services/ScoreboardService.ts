@@ -87,11 +87,44 @@ export interface TeamSnapshot {
     } | null;
 }
 
+export interface TeamBoxScore {
+    abbr: string;
+    passingYards: number;
+    rushingYards: number;
+    totalYards: number;
+    turnovers: number;
+}
+
+export interface ScoringPlay {
+    teamAbbr: string;
+    text: string;         // full play description e.g. "P.Mahomes 15 Yd Pass"
+    type: string;         // "Touchdown", "Field Goal", "Safety"
+    quarter: number;
+    clockDisplay: string; // "7:42"
+    homeScore: number;    // running score after this play
+    awayScore: number;
+}
+
+export interface GameDetail {
+    eventId: string;
+    homeTeam: string;
+    awayTeam: string;
+    homeScore: number;
+    awayScore: number;
+    status: 'pre' | 'in' | 'post';
+    statusDetail: string;
+    homeBox: TeamBoxScore | null;
+    awayBox: TeamBoxScore | null;
+    scoringPlays: ScoringPlay[];
+}
+
 // ─── Cache ────────────────────────────────────────────────────────────────────
 
 const RECORDS_TTL  = 60 * 60 * 1000;  // 1 hour — standings don't change often
 const GAMES_TTL    = 60 * 1000;        // 60 s   — live scores need to be fresh
 const SNAPSHOT_TTL = 30 * 60 * 1000;  // 30 min — schedule is stable within a day
+const DETAIL_TTL_LIVE  = 30 * 1000;        // 30 s  — scoring plays change during live games
+const DETAIL_TTL_FINAL = 5 * 60 * 1000;   // 5 min — completed game data is stable
 
 let recordsCache: Record<string, TeamRecord> = {};
 let recordsLastFetch = 0;
@@ -100,6 +133,7 @@ let gamesCache: LiveGame[] = [];
 let gamesLastFetch = 0;
 
 const snapshotCache: Record<string, { data: TeamSnapshot; ts: number }> = {};
+const gameDetailCache: Record<string, { data: GameDetail; ts: number }> = {};
 
 // ─── Subscribers ──────────────────────────────────────────────────────────────
 
@@ -332,6 +366,74 @@ export const ScoreboardService = {
 
         snapshotCache[abbr] = { data: snap, ts: Date.now() };
         return snap;
+    },
+
+    /**
+     * Fetches full game detail (box score + scoring plays) for a given ESPN event ID.
+     * Uses a shorter TTL while the game is live so scoring plays stay current.
+     */
+    async getGameDetail(eventId: string): Promise<GameDetail | null> {
+        const base = gamesCache.find(g => g.id === eventId);
+        if (!base) return null;
+
+        const ttl = base.status === 'in' ? DETAIL_TTL_LIVE : DETAIL_TTL_FINAL;
+        const cached = gameDetailCache[eventId];
+        if (cached && Date.now() - cached.ts < ttl) return cached.data;
+
+        // Seed from cached game so the modal shows something while fetching
+        const detail: GameDetail = {
+            eventId,
+            homeTeam: base.homeTeam, awayTeam: base.awayTeam,
+            homeScore: base.homeScore, awayScore: base.awayScore,
+            status: base.status, statusDetail: base.statusDetail,
+            homeBox: null, awayBox: null, scoringPlays: [],
+        };
+
+        try {
+            const res = await fetch(
+                `https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=${eventId}`
+            );
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+
+            // Parse per-team statistics from the boxscore node
+            for (const t of (data?.boxscore?.teams ?? [])) {
+                const abbr: string = t?.team?.abbreviation?.toUpperCase() ?? '';
+                const stats: any[] = t?.statistics ?? [];
+                const getStat = (name: string) =>
+                    parseInt(stats.find((s: any) => s.name === name)?.displayValue ?? '0', 10) || 0;
+                const box: TeamBoxScore = {
+                    abbr,
+                    passingYards: getStat('passingYards'),
+                    rushingYards:  getStat('rushingYards'),
+                    totalYards:    getStat('totalYards'),
+                    turnovers:     getStat('turnovers'),
+                };
+                if (abbr === base.homeTeam) detail.homeBox = box;
+                else detail.awayBox = box;
+            }
+
+            // Parse scoring play timeline (each entry = one scoring event)
+            for (const play of (data?.scoringPlays ?? [])) {
+                const clockVal: number = play?.clock?.value ?? 0;
+                const mm = Math.floor(clockVal / 60);
+                const ss = String(clockVal % 60).padStart(2, '0');
+                detail.scoringPlays.push({
+                    teamAbbr:     play?.team?.abbreviation?.toUpperCase() ?? '',
+                    text:         play?.text ?? '',
+                    type:         play?.type?.text ?? '',
+                    quarter:      play?.period?.number ?? 0,
+                    clockDisplay: `${mm}:${ss}`,
+                    homeScore:    play?.homeScore ?? 0,
+                    awayScore:    play?.awayScore ?? 0,
+                });
+            }
+        } catch (e) {
+            console.warn(`[ScoreboardService] Game detail fetch failed for ${eventId}:`, e);
+        }
+
+        gameDetailCache[eventId] = { data: detail, ts: Date.now() };
+        return detail;
     },
 
     /** Full team name for display. */

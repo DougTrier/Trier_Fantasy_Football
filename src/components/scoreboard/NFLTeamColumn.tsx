@@ -53,9 +53,9 @@ const TeamRow: React.FC<{
             style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px',
-                padding: '8px 8px',
-                borderRadius: '8px',
+                gap: '7px',
+                padding: '7px 7px',
+                borderRadius: '7px',
                 cursor: 'pointer',
                 marginBottom: '3px',
                 flexDirection: 'row', // logo always left so division label center matches visual center
@@ -80,7 +80,7 @@ const TeamRow: React.FC<{
                 src={theme.logoUrl}
                 alt={abbr}
                 style={{
-                    width: 36, height: 36,
+                    width: 32, height: 32,
                     objectFit: 'contain',
                     flexShrink: 0,
                     filter: isLive ? `drop-shadow(0 0 5px ${theme.primary})` : 'none',
@@ -92,7 +92,7 @@ const TeamRow: React.FC<{
             {/* Name + record stacked vertically — record sits tight under the abbr */}
             <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{
-                    fontSize: '0.85rem', fontWeight: 800,
+                    fontSize: '0.76rem', fontWeight: 800,
                     color: isSelected ? '#fff' : '#e5e7eb',
                     letterSpacing: '0.5px', lineHeight: 1,
                     textAlign: align === 'right' ? 'right' : 'left',
@@ -100,7 +100,7 @@ const TeamRow: React.FC<{
                     {abbr}
                 </div>
                 <div style={{
-                    fontSize: '0.68rem',
+                    fontSize: '0.61rem',
                     color: isLive ? '#ef4444' : '#6b7280',
                     fontWeight: isLive ? 700 : 500,
                     lineHeight: 1, marginTop: '2px',
@@ -137,6 +137,7 @@ export const NFLTeamColumn: React.FC<NFLTeamColumnProps> = ({
     return (
         // height: 100% fills the stretched grid cell; flex column lets logo stay fixed
         // while the divisions area grows to fill remaining space
+        // overflowY: auto lets the column scroll if 16 teams exceed the 85% height cap
         <div style={{
             width: '100%',
             maxWidth: '200px',
@@ -146,27 +147,28 @@ export const NFLTeamColumn: React.FC<NFLTeamColumnProps> = ({
             display: 'flex',
             flexDirection: 'column',
             overflowX: 'hidden',
+            overflowY: 'auto',
+            scrollbarWidth: 'none', // hide scrollbar — content still scrollable
         }}>
-            {/* Conference logo — centered over the column, slightly larger than v1 */}
+            {/* Conference logo — 10% smaller than original to give teams room to fit */}
             <div style={{
-                marginBottom: '10px',
+                marginBottom: '8px',
                 textAlign: 'center',
                 padding: '0 8px',
             }}>
                 <img
                     src={conference === 'AFC' ? afcLogo : nfcLogo}
                     alt={conference}
-                    style={{ height: '50px', width: 'auto', objectFit: 'contain', opacity: 0.9 }}
+                    style={{ height: '45px', width: 'auto', objectFit: 'contain', opacity: 0.9 }}
                 />
             </div>
 
-            {/* Divisions fill remaining height; space-evenly distributes groups top-to-bottom */}
+            {/* Divisions fill remaining height; space-evenly when content fits, visible overflow otherwise */}
             <div style={{
                 flex: 1,
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-evenly',
-                overflow: 'hidden',
             }}>
                 {Object.entries(divisions).map(([divName, teams]) => (
                     <div key={divName}>
@@ -175,10 +177,10 @@ export const NFLTeamColumn: React.FC<NFLTeamColumnProps> = ({
                             display: 'flex',
                             justifyContent: 'center',
                             width: '100%',
-                            marginBottom: '5px',
+                            marginBottom: '4px',
                         }}>
                             <span style={{
-                                fontSize: '0.9rem',
+                                fontSize: '0.8rem',
                                 fontWeight: 900,
                                 // AFC = neon red, NFC = neon blue
                                 color: conference === 'AFC' ? '#ff3333' : '#00d4ff',

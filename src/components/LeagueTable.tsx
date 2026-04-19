@@ -31,10 +31,12 @@ import leatherTexture from '../assets/leather_texture.png';
 // SyncService provides both the listener API and the sendChat helper.
 import { SyncService, type SidebandMessage, type ChatPayload } from '../utils/SyncService';
 import { AnimatePresence, motion } from 'framer-motion';
-// NFL Intelligence Panel — scoreboard service + column/snapshot components
+// NFL Intelligence Panel — scoreboard service + column/snapshot/strip/modal components
 import { ScoreboardService, type TeamSnapshot, AFC_DIVISIONS, NFC_DIVISIONS } from '../services/ScoreboardService';
 import { NFLTeamColumn } from './scoreboard/NFLTeamColumn';
 import { TeamSnapshotPanel } from './scoreboard/TeamSnapshotPanel';
+import { LiveScoreboardStrip } from './scoreboard/LiveScoreboardStrip';
+import { GameDetailModal } from './scoreboard/GameDetailModal';
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 // ChatMessage is local-only — it's never stored in League state or synced.
@@ -71,6 +73,8 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({ league, myTeamName }) 
     // scoreboardTick increments on every ScoreboardService notification,
     // forcing re-renders so live score badges stay current.
     const [scoreboardTick, setScoreboardTick] = useState(0);
+    // selectedGameId drives the GameDetailModal overlay
+    const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
 
     useEffect(() => {
         // Initial data load + subscribe to updates
@@ -190,6 +194,28 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({ league, myTeamName }) 
     }
 
     /**
+     * Returns a colored dot descriptor if any starter/bench player on this
+     * fantasy team has a live or upcoming game today. Green = actively playing,
+     * amber = pre-game kickoff today.
+     */
+    const getGameDot = (team: typeof sortedTeams[0]) => {
+        const players = [
+            team.roster?.qb, team.roster?.rb1, team.roster?.rb2,
+            team.roster?.wr1, team.roster?.wr2, team.roster?.te,
+            team.roster?.flex, team.roster?.k, team.roster?.dst,
+            ...(team.bench ?? []),
+        ].filter(Boolean);
+        let hasPre = false;
+        for (const p of players) {
+            if (!p?.team) continue;
+            const game = ScoreboardService.getLiveGame(p.team.toUpperCase());
+            if (game?.status === 'in')  return { color: '#10b981', title: 'Players active now' };
+            if (game?.status === 'pre') hasPre = true;
+        }
+        return hasPre ? { color: '#f59e0b', title: 'Players have games today' } : null;
+    };
+
+    /**
      * Returns rank-specific styling for gold/silver/bronze podium positions.
      * Teams ranked 4th and below get a neutral dark background.
      */
@@ -201,6 +227,7 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({ league, myTeamName }) 
     };
 
     return (
+        <>
         <div className="responsive-container" style={{
             background: 'transparent',
             display: 'grid',
@@ -485,6 +512,12 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({ league, myTeamName }) 
                         </h2>
                         <div style={{ height: '4px', width: '80px', background: '#eab308', margin: '10px auto', borderRadius: '2px', boxShadow: '0 0 15px rgba(234, 179, 8, 0.6)' }} />
                     </div>
+                    {/* Live game cards — hidden when no games today */}
+                    <LiveScoreboardStrip
+                        games={ScoreboardService.getLiveGames()}
+                        onGameClick={setSelectedGameId}
+                    />
+
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {sortedTeams.map((team, index) => {
                             const style = getRankStyle(index);
@@ -516,7 +549,11 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({ league, myTeamName }) 
                                         {style.icon ? <img src={style.icon} alt="Trophy" style={{ width: '30px', height: '30px', objectFit: 'contain' }} /> : <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Trophy size={14} color="#9ca3af" /></div>}
                                     </div>
                                     <div style={{ flex: 1, paddingLeft: '10px' }}>
-                                        <div style={{ fontSize: 'clamp(0.8rem, 1.2vw, 1.1rem)', fontWeight: 800, color: '#fff', fontFamily: "'Graduate', sans-serif" }}>{team.name}</div>
+                                        <div style={{ fontSize: 'clamp(0.8rem, 1.2vw, 1.1rem)', fontWeight: 800, color: '#fff', fontFamily: "'Graduate', sans-serif", display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            {team.name}
+                                            {/* Colored dot when any player on this team has an active/upcoming game */}
+                                            {(() => { const dot = getGameDot(team); return dot ? <span title={dot.title} style={{ width: 7, height: 7, borderRadius: '50%', background: dot.color, flexShrink: 0, boxShadow: `0 0 6px ${dot.color}` }} /> : null; })()}
+                                        </div>
                                         <div style={{ fontSize: '0.75rem', color: '#d1d5db' }}>Owner: {team.ownerName} {style.label && <span style={{ marginLeft: '6px', fontSize: '0.55rem', fontWeight: 900, color: '#000', padding: '1px 4px', borderRadius: '3px', background: style.border, textTransform: 'uppercase' }}>{style.label}</span>}</div>
                                     </div>
                                     <div style={{ textAlign: 'right' }}>
@@ -569,5 +606,13 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({ league, myTeamName }) 
                 )}
             </div>
         </div>
+        {/* Game detail modal — fixed overlay, rendered outside the grid */}
+        {selectedGameId && (
+            <GameDetailModal
+                eventId={selectedGameId}
+                onClose={() => setSelectedGameId(null)}
+            />
+        )}
+        </>
     );
 };
