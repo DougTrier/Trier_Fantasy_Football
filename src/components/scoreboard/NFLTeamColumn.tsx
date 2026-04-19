@@ -144,6 +144,7 @@ export const NFLTeamColumn: React.FC<NFLTeamColumnProps> = ({
             flexDirection: 'column',
             overflowX: 'hidden',
             overflowY: 'visible',
+            zoom: 1.1,
         }}>
             {/* Conference logo centered at top */}
             <div style={{

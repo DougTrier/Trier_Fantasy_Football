@@ -535,7 +535,7 @@ export const LeagueTable: React.FC<LeagueTableProps> = ({ league, myTeamName }) 
                         onGameClick={setSelectedGameId}
                     />
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', zoom: 1.1 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         {sortedTeams.map((team, index) => {
                             const style = getRankStyle(index);
                             return (
