@@ -28,11 +28,14 @@ import { PlayerTradingCard } from './PlayerTradingCard';
 import leatherTexture from '../assets/leather_texture.png';
 // ScoringEngine calculates actual points for the PERF_DIFF badge on each card.
 import { ScoringEngine } from '../utils/ScoringEngine';
+import { scrapePlayerPhoto } from '../utils/scraper';
 
 interface PlayersPageProps {
     players: Player[];
     onAddPlayers: (newPlayers: Player[]) => void;
     onMakeOffer?: (player: Player) => void;
+    // Called after a successful photo refresh so the parent can persist the update
+    onUpdatePlayer?: (updated: Player) => void;
 }
 
 type SortOption = 'PROJ' | 'ADP' | 'PASS_YDS' | 'RUSH_YDS' | 'REC_YDS' | 'GAMES' | 'NAME' | 'PERF_DIFF';
@@ -48,7 +51,7 @@ const POS_COLORS: Record<string, string> = {
     K: '#6b7280', DST: '#ef4444', LB: '#f97316', DL: '#ec4899', DB: '#06b6d4',
 };
 
-export const PlayersPage: React.FC<PlayersPageProps> = ({ players, onMakeOffer }) => {
+export const PlayersPage: React.FC<PlayersPageProps> = ({ players, onMakeOffer, onUpdatePlayer }) => {
     const [teamFilter, setTeamFilter] = useState('ALL');
     const [posFilter, setPosFilter] = useState('ALL');
     // viewingPlayer: when set, opens PlayerTradingCard full-screen overlay.
@@ -285,6 +288,12 @@ export const PlayersPage: React.FC<PlayersPageProps> = ({ players, onMakeOffer }
                                     actionLabel="View Details"
                                     highlightStat={sortBy === 'PERF_DIFF' ? { label: 'PERF DIFF', value: p.performance_differential || 0 } : highlight}
                                     onMakeOffer={onMakeOffer ? () => onMakeOffer(p) : undefined}
+                                    onRefreshPhoto={onUpdatePlayer ? async (target) => {
+                                        // Try Wikipedia first for a high-res shot; fall back to Sleeper CDN
+                                        const freshUrl = await scrapePlayerPhoto(`${target.firstName} ${target.lastName}`)
+                                            || `https://sleepercdn.com/content/nfl/players/thumb/${target.id}.jpg`;
+                                        onUpdatePlayer({ ...target, photoUrl: freshUrl });
+                                    } : undefined}
                                 />
                             </div>
                         );

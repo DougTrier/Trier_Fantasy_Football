@@ -1811,6 +1811,9 @@ export default function App() {
             setUserTeams(prev => prev.map(t => t.id === updatedTeam.id ? updatedTeam : t));
           }}
           onMakeOffer={handleOpenTradeOffer}
+          onUpdatePlayer={(updated) =>
+            setAvailablePlayers(prev => prev.map(p => p.id === updated.id ? updated : p))
+          }
         />
       )}
 

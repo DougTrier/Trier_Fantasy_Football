@@ -19,11 +19,10 @@
  * highlightStat: optional floating badge (rotated "sticker") shown for
  * top-ranked players in the PlayerSelector — drives at-a-glance sorting context.
  */
-// PlayerCard.tsx — no React import needed because JSX is handled by the
-// project's Vite plugin with automatic JSX transform (react-jsx runtime).
-// TypeScript will infer React.FC types from @types/react global declarations.
+// PlayerCard.tsx — useState is needed for the refresh-photo loading state.
+import React, { useState } from 'react';
 import type { Player } from '../types';
-import { Twitter, Instagram } from 'lucide-react';
+import { Twitter, Instagram, RefreshCw } from 'lucide-react';
 
 // GoldenSeal — SVG ownership badge shown in the top-right corner when showSeal=true.
 // The metalEmbossPC SVG filter adds specular highlight to simulate a stamped medal.
@@ -79,6 +78,8 @@ interface PlayerCardProps {
     };
     onMakeOffer?: () => void;
     showSeal?: boolean;
+    // Called when user clicks the photo refresh button — parent supplies new URL
+    onRefreshPhoto?: (player: Player) => Promise<void>;
 }
 
 /**
@@ -86,9 +87,10 @@ interface PlayerCardProps {
  * event handlers so they degrade gracefully if CSS classes are absent.
  * All font sizes use clamp() for fluid scaling across the card grid.
  */
-export const PlayerCard: React.FC<PlayerCardProps> = ({ player, onAction, actionLabel, variant = 'large', highlightStat, onMakeOffer, showSeal }) => {
+export const PlayerCard: React.FC<PlayerCardProps> = ({ player, onAction, actionLabel, variant = 'large', highlightStat, onMakeOffer, showSeal, onRefreshPhoto }) => {
     // isLarge drives clamp() size ranges throughout the component.
     const isLarge = variant === 'large';
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
     return (
         <div className={`player-card ${variant}`} style={{
@@ -335,37 +337,72 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({ player, onAction, action
             {/* ACTION AREA: rendered only when onAction is provided.
                 e.stopPropagation() prevents the card's own onClick from firing too. */}
             {onAction && (
-                <button
-                    onClick={(e) => { e.stopPropagation(); onAction(); }}
-                    title={actionLabel || "View player profile"}
-                    className="btn"
-                    style={{
-                        fontSize: '0.75rem',
-                        padding: '8px 12px',
-                        width: '100%',
-                        marginTop: '12px',
-                        background: '#1f2937', // Dark button
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                        position: 'relative',
-                        zIndex: 2
-                    }}
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.background = '#000';
-                        e.currentTarget.style.transform = 'translateY(-1px)';
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.background = '#1f2937';
-                        e.currentTarget.style.transform = 'translateY(0)';
-                    }}
-                >
-                    {actionLabel || 'Select Player'}
-                </button>
+                <div style={{ display: 'flex', gap: '6px', width: '100%', marginTop: '12px', position: 'relative', zIndex: 2 }}>
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onAction(); }}
+                        title={actionLabel || "View player profile"}
+                        className="btn"
+                        style={{
+                            fontSize: '0.75rem',
+                            padding: '8px 12px',
+                            flex: 1,
+                            background: '#1f2937',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '8px',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.background = '#000';
+                            e.currentTarget.style.transform = 'translateY(-1px)';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.background = '#1f2937';
+                            e.currentTarget.style.transform = 'translateY(0)';
+                        }}
+                    >
+                        {actionLabel || 'Select Player'}
+                    </button>
+
+                    {/* Photo refresh — fetches a fresh headshot on demand */}
+                    {onRefreshPhoto && (
+                        <button
+                            onClick={async (e) => {
+                                e.stopPropagation();
+                                setIsRefreshing(true);
+                                await onRefreshPhoto(player);
+                                setIsRefreshing(false);
+                            }}
+                            title="Refresh player photo"
+                            disabled={isRefreshing}
+                            style={{
+                                background: '#1f2937',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '8px',
+                                padding: '8px 10px',
+                                cursor: isRefreshing ? 'default' : 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexShrink: 0,
+                                opacity: isRefreshing ? 0.6 : 1,
+                                transition: 'all 0.2s',
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                            }}
+                            onMouseEnter={(e) => { if (!isRefreshing) e.currentTarget.style.background = '#000'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = '#1f2937'; }}
+                        >
+                            <RefreshCw
+                                size={13}
+                                style={{ animation: isRefreshing ? 'tff-spin 0.8s linear infinite' : 'none' }}
+                            />
+                        </button>
+                    )}
+                </div>
             )}
         </div>
     );

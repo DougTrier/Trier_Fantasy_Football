@@ -101,7 +101,12 @@ button:focus-visible {
    -1px  1px 2px #000;
 }
 
-/* Rotation Animation */
+/* Refresh icon spin — used by PlayerCard refresh button */
+@keyframes tff-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
 /* Themed dialog slide-in */
 @keyframes dialogIn {
   from { opacity: 0; transform: scale(0.95) translateY(-8px); }
