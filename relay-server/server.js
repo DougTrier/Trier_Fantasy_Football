@@ -36,9 +36,51 @@ const http = require('http');
 
 const PORT = process.env.PORT || 3001;
 
+// ─── Rate limiting ────────────────────────────────────────────────────────────
+// Per-IP sliding-window counter. Allows burst up to RATE_LIMIT_MAX messages
+// within RATE_WINDOW_MS, then drops excess with an ERROR response.
+const RATE_WINDOW_MS  = 60_000; // 1 minute window
+const RATE_LIMIT_MAX  = 120;    // max messages per IP per window
+const MAX_MSG_BYTES   = 16_384; // 16 KB hard cap per message
+
+// Map<ip, { count: number, windowStart: number }>
+const rateLimitMap = new Map();
+
+/**
+ * Returns true if the IP is within rate limits and increments its counter.
+ * Resets the window automatically when it expires.
+ */
+function checkRateLimit(ip) {
+    const now = Date.now();
+    const entry = rateLimitMap.get(ip);
+    if (!entry || now - entry.windowStart > RATE_WINDOW_MS) {
+        // Start a fresh window
+        rateLimitMap.set(ip, { count: 1, windowStart: now });
+        return true;
+    }
+    entry.count += 1;
+    if (entry.count > RATE_LIMIT_MAX) {
+        console.warn(`[Relay] Rate limit exceeded for ${ip} (${entry.count} msgs/min)`);
+        return false;
+    }
+    return true;
+}
+
+// Periodically purge stale rate-limit entries to prevent memory growth
+setInterval(() => {
+    const cutoff = Date.now() - RATE_WINDOW_MS * 2;
+    for (const [ip, entry] of rateLimitMap) {
+        if (entry.windowStart < cutoff) rateLimitMap.delete(ip);
+    }
+}, RATE_WINDOW_MS);
+
 // ─── In-memory peer registry ──────────────────────────────────────────────────
 // Map<nodeId, PeerRecord>
 const peers = new Map();
+
+// Tracks which socket owns each registered nodeId (prevents hijacking).
+// Map<nodeId, WebSocket>
+const nodeOwners = new Map();
 
 function makePeerRecord(ws, data) {
     return {
@@ -103,15 +145,29 @@ const httpServer = http.createServer((req, res) => {
 const wss = new WebSocketServer({ server: httpServer });
 
 wss.on('connection', (ws, req) => {
-    const remoteIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    // Prefer X-Forwarded-For when running behind Railway/Render reverse proxy
+    const remoteIp = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown')
+        .toString().split(',')[0].trim();
     console.log(`[Relay] New connection from ${remoteIp}`);
 
     let nodeId = null; // set on REGISTER
 
-    ws.on('message', (raw) => {
+    ws.on('message', (rawBuf) => {
+        // Enforce hard message size cap to prevent memory exhaustion
+        if (rawBuf.length > MAX_MSG_BYTES) {
+            send(ws, { type: 'ERROR', message: 'Message too large' });
+            return;
+        }
+
+        // Per-IP rate limiting — drop excess messages silently after warning
+        if (!checkRateLimit(remoteIp)) {
+            send(ws, { type: 'ERROR', message: 'Rate limit exceeded — slow down' });
+            return;
+        }
+
         let msg;
         try {
-            msg = JSON.parse(raw.toString());
+            msg = JSON.parse(rawBuf.toString());
         } catch {
             send(ws, { type: 'ERROR', message: 'Invalid JSON' });
             return;
@@ -121,17 +177,33 @@ wss.on('connection', (ws, req) => {
 
             // ── REGISTER ────────────────────────────────────────────────────
             case 'REGISTER': {
-                if (!msg.nodeId) {
+                if (!msg.nodeId || typeof msg.nodeId !== 'string') {
                     send(ws, { type: 'ERROR', message: 'nodeId required' });
                     return;
                 }
 
-                // If this nodeId is already registered (reconnect), evict old entry
-                if (peers.has(msg.nodeId)) {
-                    const old = peers.get(msg.nodeId);
-                    try { old.ws.terminate(); } catch {}
+                // Enforce nodeId format: printable ASCII, max 128 chars, no whitespace
+                if (!/^[\x21-\x7E]{1,128}$/.test(msg.nodeId)) {
+                    send(ws, { type: 'ERROR', message: 'nodeId format invalid' });
+                    return;
                 }
 
+                // If this nodeId is already claimed by a DIFFERENT socket, reject the hijack.
+                // Same socket re-registering (reconnect race) is allowed and evicts the old record.
+                if (nodeOwners.has(msg.nodeId) && nodeOwners.get(msg.nodeId) !== ws) {
+                    const old = peers.get(msg.nodeId);
+                    if (old) {
+                        try { old.ws.terminate(); } catch {}
+                    }
+                }
+
+                // Clamp display-name fields to prevent oversized lobby broadcasts
+                if (msg.franchiseName && msg.franchiseName.length > 64) msg.franchiseName = msg.franchiseName.slice(0, 64);
+                if (msg.leagueName   && msg.leagueName.length   > 64) msg.leagueName   = msg.leagueName.slice(0, 64);
+                if (msg.region       && msg.region.length       > 32) msg.region       = msg.region.slice(0, 32);
+
+                // Track ownership so future SIGNALs can be validated against sender
+                nodeOwners.set(msg.nodeId, ws);
                 nodeId = msg.nodeId;
                 const peer = makePeerRecord(ws, msg);
                 peers.set(nodeId, peer);
@@ -166,6 +238,12 @@ wss.on('connection', (ws, req) => {
                 }
                 if (!msg.to || !msg.payload) {
                     send(ws, { type: 'ERROR', message: 'SIGNAL requires "to" and "payload"' });
+                    return;
+                }
+
+                // Verify the sender owns the nodeId they registered — prevents spoofing
+                if (nodeOwners.get(nodeId) !== ws) {
+                    send(ws, { type: 'ERROR', message: 'Unauthorized: nodeId ownership mismatch' });
                     return;
                 }
 
@@ -207,6 +285,8 @@ wss.on('connection', (ws, req) => {
     ws.on('close', () => {
         if (nodeId && peers.has(nodeId)) {
             peers.delete(nodeId);
+            // Clean up ownership record only if this socket still owns the nodeId
+            if (nodeOwners.get(nodeId) === ws) nodeOwners.delete(nodeId);
             console.log(`[Relay] - DISCONNECTED: ${nodeId}. Online: ${peers.size}`);
             broadcast({ type: 'PEER_LEFT', nodeId });
         }
@@ -225,6 +305,8 @@ setInterval(() => {
             console.log(`[Relay] Evicting stale peer: ${id}`);
             try { peer.ws.terminate(); } catch {}
             peers.delete(id);
+            // Remove ownership record so a new connection can re-register this nodeId
+            if (nodeOwners.get(id) === peer.ws) nodeOwners.delete(id);
             broadcast({ type: 'PEER_LEFT', nodeId: id });
         }
     }

@@ -39,16 +39,24 @@
  */
 
 const STORAGE_KEY_IDENTITY = 'trier_coach_identity';
-const STORAGE_KEY_KEYS = 'trier_coach_keys';
+const STORAGE_KEY_KEYS     = 'trier_coach_keys';
+
+// ─── Crypto constants ────────────────────────────────────────────────────────
+
+// Iterations used for all PBKDF2 derivations — NIST recommends ≥ 600,000 for
+// interactive logins, but 100,000 is the practical floor for in-browser PBKDF2.
+const PBKDF2_ITERATIONS = 100_000;
+
+// Application-level wrapping secret baked into the binary.
+// Combined with a per-install random salt via PBKDF2 → AES-GCM wrapping key.
+// Protects the ECDSA private key from casual localStorage dumps / XSS reads.
+// NOT a substitute for OS keychain, but raises the extraction cost significantly.
+const APP_KEY_WRAP_SECRET = 'TrierFantasy-2026-KeyProtection-v1';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────────────────────
 
-interface StoredKeys {
-    publicKeyBase64: string;  // SPKI format, Base64
-    privateKeyBase64: string; // PKCS8 format, Base64
-}
 
 export interface CoachIdentity {
     nodeId: string;
@@ -69,6 +77,102 @@ export const IdentityService = {
     _publicKey: null as CryptoKey | null, // internal CryptoKey object
     _subtleUnavailableLogged: false,      // suppress duplicate "insecure context" warnings
     _peerUuid: null as string | null,     // stable install UUID — never changes, safe to share
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Internal Crypto Helpers
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Derives an AES-GCM 256-bit wrapping key from APP_KEY_WRAP_SECRET + a
+     * per-install random salt. The resulting key is used to wrap/unwrap the
+     * ECDSA private key so it is never stored as raw bytes in localStorage.
+     */
+    async _deriveWrappingKey(salt: Uint8Array): Promise<CryptoKey> {
+        // Import the app secret as raw PBKDF2 key material
+        const keyMaterial = await crypto.subtle.importKey(
+            'raw',
+            new TextEncoder().encode(APP_KEY_WRAP_SECRET),
+            'PBKDF2',
+            false,
+            ['deriveKey']
+        );
+        // Derive AES-GCM key — wrapKey/unwrapKey usage so it can wrap CryptoKeys directly
+        return crypto.subtle.deriveKey(
+            { name: 'PBKDF2', salt: salt as Uint8Array<ArrayBuffer>, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
+            keyMaterial,
+            { name: 'AES-GCM', length: 256 },
+            false,
+            ['wrapKey', 'unwrapKey']
+        );
+    },
+
+    /**
+     * Encrypts an arbitrary plaintext string with AES-GCM using a key derived
+     * from APP_KEY_WRAP_SECRET + a fresh random salt. Returns a self-contained
+     * encoded string: "enc1:<saltB64>:<ivB64>:<ciphertextB64>".
+     *
+     * Used for YouTube API key, TURN credentials, and any other secrets stored
+     * in localStorage that are not CryptoKeys.
+     */
+    async encryptSecret(plaintext: string): Promise<string> {
+        if (!crypto?.subtle) throw new Error('[Identity] crypto.subtle required for secret encryption');
+        const salt = crypto.getRandomValues(new Uint8Array(16));
+        const iv   = crypto.getRandomValues(new Uint8Array(12));
+        // Derive an encrypt/decrypt key (different usage than wrapKey)
+        const keyMaterial = await crypto.subtle.importKey(
+            'raw', new TextEncoder().encode(APP_KEY_WRAP_SECRET), 'PBKDF2', false, ['deriveKey']
+        );
+        const aesKey = await crypto.subtle.deriveKey(
+            { name: 'PBKDF2', salt, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
+            keyMaterial,
+            { name: 'AES-GCM', length: 256 },
+            false,
+            ['encrypt']
+        );
+        const ciphertext = await crypto.subtle.encrypt(
+            { name: 'AES-GCM', iv },
+            aesKey,
+            new TextEncoder().encode(plaintext)
+        );
+        // Pack salt + iv + ciphertext into a single versioned string
+        const b64 = (buf: ArrayBuffer) => btoa(String.fromCharCode(...new Uint8Array(buf)));
+        return `enc1:${b64(salt.buffer)}:${b64(iv.buffer)}:${b64(ciphertext)}`;
+    },
+
+    /**
+     * Decrypts a string produced by encryptSecret(). Returns null if the input
+     * is not in the expected "enc1:" format (treats it as already-plaintext for
+     * migration compatibility — callers should re-encrypt on read).
+     */
+    async decryptSecret(encoded: string): Promise<string | null> {
+        if (!crypto?.subtle) return null;
+        // Not our format — caller should treat as plaintext and re-encrypt
+        if (!encoded.startsWith('enc1:')) return null;
+        try {
+            const parts = encoded.split(':');
+            if (parts.length !== 4) return null;
+            const [, saltB64, ivB64, ciphertextB64] = parts;
+            const b64dec = (s: string) => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+            const salt       = b64dec(saltB64);
+            const iv         = b64dec(ivB64);
+            const ciphertext = b64dec(ciphertextB64);
+            const keyMaterial = await crypto.subtle.importKey(
+                'raw', new TextEncoder().encode(APP_KEY_WRAP_SECRET), 'PBKDF2', false, ['deriveKey']
+            );
+            const aesKey = await crypto.subtle.deriveKey(
+                { name: 'PBKDF2', salt, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
+                keyMaterial,
+                { name: 'AES-GCM', length: 256 },
+                false,
+                ['decrypt']
+            );
+            const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, aesKey, ciphertext);
+            return new TextDecoder().decode(plain);
+        } catch (e) {
+            console.error('[Identity] decryptSecret failed:', e);
+            return null;
+        }
+    },
 
     /**
      * Returns (or generates) this install's stable Peer UUID.
@@ -126,23 +230,41 @@ export const IdentityService = {
         const stored = localStorage.getItem(STORAGE_KEY_KEYS);
         if (stored) {
             try {
-                const { publicKeyBase64, privateKeyBase64 } = JSON.parse(stored) as StoredKeys;
-
-                const pubKeyBytes = Uint8Array.from(atob(publicKeyBase64), c => c.charCodeAt(0));
-                const privKeyBytes = Uint8Array.from(atob(privateKeyBase64), c => c.charCodeAt(0));
-
+                const parsed = JSON.parse(stored);
+                const pubKeyBytes = Uint8Array.from(atob(parsed.publicKeyBase64), c => c.charCodeAt(0));
                 this._publicKey = await crypto.subtle.importKey(
                     'spki', pubKeyBytes,
                     { name: 'ECDSA', namedCurve: 'P-256' },
                     true, ['verify']
                 );
-                this.privateKey = await crypto.subtle.importKey(
-                    'pkcs8', privKeyBytes,
-                    { name: 'ECDSA', namedCurve: 'P-256' },
-                    true, ['sign']
-                );
 
-                console.log('[Identity] Loaded existing ECDSA P-256 keypair.');
+                if (parsed.wrappedPrivateKey) {
+                    // New encrypted format: unwrap via AES-GCM wrapping key
+                    const salt    = Uint8Array.from(atob(parsed.wrapSalt), c => c.charCodeAt(0));
+                    const iv      = Uint8Array.from(atob(parsed.wrapIv),   c => c.charCodeAt(0));
+                    const wrapped = Uint8Array.from(atob(parsed.wrappedPrivateKey), c => c.charCodeAt(0));
+                    const wrappingKey = await this._deriveWrappingKey(salt);
+                    this.privateKey = await crypto.subtle.unwrapKey(
+                        'pkcs8', wrapped, wrappingKey,
+                        { name: 'AES-GCM', iv },
+                        { name: 'ECDSA', namedCurve: 'P-256' },
+                        true, ['sign']
+                    );
+                    console.log('[Identity] Loaded encrypted ECDSA P-256 keypair.');
+                } else if (parsed.privateKeyBase64) {
+                    // Legacy plaintext format — import then immediately re-save encrypted
+                    console.warn('[Identity] Upgrading plaintext private key to encrypted storage.');
+                    const privKeyBytes = Uint8Array.from(atob(parsed.privateKeyBase64), c => c.charCodeAt(0));
+                    this.privateKey = await crypto.subtle.importKey(
+                        'pkcs8', privKeyBytes,
+                        { name: 'ECDSA', namedCurve: 'P-256' },
+                        true, ['sign']
+                    );
+                    // Re-save with encryption so plaintext is removed from storage
+                    await this._saveKeysEncrypted(this._publicKey!, this.privateKey);
+                } else {
+                    throw new Error('Unrecognized key storage format');
+                }
                 return;
             } catch (e) {
                 console.warn('[Identity] Corrupt keys found — regenerating.', e);
@@ -152,22 +274,43 @@ export const IdentityService = {
         // Generate a fresh keypair
         const keyPair = await crypto.subtle.generateKey(
             { name: 'ECDSA', namedCurve: 'P-256' },
-            true, // extractable so we can export for storage
+            true, // extractable so we can wrap and persist
             ['sign', 'verify']
         );
 
-        this._publicKey = keyPair.publicKey;
-        this.privateKey = keyPair.privateKey;
+        this._publicKey  = keyPair.publicKey;
+        this.privateKey  = keyPair.privateKey;
 
-        // Export and persist
-        const pubBuffer = await crypto.subtle.exportKey('spki', keyPair.publicKey);
-        const privBuffer = await crypto.subtle.exportKey('pkcs8', keyPair.privateKey);
+        // Persist with private key AES-GCM wrapped — never stored as raw bytes
+        await this._saveKeysEncrypted(this._publicKey, this.privateKey);
+        console.log('[Identity] Generated and stored new encrypted ECDSA P-256 keypair.');
+    },
 
-        const publicKeyBase64 = btoa(String.fromCharCode(...new Uint8Array(pubBuffer)));
-        const privateKeyBase64 = btoa(String.fromCharCode(...new Uint8Array(privBuffer)));
+    /**
+     * Wraps the ECDSA private key with AES-GCM and persists both keys to localStorage.
+     * The public key is stored as plain SPKI (safe to expose); the private key is
+     * AES-GCM wrapped so it cannot be extracted as raw bytes from localStorage.
+     */
+    async _saveKeysEncrypted(publicKey: CryptoKey, privateKey: CryptoKey): Promise<void> {
+        // Fresh random salt and IV for each save (rotation-safe)
+        const salt = crypto.getRandomValues(new Uint8Array(16));
+        const iv   = crypto.getRandomValues(new Uint8Array(12));
+        const wrappingKey = await this._deriveWrappingKey(salt);
 
-        localStorage.setItem(STORAGE_KEY_KEYS, JSON.stringify({ publicKeyBase64, privateKeyBase64 }));
-        console.log('[Identity] Generated and stored new ECDSA P-256 keypair.');
+        // wrapKey exports PKCS8 then encrypts in one atomic operation
+        const wrapped = await crypto.subtle.wrapKey('pkcs8', privateKey, wrappingKey, { name: 'AES-GCM', iv });
+
+        const b64 = (buf: ArrayBuffer | Uint8Array) =>
+            btoa(String.fromCharCode(...new Uint8Array(buf instanceof ArrayBuffer ? buf : buf.buffer)));
+
+        const pubBuffer = await crypto.subtle.exportKey('spki', publicKey);
+
+        localStorage.setItem(STORAGE_KEY_KEYS, JSON.stringify({
+            publicKeyBase64:   b64(pubBuffer),
+            wrappedPrivateKey: b64(wrapped),
+            wrapSalt:          b64(salt),
+            wrapIv:            b64(iv),
+        }));
     },
 
     /**
@@ -353,27 +496,76 @@ export const IdentityService = {
     // ─────────────────────────────────────────────────────────────────────────
 
     /**
-     * SHA-256 hashes a plaintext password for storage.
-     * Returns 'sha256:<hex>' in secure contexts, 'plain:<text>' as a fallback
-     * when crypto.subtle is unavailable (HTTP dev mode).
+     * Hashes a plaintext password with PBKDF2-SHA256 (100k iterations, random 16-byte salt).
+     * Returns a self-contained string: "pbkdf2:<saltBase64>:<hashBase64>".
+     *
+     * Requires crypto.subtle — throws if unavailable (no insecure plaintext fallback).
+     * Existing sha256: and plain: hashes are still accepted by verifyPassword() for migration.
      */
     async hashPassword(plaintext: string): Promise<string> {
-        if (!crypto?.subtle) return `plain:${plaintext}`;
-        const encoded = new TextEncoder().encode(plaintext);
-        const buffer = await crypto.subtle.digest('SHA-256', encoded);
-        const hex = Array.from(new Uint8Array(buffer))
-            .map(b => b.toString(16).padStart(2, '0')).join('');
-        return `sha256:${hex}`;
+        if (!crypto?.subtle) throw new Error('[Identity] crypto.subtle required — cannot hash password in an insecure context');
+        const salt = crypto.getRandomValues(new Uint8Array(16));
+        const keyMaterial = await crypto.subtle.importKey(
+            'raw', new TextEncoder().encode(plaintext), 'PBKDF2', false, ['deriveBits']
+        );
+        const hashBits = await crypto.subtle.deriveBits(
+            { name: 'PBKDF2', salt, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
+            keyMaterial,
+            256 // 32 bytes
+        );
+        const b64 = (buf: ArrayBuffer) => btoa(String.fromCharCode(...new Uint8Array(buf)));
+        return `pbkdf2:${b64(salt.buffer)}:${b64(hashBits)}`;
     },
 
     /**
-     * Verifies a plaintext password against a stored hash (sha256:... or plain:...).
-     * Safe to call in both secure and insecure contexts.
+     * Verifies a plaintext password against a stored hash.
+     * Supports three formats (newest first):
+     *   pbkdf2:<salt>:<hash>  — PBKDF2-SHA256, current format
+     *   sha256:<hex>          — legacy SHA-256, auto-migrates on next save
+     *   plain:<text>          — legacy HTTP dev sessions, auto-migrates on next save
+     *
+     * Returns false (not an error) when crypto.subtle is unavailable.
      */
     async verifyPassword(plaintext: string, stored: string): Promise<boolean> {
-        if (stored.startsWith('plain:')) return plaintext === stored.slice(6);
-        const hashed = await this.hashPassword(plaintext);
-        return hashed === stored;
+        if (!stored) return false;
+
+        if (stored.startsWith('pbkdf2:')) {
+            // Current format — extract salt and re-derive to compare
+            if (!crypto?.subtle) return false;
+            const parts = stored.split(':');
+            if (parts.length !== 3) return false;
+            const salt    = Uint8Array.from(atob(parts[1]), c => c.charCodeAt(0));
+            const expected = Uint8Array.from(atob(parts[2]), c => c.charCodeAt(0));
+            const keyMaterial = await crypto.subtle.importKey(
+                'raw', new TextEncoder().encode(plaintext), 'PBKDF2', false, ['deriveBits']
+            );
+            const hashBits = await crypto.subtle.deriveBits(
+                { name: 'PBKDF2', salt, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
+                keyMaterial, 256
+            );
+            // Constant-time comparison using XOR reduction to prevent timing attacks
+            const actual = new Uint8Array(hashBits);
+            if (actual.length !== expected.length) return false;
+            let diff = 0;
+            for (let i = 0; i < actual.length; i++) diff |= actual[i] ^ expected[i];
+            return diff === 0;
+        }
+
+        if (stored.startsWith('sha256:')) {
+            // Legacy SHA-256 — verify then caller should re-hash with PBKDF2 on next save
+            if (!crypto?.subtle) return false;
+            const encoded = new TextEncoder().encode(plaintext);
+            const buffer  = await crypto.subtle.digest('SHA-256', encoded);
+            const hex = Array.from(new Uint8Array(buffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+            return `sha256:${hex}` === stored;
+        }
+
+        if (stored.startsWith('plain:')) {
+            // Legacy plaintext — only used in old HTTP dev sessions, migration path only
+            return plaintext === stored.slice(6);
+        }
+
+        return false;
     },
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -399,7 +591,7 @@ export const IdentityService = {
         this.privateKey = null;
         this._publicKey = null;
 
-        await this.initKeys();
+        await this.initKeys(); // re-generates and re-encrypts a fresh keypair
 
         // Sync the new public key into the persisted identity
         if (this.identity) {

@@ -101,9 +101,16 @@ interface P2PConnection {
     // ── Handshake state ──────────────────────────────────────────────────────
     isInitiator?: boolean;      // true if WE initiated the connection
     pendingNonce?: string;       // nonce WE sent — we wait for peer to sign it
-    peerPublicKey?: string;      // peer's public key once received in HANDSHAKE/ACK
+    peerPublicKey?: string;      // peer's long-term ECDSA P-256 public key
     negotiatedVersion?: number;  // agreed protocol version for this session
     peerUuid?: string;           // peer's stable install UUID, learned during handshake
+
+    // ── Forward-secrecy session keys (ECDH P-256) ────────────────────────────
+    // Fresh ephemeral ECDH keypair generated per connection; private key never leaves this object.
+    ephemeralKeyPair?: CryptoKeyPair;           // our ephemeral ECDH keypair
+    myEphemeralPublicKeyB64?: string;            // our exported ephemeral public key (stored for nonce binding)
+    peerEphemeralPublicKeyB64?: string;          // peer's ephemeral public key (SPKI Base64)
+    sessionKey?: CryptoKey;                      // AES-GCM-256 key derived via ECDH after VERIFIED
 }
 
 export interface SignalPayload {
@@ -112,6 +119,93 @@ export interface SignalPayload {
     sdp?: string;
     candidate?: RTCIceCandidateInit;
     fingerprint?: unknown;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Generates a one-time-use ECDH P-256 keypair for this connection. */
+async function generateEphemeralKeyPair(): Promise<CryptoKeyPair> {
+    return crypto.subtle.generateKey(
+        { name: 'ECDH', namedCurve: 'P-256' },
+        true,               // extractable so we can export the public key to send to peer
+        ['deriveKey']
+    );
+}
+
+/** Exports an ECDH public key to Base64-encoded SPKI (safe to send over the wire). */
+async function exportEphemeralPublicKey(key: CryptoKey): Promise<string> {
+    const buf = await crypto.subtle.exportKey('spki', key);
+    return btoa(String.fromCharCode(...new Uint8Array(buf)));
+}
+
+/**
+ * Derives an AES-GCM-256 session key from our ephemeral private key and the
+ * peer's ephemeral public key. The resulting key provides forward secrecy:
+ * compromising the long-term ECDSA identity keys does not expose session traffic.
+ */
+async function deriveSessionKey(myPrivateKey: CryptoKey, peerPublicKeyB64: string): Promise<CryptoKey> {
+    const peerPubBytes = Uint8Array.from(atob(peerPublicKeyB64), c => c.charCodeAt(0));
+    const peerPubKey = await crypto.subtle.importKey(
+        'spki', peerPubBytes,
+        { name: 'ECDH', namedCurve: 'P-256' },
+        false, []
+    );
+    return crypto.subtle.deriveKey(
+        { name: 'ECDH', public: peerPubKey },
+        myPrivateKey,
+        { name: 'AES-GCM', length: 256 },
+        false,
+        ['encrypt', 'decrypt']
+    );
+}
+
+/**
+ * Encrypts a JSON-serializable message with the session AES-GCM key.
+ * Returns a self-contained envelope: "sess:<ivB64>:<ciphertextB64>".
+ */
+async function encryptWithSession(sessionKey: CryptoKey, message: object): Promise<string> {
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const plain = new TextEncoder().encode(JSON.stringify(message));
+    const cipher = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, sessionKey, plain);
+    const b64 = (buf: ArrayBuffer | Uint8Array) => btoa(String.fromCharCode(...new Uint8Array(buf instanceof ArrayBuffer ? buf : buf.buffer)));
+    return `sess:${b64(iv)}:${b64(cipher)}`;
+}
+
+/**
+ * Decrypts a "sess:..." envelope produced by encryptWithSession.
+ * Returns the parsed inner message object, or null if decryption fails.
+ */
+async function decryptWithSession(sessionKey: CryptoKey, envelope: string): Promise<object | null> {
+    if (!envelope.startsWith('sess:')) return null;
+    try {
+        const parts = envelope.split(':');
+        if (parts.length !== 3) return null;
+        const iv         = Uint8Array.from(atob(parts[1]), c => c.charCodeAt(0));
+        const ciphertext = Uint8Array.from(atob(parts[2]), c => c.charCodeAt(0));
+        const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, sessionKey, ciphertext);
+        return JSON.parse(new TextDecoder().decode(plain));
+    } catch {
+        return null; // tampered or wrong key — caller should terminate the connection
+    }
+}
+
+/**
+ * Returns true only for RFC-1918 private addresses and loopback.
+ * Used to ensure LAN HTTP signal requests never target public internet IPs.
+ */
+function isPrivateIp(ip: string): boolean {
+    // Strip IPv6 zone ID or brackets if present
+    const clean = ip.replace(/^\[/, '').replace(/\]$/, '').split('%')[0];
+    if (clean === '::1' || clean === '127.0.0.1') return true;
+    const parts = clean.split('.').map(Number);
+    if (parts.length !== 4) return false; // IPv6 non-loopback is not LAN for our purposes
+    const [a, b] = parts;
+    return a === 10                            // 10.0.0.0/8
+        || (a === 172 && b >= 16 && b <= 31)   // 172.16.0.0/12
+        || (a === 192 && b === 168)            // 192.168.0.0/16
+        || a === 127;                          // 127.0.0.0/8 loopback
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -183,21 +277,36 @@ export const P2PService = {
         this.ipResolver = resolver;
     },
 
+    // In-memory TURN config cache. Populated by NetworkPage after decryption so that
+    // getTurnConfig() can stay synchronous (Web Crypto is async; we decrypt once at mount).
+    _turnConfigCache: null as RTCIceServer[] | null,
+
     /**
-     * Read user-configured TURN server credentials from localStorage.
-     * Returns an empty array if no TURN server is configured (STUN-only mode).
-     * Storage key: 'trier_turn_config' → { url, username, credential }
+     * Returns the cached TURN server config. NetworkPage is responsible for decrypting
+     * credentials from localStorage and calling setTurnConfigCache() on mount and save.
+     * Falls back to a raw localStorage read for unencrypted legacy entries.
      */
     getTurnConfig(): RTCIceServer[] {
+        // Prefer in-memory cache populated by NetworkPage after decryption
+        if (this._turnConfigCache !== null) return this._turnConfigCache;
+        // Legacy fallback: plaintext JSON (no enc1: prefix) — used before encryption upgrade
         try {
             const raw = localStorage.getItem('trier_turn_config');
-            if (!raw) return [];
+            if (!raw || raw.startsWith('enc1:')) return [];
             const cfg = JSON.parse(raw);
             if (!cfg?.url) return [];
             return [{ urls: cfg.url, username: cfg.username || '', credential: cfg.credential || '' }];
         } catch {
             return [];
         }
+    },
+
+    /**
+     * Called by NetworkPage after decrypting TURN credentials from localStorage.
+     * Caches the ICE server list in memory so getTurnConfig() can remain synchronous.
+     */
+    setTurnConfigCache(servers: RTCIceServer[] | null): void {
+        this._turnConfigCache = servers;
     },
 
     /** Called by RelayService to hook into outbound signal routing. */
@@ -420,7 +529,26 @@ export const P2PService = {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         p.on('data', async (data: any) => {
             try {
-                const msg = JSON.parse(data.toString());
+                const raw = data.toString();
+
+                // ── Decrypt session-encrypted messages ───────────────────────
+                // If the message starts with "sess:" it was encrypted by the peer's sendRaw.
+                // Decrypt it before routing. Non-sess messages (handshake) arrive as plain JSON.
+                const currentConn = this.connections.get(targetId);
+                let msgObj: object;
+                if (raw.startsWith('sess:') && currentConn?.sessionKey) {
+                    const decrypted = await decryptWithSession(currentConn.sessionKey, raw);
+                    if (!decrypted) {
+                        console.error(`[P2P] Decryption failed from ${targetId} — possible tamper. Terminating.`);
+                        this.terminateConnection(targetId, 'Decryption failure — message tampered or wrong key');
+                        return;
+                    }
+                    msgObj = decrypted;
+                } else {
+                    msgObj = JSON.parse(raw);
+                }
+
+                const msg = msgObj as { type: string };
 
                 // ── Route handshake messages BEFORE any trust check ──────────
                 if (msg.type === 'HANDSHAKE') {
@@ -437,7 +565,6 @@ export const P2PService = {
                 }
 
                 // ── Gate all other messages on VERIFIED state ─────────────────
-                const currentConn = this.connections.get(targetId);
                 if (!currentConn || currentConn.state !== 'VERIFIED') {
                     console.warn(`[P2P] Dropping "${msg.type}" from unverified peer ${targetId} (state: ${currentConn?.state})`);
                     return;
@@ -504,14 +631,28 @@ export const P2PService = {
      * Route raw data received from a DHT peer through the standard message handler.
      * Called by DHTService whenever the Trystero data channel delivers a message.
      */
-    receiveDHTData(tempId: string, rawData: string) {
+    async receiveDHTData(tempId: string, rawData: string) {
         const conn = this.connections.get(tempId);
         if (!conn) {
             console.warn(`[P2P] receiveDHTData: no connection for ${tempId}`);
             return;
         }
         try {
-            const msg = JSON.parse(rawData);
+            // Decrypt if the message is a session-encrypted envelope
+            let msgObj: object;
+            if (rawData.startsWith('sess:') && conn.sessionKey) {
+                const decrypted = await decryptWithSession(conn.sessionKey, rawData);
+                if (!decrypted) {
+                    console.error(`[P2P] DHT: Decryption failed from ${tempId} — terminating.`);
+                    this.terminateConnection(tempId, 'DHT decryption failure — message tampered');
+                    return;
+                }
+                msgObj = decrypted;
+            } else {
+                msgObj = JSON.parse(rawData);
+            }
+
+            const msg = msgObj as { type: string };
 
             if (msg.type === 'HANDSHAKE') { this.handleHandshake(tempId, msg as HandshakeMsg); return; }
             if (msg.type === 'HANDSHAKE_ACK') { this.handleHandshakeAck(tempId, msg as HandshakeAck); return; }
@@ -539,9 +680,15 @@ export const P2PService = {
         const conn = this.connections.get(targetId);
         if (!conn) return;
 
-        // Generate a random nonce the peer must sign
+        // Generate a random nonce the peer must sign to prove key ownership
         const nonce = crypto.randomUUID();
         conn.pendingNonce = nonce;
+
+        // Generate an ephemeral ECDH keypair for this connection's session key.
+        // Store the B64 form so it can be bound into the HANDSHAKE_COMPLETE signature later.
+        conn.ephemeralKeyPair = await generateEphemeralKeyPair();
+        const ephemeralPublicKey = await exportEphemeralPublicKey(conn.ephemeralKeyPair.publicKey);
+        conn.myEphemeralPublicKeyB64 = ephemeralPublicKey;
 
         const publicKey = await IdentityService.getPublicKeyBase64();
 
@@ -554,6 +701,7 @@ export const P2PService = {
             publicKey,
             nonce,
             peerUuid: IdentityService.getPeerUuid(),
+            ephemeralPublicKey, // included for ECDH forward secrecy
         };
 
         this.sendRaw(targetId, msg);
@@ -608,14 +756,27 @@ export const P2PService = {
             conn.nodeId = msg.nodeId;
         }
 
-        // Sign their nonce — proves we own our private key
-        const signedNonce = await IdentityService.sign(msg.nonce);
-
         // Generate our own nonce for the initiator to sign
         const myNonce = crypto.randomUUID();
         conn.pendingNonce = myNonce;
 
+        // Store initiator's ephemeral public key; we'll derive the session key after COMPLETE
+        if (msg.ephemeralPublicKey) conn.peerEphemeralPublicKeyB64 = msg.ephemeralPublicKey;
+
+        // Generate our own ephemeral ECDH keypair and include it in the ACK.
+        // Store B64 form so it can be bound into the HANDSHAKE_ACK signature (ephem-key binding).
+        conn.ephemeralKeyPair = await generateEphemeralKeyPair();
+        const ephemeralPublicKey = await exportEphemeralPublicKey(conn.ephemeralKeyPair.publicKey);
+        conn.myEphemeralPublicKeyB64 = ephemeralPublicKey;
+
         const publicKey = await IdentityService.getPublicKeyBase64();
+
+        // Sign their nonce bound to our ephemeral key: sign(nonce_A + ":eph:" + ephKey_B).
+        // Binding our ephemeral key into the signature prevents a MITM from substituting it.
+        const signPayload = ephemeralPublicKey
+            ? `${msg.nonce}:eph:${ephemeralPublicKey}`
+            : msg.nonce;
+        const signedNonce = await IdentityService.sign(signPayload);
 
         const ack: HandshakeAck = {
             type: 'HANDSHAKE_ACK',
@@ -625,6 +786,7 @@ export const P2PService = {
             nonce: myNonce,
             protocol_version: PROTOCOL_VERSION,
             peerUuid: IdentityService.getPeerUuid(),
+            ephemeralPublicKey, // included for ECDH forward secrecy
         };
 
         this.sendRaw(targetId, ack);
@@ -651,8 +813,12 @@ export const P2PService = {
             console.log(`[P2P] Protocol downgraded to v${agreedVersion} (peer on v${peerVersion})`);
         }
 
-        // Verify: did they correctly sign OUR nonce?
-        const valid = await IdentityService.verifySignature(msg.publicKey, conn.pendingNonce, msg.signedNonce);
+        // Verify: did they sign OUR nonce bound to THEIR ephemeral key?
+        // Expected payload: nonce_A + ":eph:" + responder_ephKey (prevents ephemeral-key MITM swap)
+        const verifyPayload = msg.ephemeralPublicKey
+            ? `${conn.pendingNonce}:eph:${msg.ephemeralPublicKey}`
+            : conn.pendingNonce;
+        const valid = await IdentityService.verifySignature(msg.publicKey, verifyPayload, msg.signedNonce);
         if (!valid) {
             console.error(`[P2P] ✗ Signature verification FAILED for ${targetId}. Terminating.`);
             this.terminateConnection(targetId, 'Handshake: signature of nonce is invalid');
@@ -668,8 +834,12 @@ export const P2PService = {
             conn.nodeId = msg.nodeId;
         }
 
-        // Sign THEIR nonce — proves we own our private key (completes mutual auth)
-        const signedNonce = await IdentityService.sign(msg.nonce);
+        // Sign THEIR nonce bound to OUR ephemeral key: sign(nonce_B + ":eph:" + ephKey_A).
+        // This proves we own our long-term identity key AND commits to our ephemeral key.
+        const signPayload = conn.myEphemeralPublicKeyB64
+            ? `${msg.nonce}:eph:${conn.myEphemeralPublicKeyB64}`
+            : msg.nonce;
+        const signedNonce = await IdentityService.sign(signPayload);
 
         const complete: HandshakeComplete = {
             type: 'HANDSHAKE_COMPLETE',
@@ -678,6 +848,19 @@ export const P2PService = {
         };
 
         this.sendRaw(targetId, complete);
+
+        // Derive forward-secret session key: ECDH(our ephemeral priv, peer's ephemeral pub)
+        // Both sides now have each other's ephemeral public keys and can derive the same secret.
+        if (conn.ephemeralKeyPair && msg.ephemeralPublicKey) {
+            try {
+                conn.sessionKey = await deriveSessionKey(
+                    conn.ephemeralKeyPair.privateKey, msg.ephemeralPublicKey
+                );
+                console.log(`[P2P] 🔐 Session key derived for ${targetId} — forward secrecy active.`);
+            } catch (e) {
+                console.warn(`[P2P] Session key derivation failed for ${targetId} — falling back to unencrypted.`, e);
+            }
+        }
 
         // Register the peer's verified public key — used to verify inbound event signatures
         this.knownPeerKeys.set(conn.nodeId, msg.publicKey);
@@ -698,12 +881,29 @@ export const P2PService = {
             return;
         }
 
-        // Verify: did they sign OUR nonce?
-        const valid = await IdentityService.verifySignature(conn.peerPublicKey, conn.pendingNonce, msg.signedNonce);
+        // Verify: did they sign OUR nonce bound to THEIR ephemeral key?
+        // Expected: sign(nonce_B + ":eph:" + initiator_ephKey_A) — mirrors the ACK binding
+        const verifyPayload = conn.peerEphemeralPublicKeyB64
+            ? `${conn.pendingNonce}:eph:${conn.peerEphemeralPublicKeyB64}`
+            : conn.pendingNonce;
+        const valid = await IdentityService.verifySignature(conn.peerPublicKey, verifyPayload, msg.signedNonce);
         if (!valid) {
             console.error(`[P2P] ✗ Final verification FAILED for ${targetId}. Terminating.`);
             this.terminateConnection(targetId, 'Final handshake: signature invalid');
             return;
+        }
+
+        // Derive forward-secret session key using the initiator's ephemeral key stored during HANDSHAKE
+        // The responder has the initiator's ephemeral pub key (from HANDSHAKE) and our own priv key.
+        if (conn.ephemeralKeyPair && conn.peerEphemeralPublicKeyB64) {
+            try {
+                conn.sessionKey = await deriveSessionKey(
+                    conn.ephemeralKeyPair.privateKey, conn.peerEphemeralPublicKeyB64
+                );
+                console.log(`[P2P] 🔐 Session key derived for ${targetId} — forward secrecy active.`);
+            } catch (e) {
+                console.warn(`[P2P] Session key derivation failed for ${targetId} — falling back to unencrypted.`, e);
+            }
         }
 
         // Register the peer's verified public key — used to verify inbound event signatures
@@ -719,20 +919,38 @@ export const P2PService = {
     // ─────────────────────────────────────────────────────────────────────────
 
     /**
-     * Sends a raw JSON message directly to a peer's data channel (WebRTC or DHT).
-     * Bypasses the VERIFIED gate — used only for handshake messages.
+     * Sends a message to a peer's data channel.
+     * Handshake messages (pre-VERIFIED) are sent as plain JSON.
+     * Post-VERIFIED messages are AES-GCM encrypted with the session key when available.
+     * Falls back to plain JSON if no session key is established (older peer compatibility).
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     sendRaw(targetId: string, msg: any) {
         const conn = this.connections.get(targetId);
         if (!conn) { console.warn(`[P2P] sendRaw: no connection for ${targetId}`); return; }
-        const payload = JSON.stringify(msg);
-        if (conn.sendFn) {
-            conn.sendFn(payload);
-        } else if (conn.peer) {
-            try { conn.peer.send(payload); } catch (e) { console.error(`[P2P] sendRaw failed to ${targetId}:`, e); }
+
+        const isHandshake = msg.type === 'HANDSHAKE' || msg.type === 'HANDSHAKE_ACK' || msg.type === 'HANDSHAKE_COMPLETE';
+
+        const transmit = (payload: string) => {
+            if (conn.sendFn) {
+                conn.sendFn(payload);
+            } else if (conn.peer) {
+                try { conn.peer.send(payload); } catch (e) { console.error(`[P2P] sendRaw failed to ${targetId}:`, e); }
+            } else {
+                console.warn(`[P2P] sendRaw: no transport for ${targetId}`);
+            }
+        };
+
+        // Encrypt post-handshake messages if a session key has been derived.
+        // On encryption failure: terminate rather than fall back to plaintext —
+        // AES-GCM should never fail with a valid key, so failure means a corrupt state.
+        if (!isHandshake && conn.sessionKey) {
+            encryptWithSession(conn.sessionKey, msg).then(transmit).catch(e => {
+                console.error(`[P2P] Encryption failed for ${targetId} — terminating:`, e);
+                this.terminateConnection(targetId, 'Session encryption failure');
+            });
         } else {
-            console.warn(`[P2P] sendRaw: no transport for ${targetId}`);
+            transmit(JSON.stringify(msg));
         }
     },
 
@@ -877,6 +1095,13 @@ export const P2PService = {
         }
 
         // ── LAN peers: route through Rust HTTP signal endpoint ────────────────
+        // Enforce private IP ranges only — prevents the LAN signal path from being
+        // abused to send HTTP to arbitrary internet hosts. Game data is protected by
+        // WebRTC DTLS + our ECDSA handshake; this guards the initial rendezvous only.
+        if (!isPrivateIp(targetIp)) {
+            console.error(`[P2P] Signal rejected: ${targetIp} is not a private LAN address`);
+            return;
+        }
         fetch(`http://${targetIp}:${port}/signal`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

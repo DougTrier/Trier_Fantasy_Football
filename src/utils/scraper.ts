@@ -1,24 +1,18 @@
 // scraper.ts - Multi-Source Player Data Fetcher
 import type { Player } from '../types';
 
-// Helper to strip HTML tags and decode entities
-const cleanText = (html: string) => {
+// Safely strips HTML and decodes entities without executing any scripts.
+// Uses DOMParser instead of innerHTML so <script> tags and event handlers in
+// externally-sourced HTML (Wikipedia, Google) never execute during parsing.
+const cleanText = (html: string): string => {
     if (!html) return '';
-    const temp = document.createElement('div');
-    temp.innerHTML = html.replace(/<(br|div|p|li)[^>]*>/gi, ' ');
-    return (temp.textContent || '').replace(/\s+/g, ' ').trim();
+    // Insert whitespace before block elements so word boundaries are preserved after strip
+    const spaced = html.replace(/<(br|div|p|li)[^>]*>/gi, ' ');
+    // DOMParser sandboxes the HTML — scripts are parsed but not executed
+    const doc = new DOMParser().parseFromString(spaced, 'text/html');
+    return (doc.body.textContent || '').replace(/\s+/g, ' ').trim();
 };
 
-// Global Throttler: Ensures we don't hit proxies too fast
-let lastRequestTime = 0;
-const MIN_REQUEST_GAP = 1200; // 1.2s between calls
-
-const throttle = async () => {
-    const now = Date.now();
-    const wait = Math.max(0, lastRequestTime + MIN_REQUEST_GAP - now);
-    if (wait > 0) await new Promise(r => setTimeout(r, wait));
-    lastRequestTime = Date.now();
-};
 
 export interface ScrapedBio {
     height?: string;
@@ -232,66 +226,11 @@ export const scrapePlayerPhoto = async (playerName: string, options: ScraperOpti
         console.warn("[scraper] Wiki photo lookup failed", e);
     }
 
-    if (options.skipGoogle) return null;
-    await throttle();
-
-    // Strategy 2: ESPN Headshot via Search Snippet
-    try {
-        const query = `${playerName} ESPN headshot full resolution`;
-        const proxy = `https://corsproxy.io/?${encodeURIComponent(`https://www.google.com/search?q=${encodeURIComponent(query)}`)}`;
-        const res = await fetch(proxy);
-        const html = await res.text();
-
-        // ESPN Headshot pattern: https://a.espncdn.com/combiner/i?img=/i/headshots/nfl/players/full/3117251.png
-        // Improved regex to handle potential URL encoding or slight variations
-        const espnMatch = html.match(/https?:\/\/a\.espncdn\.com\/combiner\/i\?img=\/i\/headshots\/nfl\/players\/full\/\d+\.png/i);
-        if (espnMatch) {
-            console.log(`[scraper] Found ESPN headshot: ${espnMatch[0]}`);
-            // SAVE TO CACHE
-            try {
-                const cache = JSON.parse(localStorage.getItem('tff_photo_cache') || '{}');
-                cache[playerName] = espnMatch[0];
-                localStorage.setItem('tff_photo_cache', JSON.stringify(cache));
-            } catch (e) { console.warn("Cache write error", e); }
-            return espnMatch[0];
-        }
-
-        // Fallback: Check for just the ID and rebuild
-        const idMatch = html.match(/headshots\/nfl\/players\/full\/(\d+)\.png/i);
-        if (idMatch) {
-            const url = `https://a.espncdn.com/combiner/i?img=/i/headshots/nfl/players/full/${idMatch[1]}.png`;
-            console.log(`[scraper] Rebuilt ESPN headshot from ID: ${url}`);
-            // SAVE TO CACHE
-            try {
-                const cache = JSON.parse(localStorage.getItem('tff_photo_cache') || '{}');
-                cache[playerName] = url;
-                localStorage.setItem('tff_photo_cache', JSON.stringify(cache));
-            } catch (e) { console.warn("Cache write error", e); }
-            return url;
-        }
-    } catch {
-        console.warn("[scraper] ESPN photo lookup failed");
-    }
-
-    // Strategy 2: NFL.com / Sleeper Static Assets (Hardcoded Fallbacks)
-    // Most players follow a predictable pattern if we had their NFL ID, but we don't always.
-
-    // Strategy 3: eBay / Trading Card Fallback (Real High-Res Imagery)
-    try {
-        const query = `${playerName} donruss optic trading card site:ebay.com`;
-        const proxy = `https://corsproxy.io/?${encodeURIComponent(`https://www.google.com/search?q=${encodeURIComponent(query)}&tbm=isch`)}`; // Image search
-        const res = await fetch(proxy);
-        const html = await res.text();
-
-        // This is tricky without a headless browser for image search, but we might find img tags in the raw HTML
-        const imgMatch = html.match(/https?:\/\/[^"']+\.(?:jpg|jpeg|png)(?=[^"']*ebayimg\.com)/i);
-        if (imgMatch) {
-            console.log(`[scraper] Found eBay card image: ${imgMatch[0]}`);
-            return imgMatch[0];
-        }
-    } catch {
-        console.warn("[scraper] eBay card image lookup failed");
-    }
+    // Google SERP strategies 2 & 3 removed — corsproxy.io was rate-limited to uselessness
+    // and routes all search queries through a third-party server (privacy + supply-chain risk).
+    // Future path: use Tauri's @tauri-apps/api/http to fetch ESPN/NFL.com directly from Rust
+    // where CORS restrictions do not apply. Track at: https://github.com/tauri-apps/tauri/discussions
+    if (options.skipGoogle) return null; // param kept for API compatibility
 
     return null;
 };
@@ -335,97 +274,10 @@ export const scrapePlayerBio = async (source: string, knownName?: string): Promi
 
     const bio: ScrapedBio = {};
 
-    // ============================================================
-    // STRATEGY 1: GOOGLE SERP SCRAPE (Text Snippets)
-    // ============================================================
-    // We run two searches: one for Bio, one for Money.
-    try {
-        console.log(`[scraper] Google Search: ${playerName}`);
-
-        // QUERY 1: Bio (Height, Weight, Age, College)
-        const bioQuery = `${playerName} height weight age college`;
-        // Encode ONLY the query param, pass full URL to proxy
-        // corsproxy.io usage: https://corsproxy.io/?https://www.google.com...
-        const bioProxy = `https://corsproxy.io/?${encodeURIComponent(`https://www.google.com/search?q=${encodeURIComponent(bioQuery)}`)}`;
-
-        const bioRes = await fetch(bioProxy);
-        const bioHtml = await bioRes.text(); // corsproxy returns raw text, not JSON wrapped
-
-        if (bioHtml) {
-            const html = bioHtml;
-            // Google Snippets often formatted as: "5 ft 10 in" or "191 lbs"
-
-            // Height
-            const hMatch = html.match(/(\d+)\s*ft\s*(\d+)\s*in/i) || html.match(/(\d+)'\s*(\d+)"/);
-            if (hMatch) {
-                // If it's already in Ft/In, convert to inches for Sleeper-standard storage
-                const inches = (parseInt(hMatch[1]) * 12) + parseInt(hMatch[2]);
-                bio.height = inches.toString();
-            } else {
-                // Fallback for raw inches if found
-                const rawInchesMatch = html.match(/(\d{2})\s*inches/i);
-                if (rawInchesMatch) bio.height = rawInchesMatch[1];
-            }
-
-            // Weight
-            const wMatch = html.match(/(\d{3})\s*(lb|lbs)/i) || html.match(/(\d{2,3})\s*kg/i);
-            if (wMatch) bio.weight = wMatch[1];
-
-
-            // Age - restricted to realistic range (18-50) to avoid "6 years experience"
-            const ageMatch = html.match(/(\d{2})\s*years/i) || html.match(/Age\s*(\d{2})/i);
-            if (ageMatch) {
-                const ageVal = parseInt(ageMatch[1]);
-                if (ageVal > 18 && ageVal < 50) bio.age = ageMatch[1];
-            }
-
-            // College
-            // Look for "College: University of X" or similar structure in knowledge graph
-            // This is harder in raw HTML, skipping for now to rely on Wiki for College.
-        }
-
-        // Rate Limit Prevention: Wait 1.5s before second proxy call
-        await new Promise(resolve => setTimeout(resolve, 1500));
-
-        // QUERY 2: Contract (Spotrac/OverTheCap snippet)
-        const moneyQuery = `${playerName} contract spotrac`;
-        const moneyProxy = `https://corsproxy.io/?${encodeURIComponent(`https://www.google.com/search?q=${encodeURIComponent(moneyQuery)}`)}`;
-
-        const moneyRes = await fetch(moneyProxy);
-        const moneyHtml = await moneyRes.text();
-
-        if (moneyHtml) {
-            const html = moneyHtml;
-            // Look for "$30,000,000" patterns in close proximity to "average" or "contract"
-
-            // Regex for dollar amounts greater than 1 million
-            const moneyMatches = html.match(/\$\d{1,3}(,\d{3})*(,\d{3})/g);
-            if (moneyMatches && moneyMatches.length > 0) {
-                // Take the largest number found? Or the first?
-                // Usually snippets show "signed a 3 year $X contract" or "avg salary $Y"
-                // Let's grab the biggest number assuming it's total value, or a frequent large number
-
-                // Clean and parse
-                const values = moneyMatches.map(s => parseInt(s.replace(/[^0-9]/g, '')));
-                const maxVal = Math.max(...values);
-
-                // Heuristic: If maxVal > 1,000,000, assume it's a relevant contract number
-                if (maxVal > 1000000) {
-                    bio.financials = {
-                        nflContract: {
-                            amount: Math.round(maxVal / 3), // Rough guess: Total / 3 years = Avg? 
-                            // Or just display the specific number if we found "Average"
-                            year: new Date().getFullYear()
-                        },
-                        lifetimeEarnings: 0
-                    };
-                }
-            }
-        }
-
-    } catch (e) {
-        console.error("[scraper] Google scrape failed", e);
-    }
+    // Google SERP scraping (Strategy 1) removed — corsproxy.io was rate-limited to uselessness
+    // and routes player name queries through a third-party server (privacy + supply-chain risk).
+    // Bio data now comes exclusively from Wikipedia (Strategy 2 below).
+    // Future: use Tauri @tauri-apps/api/http (Rust-side, no CORS) for ESPN/Spotrac direct access.
 
     // ============================================================
     // STRATEGY 2: WIKIPEDIA API (Reliable Fallback & Stats)

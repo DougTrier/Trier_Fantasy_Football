@@ -1,3 +1,16 @@
+/**
+ * NetworkPage — P2P Connection Hub
+ * ==================================
+ * Central UI for managing all peer connectivity:
+ *
+ *   LAN discovery  — mDNS scan via DiscoveryService (Tauri Rust backend)
+ *   Internet peers — WebSocket relay (RelayService) + DHT fallback (DHTService)
+ *   Friends list   — stable UUID-based bookmarks persisted in localStorage
+ *
+ * Security note: connections displayed here may be CONNECTED (transport up)
+ * but not yet VERIFIED (handshake incomplete). Only VERIFIED peers exchange
+ * game data. See P2PService.ts for the full state machine.
+ */
 import React, { useState, useEffect, useRef } from 'react';
 import { useDialog } from './AppDialog';
 import { IdentityService } from '../services/IdentityService';
@@ -37,6 +50,11 @@ export const NetworkPage: React.FC = () => {
     const [turnUser, setTurnUser] = useState('');
     const [turnCred, setTurnCred] = useState('');
     const [turnSaved, setTurnSaved] = useState(false);
+
+    // Custom relay URL — must be wss:// (enforced by RelayService.getConfiguredRelayUrl)
+    const [customRelayUrl, setCustomRelayUrl] = useState(
+        () => localStorage.getItem('trier_relay_url') || ''
+    );
     const turnSavedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Friends system
@@ -103,17 +121,49 @@ export const NetworkPage: React.FC = () => {
         loaded.forEach(f => DHTService.watchFriend(f.uuid));
     }, []);
 
-    // Load TURN config from localStorage
+    // Load and decrypt TURN config from localStorage on mount.
+    // Supports both the new enc1: encrypted format and the legacy plaintext JSON format.
     useEffect(() => {
-        try {
-            const raw = localStorage.getItem('trier_turn_config');
-            if (raw) {
-                const cfg = JSON.parse(raw);
-                setTurnUrl(cfg.url || '');
-                setTurnUser(cfg.username || '');
-                setTurnCred(cfg.credential || '');
-            }
-        } catch { /* intentionally empty — missing TURN config is not an error */ }
+        const loadTurnConfig = async () => {
+            try {
+                const raw = localStorage.getItem('trier_turn_config');
+                if (!raw) return;
+
+                let cfg: { url?: string; username?: string; credential?: string } | null = null;
+
+                if (raw.startsWith('enc1:')) {
+                    // New encrypted format — decrypt via IdentityService
+                    const { IdentityService } = await import('../services/IdentityService');
+                    const plaintext = await IdentityService.decryptSecret(raw);
+                    if (plaintext) cfg = JSON.parse(plaintext);
+                } else {
+                    // Legacy plaintext — parse directly and re-encrypt immediately
+                    cfg = JSON.parse(raw);
+                    if (cfg?.url) {
+                        const { IdentityService } = await import('../services/IdentityService');
+                        const encrypted = await IdentityService.encryptSecret(JSON.stringify(cfg));
+                        localStorage.setItem('trier_turn_config', encrypted);
+                        console.log('[Network] TURN config migrated to encrypted storage.');
+                    }
+                }
+
+                if (cfg) {
+                    setTurnUrl(cfg.url || '');
+                    setTurnUser(cfg.username || '');
+                    setTurnCred(cfg.credential || '');
+                    // Populate P2PService cache so it can be used synchronously during ICE
+                    const { P2PService } = await import('../services/P2PService');
+                    if (cfg.url) {
+                        P2PService.setTurnConfigCache([{
+                            urls: cfg.url,
+                            username: cfg.username || '',
+                            credential: cfg.credential || '',
+                        }]);
+                    }
+                }
+            } catch { /* non-fatal — STUN-only fallback is acceptable */ }
+        };
+        loadTurnConfig();
         return () => { if (turnSavedTimer.current) clearTimeout(turnSavedTimer.current); };
     }, []);
 
@@ -146,7 +196,7 @@ export const NetworkPage: React.FC = () => {
     const getStateByNodeId = (nodeId: string): ConnectionState =>
         getConnectionByNodeId(nodeId)?.state ?? 'IDLE';
 
-    // Actions
+    // ── Connection actions ────────────────────────────────────────────────────
     const handleConnect = (peer: DiscoveredPeer) => {
         const targetPort = peer.port || 15432;
         console.log(`[Network] Connecting to ${peer.id} on ${peer.ip}:${targetPort}`);
@@ -171,36 +221,68 @@ export const NetworkPage: React.FC = () => {
         }
     };
 
-    const handleSaveTurn = () => {
+    // Encrypt TURN credentials before persisting to localStorage.
+    const handleSaveTurn = async () => {
+        const { IdentityService } = await import('../services/IdentityService');
+        const { P2PService } = await import('../services/P2PService');
         if (turnUrl.trim()) {
-            localStorage.setItem('trier_turn_config', JSON.stringify({
+            const cfg = {
                 url: turnUrl.trim(),
                 username: turnUser.trim(),
                 credential: turnCred.trim(),
-            }));
+            };
+            // Store encrypted; update in-memory cache for synchronous ICE use
+            const encrypted = await IdentityService.encryptSecret(JSON.stringify(cfg));
+            localStorage.setItem('trier_turn_config', encrypted);
+            P2PService.setTurnConfigCache([{
+                urls: cfg.url,
+                username: cfg.username,
+                credential: cfg.credential,
+            }]);
         } else {
             localStorage.removeItem('trier_turn_config');
+            P2PService.setTurnConfigCache(null);
         }
         setTurnSaved(true);
         if (turnSavedTimer.current) clearTimeout(turnSavedTimer.current);
         turnSavedTimer.current = setTimeout(() => setTurnSaved(false), 2500);
     };
 
-    const handleTurnClear = () => {
+    const handleTurnClear = async () => {
+        const { P2PService } = await import('../services/P2PService');
         setTurnUrl('');
         setTurnUser('');
         setTurnCred('');
         localStorage.removeItem('trier_turn_config');
+        P2PService.setTurnConfigCache(null);
     };
 
     const handleRelayToggle = async () => {
         if (relayStatus === 'DISCONNECTED' || relayStatus === 'ERROR') {
-            RelayService.connect().catch(() => {});
+            // Pass custom URL if set; RelayService enforces wss:// or falls back to default
+            RelayService.connect(customRelayUrl || undefined).catch(() => {});
         } else {
             RelayService.disconnect();
         }
     };
 
+    // Persist custom relay URL (or clear it) — RelayService reads this on next connect
+    const handleSaveRelayUrl = () => {
+        const trimmed = customRelayUrl.trim();
+        if (trimmed && !trimmed.startsWith('wss://')) {
+            // Show inline warning without blocking the save — RelayService will reject it
+            alert('Relay URL must start with wss:// — plaintext ws:// is not allowed.');
+            return;
+        }
+        if (trimmed) {
+            localStorage.setItem('trier_relay_url', trimmed);
+        } else {
+            localStorage.removeItem('trier_relay_url');
+        }
+    };
+
+    // Generates a short-lived invite code via DiscoveryService and shows the share modal.
+    // The code encodes this node's IP + port so the recipient can add them as a peer directly.
     const handleGenerateInvite = async () => {
         try {
             const code = await DiscoveryService.generateInvite();
@@ -211,6 +293,8 @@ export const NetworkPage: React.FC = () => {
         }
     };
 
+    // Redeems a code from another peer — adds them to the known-peer list so DiscoveryService
+    // will show them as connectable when both are on the same LAN or relay.
     const handleRedeemInvite = () => {
         try {
             DiscoveryService.redeemInvite(joinCode);
@@ -250,6 +334,29 @@ export const NetworkPage: React.FC = () => {
                 getStateByNodeId={getStateByNodeId}
                 handleConnect={handleConnect}
             />
+
+            {/* CUSTOM RELAY URL — optional self-hosted relay, must be wss:// */}
+            <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <label style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 'bold', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>
+                    RELAY URL
+                </label>
+                <input
+                    value={customRelayUrl}
+                    onChange={e => setCustomRelayUrl(e.target.value)}
+                    placeholder="wss://your-relay.example.com (leave blank for default)"
+                    style={{
+                        flex: 1, padding: '0.4rem 0.75rem',
+                        background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.12)',
+                        color: '#fff', borderRadius: '6px', fontSize: '0.8rem', fontFamily: 'monospace',
+                    }}
+                />
+                <button
+                    onClick={handleSaveRelayUrl}
+                    style={{ padding: '0.4rem 1rem', background: '#1d4ed8', border: 'none', color: '#fff', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', fontSize: '0.8rem' }}
+                >
+                    Save
+                </button>
+            </div>
 
             {/* TURN SERVER CONFIG + GLOBAL NETWORK RELAY PANEL */}
             <RelayPanel

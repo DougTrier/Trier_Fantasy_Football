@@ -121,13 +121,21 @@ export const RelevanceEngine = {
 // Falls back to mock data for dev/demo when no key is present.
 
 class SearchRunner {
-    private getYtApiKey(): string | null {
-        return localStorage.getItem('trier_yt_api_key') || null;
+    // Decrypts the stored API key (enc1: format) or returns plaintext for legacy entries.
+    private async getYtApiKey(): Promise<string | null> {
+        const raw = localStorage.getItem('trier_yt_api_key');
+        if (!raw) return null;
+        if (raw.startsWith('enc1:')) {
+            const { IdentityService } = await import('./IdentityService');
+            return IdentityService.decryptSecret(raw);
+        }
+        // Legacy plaintext — return as-is (will be encrypted on next save from Settings)
+        return raw;
     }
 
     async runSearch(source: VideoSource, query: string): Promise<VideoCandidate[]> {
         const normPlatform = normalizePlatform(source.platform);
-        const apiKey = this.getYtApiKey();
+        const apiKey = await this.getYtApiKey();
 
         if (normPlatform === 'youtube') {
             if (apiKey) return this.searchYouTube(query, source, apiKey);

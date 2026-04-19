@@ -72,19 +72,16 @@ export const CreatePlayerForm: React.FC<CreatePlayerFormProps> = ({ onClose, onC
                 }
             }
 
-            // 2. Image Scraping (Async Best Effort via Proxy)
-            // Using allorigins to bypass CORS
-            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-            const response = await fetch(proxyUrl);
-            const data = await response.json();
-            if (data.contents) {
-                const html = data.contents;
-                // Look for meta og:image or the specific class used by NFL
-                // <meta property="og:image" content="..." />
-                const match = html.match(/meta property="og:image" content="([^"]+)"/);
-                if (match && match[1]) {
-                    setPhotoUrl(match[1]);
-                }
+            // 2. Photo — attempt ESPN CDN directly using the slug we just parsed.
+            // ESPN headshots follow a predictable URL pattern; no third-party proxy needed.
+            // The user can always paste a custom URL if the CDN attempt returns a broken image.
+            const slugForEspn = parts[1]?.split('/')[0] || '';
+            if (slugForEspn) {
+                // ESPN headshot URL requires the numeric player ID, which we don't have from the
+                // NFL.com URL slug alone. Leave blank so the user can paste their own photo URL.
+                // Future: use Tauri HTTP (@tauri-apps/api/http) to fetch NFL.com og:image directly,
+                // bypassing CORS without a third-party proxy.
+                setPhotoUrl('');
             }
         } catch (err) {
             console.error("Smart import failed", err);

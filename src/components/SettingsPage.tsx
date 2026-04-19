@@ -23,7 +23,7 @@
  */
 // useRef: the hidden file input element for the .tff import trigger.
 // useState: inline form state + create-franchise modal visibility.
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { useDialog } from './AppDialog';
 import {
     Settings, Shield, Users, Lock, Download, Upload,
@@ -101,19 +101,36 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     const [newOwner, setNewOwner] = useState('');
     const [newPass, setNewPass] = useState('');
 
-    // YouTube API key (admin-only; stored in localStorage so it survives reloads).
-    // Lazy initializer reads the stored value once rather than on every render.
-    const [ytApiKey, setYtApiKey] = useState(() => localStorage.getItem('trier_yt_api_key') || '');
+    // YouTube API key — decrypted from localStorage on mount, displayed in plaintext UI field.
+    // localStorage always holds the enc1: encrypted form; plaintext only lives in React state.
+    const [ytApiKey, setYtApiKey] = useState('');
+    useEffect(() => {
+        const loadApiKey = async () => {
+            const raw = localStorage.getItem('trier_yt_api_key');
+            if (!raw) return;
+            if (raw.startsWith('enc1:')) {
+                // Decrypt stored key for display
+                const { IdentityService } = await import('../services/IdentityService');
+                const plain = await IdentityService.decryptSecret(raw);
+                if (plain) setYtApiKey(plain);
+            } else {
+                // Legacy plaintext — display as-is and migrate to encrypted on next save
+                setYtApiKey(raw);
+            }
+        };
+        loadApiKey();
+    }, []);
     const { showAlert, showConfirm, showPrompt } = useDialog();
 
     /**
      * Encrypts and downloads the team as a .tff file.
-     * Uses the team's existing password if set, otherwise prompts.
-     * The v2 envelope includes a version tag and timestamp for future migration support.
+     * Always prompts for a separate backup password — team.password is now a PBKDF2 hash
+     * and must not be reused as an AES encryption key.
      */
     const handleExport = async (team: FantasyTeam) => {
         try {
-            const encryptionPass = team.password ||
+            // Backup password is separate from the team access password (which is now a hash)
+            const encryptionPass =
                 await showPrompt("Set a backup password (leave blank to skip):", "Backup Encryption", { placeholder: "Optional password..." }) ||
                 undefined;
             // eslint-disable-next-line react-hooks/purity
@@ -290,9 +307,17 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                                         style={{ ...inputStyle, flex: 1, fontSize: '0.85rem' }}
                                     />
                                     <button
-                                        onClick={() => {
-                                            localStorage.setItem('trier_yt_api_key', ytApiKey.trim());
-                                            showAlert(ytApiKey.trim() ? 'YouTube API key saved. Real video search is now active.' : 'API key cleared. Pipeline will use demo data.', 'Saved');
+                                        onClick={async () => {
+                                            const trimmed = ytApiKey.trim();
+                                            if (trimmed) {
+                                                // Encrypt before storing — plaintext never touches localStorage
+                                                const { IdentityService } = await import('../services/IdentityService');
+                                                const encrypted = await IdentityService.encryptSecret(trimmed);
+                                                localStorage.setItem('trier_yt_api_key', encrypted);
+                                            } else {
+                                                localStorage.removeItem('trier_yt_api_key');
+                                            }
+                                            showAlert(trimmed ? 'YouTube API key saved (encrypted). Real video search is now active.' : 'API key cleared. Pipeline will use demo data.', 'Saved');
                                         }}
                                         style={{ ...btnStyle, padding: '8px 14px', background: '#10b981', color: '#000', fontSize: '0.8rem' }}
                                     >

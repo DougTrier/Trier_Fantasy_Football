@@ -157,7 +157,9 @@ export const DHTService = {
         recvMsg((data: string, trysteroId: string) => {
             const tempId = trysteroToTemp.get(trysteroId);
             if (tempId) {
-                P2PService.receiveDHTData(tempId, data);
+                P2PService.receiveDHTData(tempId, data).catch(e =>
+                    console.error('[DHT] receiveDHTData error:', e)
+                );
             }
         });
 

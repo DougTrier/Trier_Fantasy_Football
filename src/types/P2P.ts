@@ -106,15 +106,19 @@ export interface EventLogEntry {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Handshake Protocol — 3-message mutual authentication
+// Handshake Protocol — 3-message mutual auth + ECDH forward secrecy
 //
 // Flow:
-//   Initiator → Responder : HANDSHAKE    (with initiator's nonce_A)
-//   Responder → Initiator : HANDSHAKE_ACK (signed nonce_A + responder's nonce_B)
-//   Initiator → Responder : HANDSHAKE_COMPLETE (signed nonce_B)
+//   Initiator → Responder : HANDSHAKE    (nonce_A + ephemeral ECDH pubkey_A)
+//   Responder → Initiator : HANDSHAKE_ACK (sign(nonce_A) + nonce_B + ephemeral pubkey_B)
+//   Initiator → Responder : HANDSHAKE_COMPLETE (sign(nonce_B))
 //
-// After HANDSHAKE_ACK:  Initiator marks responder VERIFIED (checked sig of nonce_A)
-// After HANDSHAKE_COMPLETE: Responder marks initiator VERIFIED (checked sig of nonce_B)
+// Session key derivation (both sides):
+//   sharedSecret = ECDH(myEphemeralPrivKey, peerEphemeralPubKey)
+//   sessionKey   = AES-GCM-256 key derived from sharedSecret
+//
+// After VERIFIED, all game-data messages are AES-GCM encrypted with sessionKey.
+// Compromising the long-term ECDSA identity keys does NOT expose session traffic.
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Step 1: Initiator → Responder */
@@ -124,20 +128,22 @@ export interface HandshakeMsg {
     app_family: string;       // Must equal APP_FAMILY
     protocol_version: number; // Must equal PROTOCOL_VERSION
     nodeId: NodeId;
-    publicKey: string;        // Base64-encoded SPKI public key (ECDSA P-256)
+    publicKey: string;        // Long-term ECDSA P-256 public key (Base64 SPKI)
     nonce: string;            // Random UUID — responder must sign this to prove key ownership
     peerUuid?: string;        // Stable install UUID — safe to share, used for friends matching
+    ephemeralPublicKey?: string; // Ephemeral ECDH P-256 public key (Base64 SPKI) for session key
 }
 
 /** Step 2: Responder → Initiator */
 export interface HandshakeAck {
     type: 'HANDSHAKE_ACK';
     nodeId: NodeId;
-    publicKey: string;         // Responder's Base64-encoded SPKI public key
+    publicKey: string;         // Responder's long-term ECDSA P-256 public key
     signedNonce: string;       // Base64: ECDSA P-256 signature of initiator's nonce
     nonce: string;             // Responder's own nonce — initiator must sign this
     protocol_version?: number; // Responder's native version — initiator computes agreed version
     peerUuid?: string;         // Stable install UUID — echoed back so initiator learns responder's UUID
+    ephemeralPublicKey?: string; // Responder's ephemeral ECDH P-256 public key for session key
 }
 
 /** Step 3: Initiator → Responder */

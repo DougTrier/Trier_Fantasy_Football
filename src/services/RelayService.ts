@@ -64,8 +64,24 @@ export type RelayStatus =
     | 'REGISTERED'      // Fully online on the relay
     | 'ERROR';
 
-// Default relay URL — override via connect(url) for self-hosted deployments
+// Default relay URL — can be overridden by the user in Network settings.
+// Stored in localStorage as 'trier_relay_url'; must be a wss:// URL.
 const DEFAULT_RELAY_URL = 'wss://trier-fantasy-relay.up.railway.app';
+
+/**
+ * Reads the user-configured relay URL from localStorage, falling back to the
+ * default. Rejects ws:// (unencrypted) URLs to prevent downgrade attacks.
+ */
+function getConfiguredRelayUrl(): string {
+    const stored = localStorage.getItem('trier_relay_url');
+    if (!stored) return DEFAULT_RELAY_URL;
+    // Block cleartext WebSocket connections — only wss:// is accepted
+    if (!stored.startsWith('wss://')) {
+        console.warn('[Relay] Custom relay URL must use wss:// — ignoring and using default.');
+        return DEFAULT_RELAY_URL;
+    }
+    return stored;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // RelayService
@@ -101,7 +117,8 @@ export const RelayService = {
         this._connecting = true;
         this._intentionalDisconnect = false;
         this._clearReconnectTimer();
-        this.relayUrl = url || DEFAULT_RELAY_URL;
+        // Prefer explicit argument → user config → built-in default (always wss://)
+        this.relayUrl = url || getConfiguredRelayUrl();
         this._setStatus('CONNECTING');
         console.debug(`[Relay] Connecting to ${this.relayUrl}...`);
 

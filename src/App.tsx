@@ -617,65 +617,81 @@ export default function App() {
 
   // ─────────────────────────────────────────────────────────────────────────────
   // ADMIN / SECURITY
-  // Admin mode is session-only (not persisted). The password hash is persisted
-  // in localStorage as "sha256:{hex}" — never the plaintext.
+  // Admin mode is session-only (not persisted). The password hash is stored in
+  // localStorage as "pbkdf2:<salt>:<hash>" — never as plaintext.
+  // Legacy sha256: and plain: entries are migrated to PBKDF2 on mount.
   // ─────────────────────────────────────────────────────────────────────────────
   const [isAdmin, setIsAdmin] = useState(false);
-  // Holds the SHA-256 hash of the admin password (never the plaintext).
+  // Holds the PBKDF2 hash of the admin password (never the plaintext).
   const adminPasswordHash = useRef<string>('');
 
-  // On mount: load the stored admin password hash.
-  // Migrates legacy plaintext and re-hashes any plain: entries from HTTP dev sessions.
+  // Brute-force protection: tracks failed login attempts and lockout expiry.
+  // Stored in sessionStorage so it resets on app restart (not persisted to disk).
+  const adminLoginAttempts = useRef<number>(0);
+  const adminLockoutUntil  = useRef<number>(0);
+
+  // On mount: load the stored admin password hash and migrate legacy formats.
   useEffect(() => {
     const migrateAdminPassword = async () => {
       const { IdentityService } = await import('./services/IdentityService');
       const raw = localStorage.getItem('trier_admin_pass');
 
       if (!raw) {
-        // No password set yet — first run. Leave adminPasswordHash empty;
-        // the admin login handler will guide the user through setup.
+        // First run — no password yet. Admin login handler will guide setup.
         adminPasswordHash.current = '';
         return;
       }
 
-      if (raw.startsWith('sha256:')) {
-        // Already properly hashed — just load it.
+      if (raw.startsWith('pbkdf2:')) {
+        // Current format — load as-is.
         adminPasswordHash.current = raw;
         return;
       }
 
+      // Legacy sha256: or plain: — re-hash using PBKDF2 if possible.
+      // We can only do this if we have the plaintext, which is only available
+      // for the plain: format. sha256: hashes cannot be upgraded without re-login.
       if (raw.startsWith('plain:')) {
-        // Stored in insecure plain: format (from an HTTP dev session). Re-hash immediately.
         const plaintext = raw.slice(6);
-        const hashed = await IdentityService.hashPassword(plaintext);
-        if (!hashed.startsWith('plain:')) {
-          // crypto.subtle was available — persist the upgrade
-          localStorage.setItem('trier_admin_pass', hashed);
-          adminPasswordHash.current = hashed;
-          console.warn('[App] Admin password was stored in plain: format — upgraded to sha256:');
-        } else {
-          // Still no crypto.subtle — keep in memory only, don't persist
+        try {
+          const upgraded = await IdentityService.hashPassword(plaintext);
+          localStorage.setItem('trier_admin_pass', upgraded);
+          adminPasswordHash.current = upgraded;
+          console.warn('[App] Admin password upgraded from plain: to PBKDF2.');
+        } catch {
+          // crypto.subtle unavailable — keep legacy hash in memory only
           adminPasswordHash.current = raw;
         }
         return;
       }
 
-      // Legacy raw plaintext (no prefix) — hash and upgrade
-      const hashed = await IdentityService.hashPassword(raw);
-      localStorage.setItem('trier_admin_pass', hashed);
-      adminPasswordHash.current = hashed;
-      console.log('[App] Admin password migrated to hashed format.');
+      // sha256: format — accept for this session but can only fully migrate on next login
+      adminPasswordHash.current = raw;
+      console.log('[App] Admin password is sha256: — will migrate to PBKDF2 on next login.');
     };
     migrateAdminPassword();
   }, []);
 
-  const createNewTeam = (name: string, ownerName: string, password?: string) => {
+  // Strips HTML tags and control characters from free-text user inputs, and caps length.
+  // React JSX already escapes on render; this is a defense-in-depth boundary at the storage layer.
+  const sanitizeInput = (value: string, maxLength = 60): string =>
+    value
+      .replace(/<[^>]*>/g, '')          // strip any HTML tags
+      .replace(/[\x00-\x1F\x7F]/g, '') // strip control characters
+      .trim()
+      .slice(0, maxLength);
+
+  // Hash a team password before storing — team.password is always a pbkdf2: hash or undefined.
+  const createNewTeam = async (name: string, ownerName: string, password?: string) => {
+    const { IdentityService } = await import('./services/IdentityService');
+    // Only hash non-empty passwords; undefined/empty means no password protection
+    const hashedPassword = password ? await IdentityService.hashPassword(password) : undefined;
     const newTeam: FantasyTeam = {
       ...formatInitialTeam(),
-      id: `team - ${Date.now()} `,
-      name,
-      ownerName,
-      password // Store password
+      id: `team-${Date.now()}`,
+      name:      sanitizeInput(name),
+      ownerName: sanitizeInput(ownerName),
+      password:  hashedPassword,
     };
     setUserTeams(prev => [...prev, newTeam]);
     setActiveTeamId(newTeam.id);
@@ -699,9 +715,19 @@ export default function App() {
     });
   };
 
-  const updateTeamDetails = (teamId: string, name: string, owner: string, password?: string) => {
+  // Hash the new password if one was provided before updating state; sanitize text fields.
+  const updateTeamDetails = async (teamId: string, name: string, owner: string, password?: string) => {
+    const { IdentityService } = await import('./services/IdentityService');
+    const hashedPassword = password ? await IdentityService.hashPassword(password) : undefined;
     setUserTeams(prev => prev.map(t =>
-      t.id === teamId ? { ...t, name, ownerName: owner, ...(password !== undefined ? { password } : {}) } : t
+      t.id === teamId
+        ? {
+            ...t,
+            name:      sanitizeInput(name),
+            ownerName: sanitizeInput(owner),
+            ...(hashedPassword !== undefined ? { password: hashedPassword } : {}),
+          }
+        : t
     ));
   };
 
@@ -1728,12 +1754,24 @@ export default function App() {
           teams={userTeams}
           activeTeamId={activeTeamId}
           isAdmin={isAdmin}
-          onResetOwnerPassword={(teamId: string, newPassword?: string) => {
-            setUserTeams(prev => prev.map(t => t.id === teamId ? { ...t, password: newPassword || '' } : t));
+          onResetOwnerPassword={async (teamId: string, newPassword?: string) => {
+            // Hash the new password before storing; clear it if empty (removes lock)
+            const { IdentityService } = await import('./services/IdentityService');
+            const hashed = newPassword ? await IdentityService.hashPassword(newPassword) : '';
+            setUserTeams(prev => prev.map(t => t.id === teamId ? { ...t, password: hashed } : t));
           }}
           onToggleAdmin={async () => {
             if (isAdmin) { setIsAdmin(false); return; }
             const { IdentityService } = await import('./services/IdentityService');
+
+            // ── Lockout check ──────────────────────────────────────────────
+            // Block login if currently in a backoff period from failed attempts.
+            const now = Date.now();
+            if (adminLockoutUntil.current > now) {
+              const secsLeft = Math.ceil((adminLockoutUntil.current - now) / 1000);
+              showAlert(`Too many failed attempts. Try again in ${secsLeft} seconds.`, 'Locked Out');
+              return;
+            }
 
             // First run — no password has ever been set. Guide commissioner through setup.
             if (!adminPasswordHash.current) {
@@ -1751,6 +1789,9 @@ export default function App() {
               const hashed = await IdentityService.hashPassword(newPass);
               localStorage.setItem('trier_admin_pass', hashed);
               adminPasswordHash.current = hashed;
+              // Successful setup counts as a clean slate
+              adminLoginAttempts.current = 0;
+              adminLockoutUntil.current  = 0;
               setIsAdmin(true);
               showAlert("Commissioner password set. You are now logged in.", "Password Created");
               return;
@@ -1758,14 +1799,48 @@ export default function App() {
 
             const code = await showPrompt("Enter the Commissioner password:", "Commissioner Login", { placeholder: "Password" });
             if (!code) return;
+
             const ok = await IdentityService.verifyPassword(code, adminPasswordHash.current);
-            if (ok) setIsAdmin(true);
-            else showAlert("Incorrect password. Access denied.", "Wrong Password");
+            if (ok) {
+              // Success — reset attempt counter and migrate hash to PBKDF2 if still on legacy format
+              adminLoginAttempts.current = 0;
+              adminLockoutUntil.current  = 0;
+              if (!adminPasswordHash.current.startsWith('pbkdf2:')) {
+                // Opportunistic migration: re-hash with PBKDF2 now that we have the plaintext
+                try {
+                  const upgraded = await IdentityService.hashPassword(code);
+                  localStorage.setItem('trier_admin_pass', upgraded);
+                  adminPasswordHash.current = upgraded;
+                  console.log('[App] Admin password migrated to PBKDF2.');
+                } catch { /* non-fatal — old hash still works */ }
+              }
+              setIsAdmin(true);
+            } else {
+              // Failure — apply exponential backoff: 5s, 30s, 5min for attempts 1/2/3+
+              adminLoginAttempts.current += 1;
+              const attempt = adminLoginAttempts.current;
+              const delayMs = attempt >= 3 ? 300_000 : attempt === 2 ? 30_000 : 5_000;
+              adminLockoutUntil.current = Date.now() + delayMs;
+              const delayLabel = attempt >= 3 ? '5 minutes' : attempt === 2 ? '30 seconds' : '5 seconds';
+              showAlert(`Incorrect password. Too many failures — locked for ${delayLabel}.`, 'Access Denied');
+            }
           }}
-          onSwitchTeam={(teamId: string, password?: string) => {
+          onSwitchTeam={async (teamId: string, password?: string) => {
             if (teamId === activeTeamId) return;
             const target = userTeams.find(t => t.id === teamId);
-            if (isAdmin || !target?.password || (password !== undefined && password === target.password)) {
+            // Admin always bypasses; no-password teams are open; otherwise verify PBKDF2 hash
+            if (isAdmin || !target?.password) {
+              setActiveTeamId(teamId);
+              setActiveView('dashboard');
+              return;
+            }
+            if (password === undefined) {
+              showAlert("A password is required to access this team.", "Password Required");
+              return;
+            }
+            const { IdentityService } = await import('./services/IdentityService');
+            const ok = await IdentityService.verifyPassword(password, target.password);
+            if (ok) {
               setActiveTeamId(teamId);
               setActiveView('dashboard');
             } else {

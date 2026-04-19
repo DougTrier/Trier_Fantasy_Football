@@ -1,0 +1,25 @@
+version: 2
+
+updates:
+  # npm — main app and relay server
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    # Group all non-breaking updates into one PR to reduce noise
+    groups:
+      non-breaking:
+        update-types:
+          - minor
+          - patch
+    # Security updates always get their own PR regardless of grouping
+    open-pull-requests-limit: 5
+
+  # GitHub Actions — pin action versions to avoid supply-chain attacks
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5

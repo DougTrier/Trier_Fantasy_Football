@@ -8,7 +8,7 @@
     },
     "package": {
         "productName": "Trier Fantasy Football 2026",
-        "version": "1.1.0"
+        "version": "1.2.0"
     },
     "tauri": {
         "allowlist": {
@@ -63,7 +63,7 @@
             }
         },
         "security": {
-            "csp": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' http://* ws://* localhost:*; img-src 'self' data: blob:;"
+            "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://* wss://* http://localhost:* ws://localhost:*; img-src 'self' data: https:;"
         },
         "updater": {
             "active": false
