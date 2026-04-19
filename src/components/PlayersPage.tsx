@@ -51,6 +51,15 @@ const POS_COLORS: Record<string, string> = {
     K: '#6b7280', DST: '#ef4444', LB: '#f97316', DL: '#ec4899', DB: '#06b6d4',
 };
 
+/** Returns true if the URL resolves to a loadable image. */
+const probeImage = (url: string): Promise<boolean> =>
+    new Promise(resolve => {
+        const img = new Image();
+        img.onload  = () => resolve(true);
+        img.onerror = () => resolve(false);
+        img.src = url;
+    });
+
 export const PlayersPage: React.FC<PlayersPageProps> = ({ players, onMakeOffer, onUpdatePlayer }) => {
     const [teamFilter, setTeamFilter] = useState('ALL');
     const [posFilter, setPosFilter] = useState('ALL');
@@ -289,14 +298,17 @@ export const PlayersPage: React.FC<PlayersPageProps> = ({ players, onMakeOffer, 
                                     highlightStat={sortBy === 'PERF_DIFF' ? { label: 'PERF DIFF', value: p.performance_differential || 0 } : highlight}
                                     onMakeOffer={onMakeOffer ? () => onMakeOffer(p) : undefined}
                                     onRefreshPhoto={onUpdatePlayer ? async (target) => {
-                                        // Wikipedia first (action shots > headshots); if nothing found,
-                                        // restore ESPN CDN so onError can cascade to Sleeper if needed.
+                                        // 1. ESPN CDN — best quality when espnId is available
+                                        if (target.espnId) {
+                                            const espnUrl = `https://a.espncdn.com/i/headshots/nfl/players/full/${target.espnId}.png`;
+                                            if (await probeImage(espnUrl)) { onUpdatePlayer({ ...target, photoUrl: espnUrl }); return; }
+                                        }
+                                        // 2. Sleeper CDN — reliable fallback for all active players
+                                        const sleeperUrl = `https://sleepercdn.com/content/nfl/players/thumb/${target.id}.jpg`;
+                                        if (await probeImage(sleeperUrl)) { onUpdatePlayer({ ...target, photoUrl: sleeperUrl }); return; }
+                                        // 3. Wikipedia — last resort (scrapes a photo if available)
                                         const wikiUrl = await scrapePlayerPhoto(`${target.firstName} ${target.lastName}`);
-                                        const freshUrl = wikiUrl
-                                            || (target.espnId
-                                                ? `https://a.espncdn.com/i/headshots/nfl/players/full/${target.espnId}.png`
-                                                : `https://sleepercdn.com/content/nfl/players/thumb/${target.id}.jpg`);
-                                        onUpdatePlayer({ ...target, photoUrl: freshUrl });
+                                        onUpdatePlayer({ ...target, photoUrl: wikiUrl || sleeperUrl });
                                     } : undefined}
                                 />
                             </div>
