@@ -26,24 +26,24 @@ const GameCard: React.FC<{ game: LiveGame; onClick: () => void }> = ({ game, onC
         <div
             onClick={onClick}
             style={{
-                width: '128px',
-                flexShrink: 0,
-                background: isLive ? 'rgba(239,68,68,0.09)' : 'rgba(255,255,255,0.04)',
-                border: `1px solid ${isLive ? 'rgba(239,68,68,0.35)' : 'rgba(255,255,255,0.09)'}`,
+                width: '100%',
+                // Dark base ensures readability over the leather texture background
+                background: isLive ? 'rgba(60,0,0,0.75)' : 'rgba(0,0,0,0.65)',
+                border: `1px solid ${isLive ? 'rgba(239,68,68,0.5)' : 'rgba(255,255,255,0.15)'}`,
                 borderRadius: '8px',
                 padding: '8px 9px',
                 cursor: 'pointer',
                 transition: 'background 0.15s, border-color 0.15s',
             }}
             onMouseEnter={e => {
-                (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.09)';
-                (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,255,255,0.2)';
+                (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.15)';
+                (e.currentTarget as HTMLDivElement).style.borderColor = 'rgba(255,255,255,0.3)';
             }}
             onMouseLeave={e => {
                 (e.currentTarget as HTMLDivElement).style.background =
-                    isLive ? 'rgba(239,68,68,0.09)' : 'rgba(255,255,255,0.04)';
+                    isLive ? 'rgba(60,0,0,0.75)' : 'rgba(0,0,0,0.65)';
                 (e.currentTarget as HTMLDivElement).style.borderColor =
-                    isLive ? 'rgba(239,68,68,0.35)' : 'rgba(255,255,255,0.09)';
+                    isLive ? 'rgba(239,68,68,0.5)' : 'rgba(255,255,255,0.15)';
             }}
         >
             {/* Away team row */}
@@ -109,23 +109,25 @@ export const LiveScoreboardStrip: React.FC<LiveScoreboardStripProps> = ({ games,
                 display: 'flex', alignItems: 'center', gap: '8px',
                 marginBottom: '8px',
             }}>
-                <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.07)' }} />
+                <div style={{ flex: 1, height: '1px', background: 'rgba(0,0,0,0.35)' }} />
                 <span style={{
-                    fontSize: '0.52rem', fontWeight: 900, letterSpacing: '1.5px',
+                    fontSize: '1.2rem', fontWeight: 900, letterSpacing: '1.5px',
                     textTransform: 'uppercase',
-                    color: liveCount > 0 ? '#ef4444' : '#6b7280',
+                    color: liveCount > 0 ? '#ef4444' : '#9ca3af',
+                    background: 'rgba(0,0,0,0.65)',
+                    padding: '3px 14px',
+                    borderRadius: '6px',
                 }}>
                     {liveCount > 0 ? `${liveCount} Live` : "Today's Games"}
                 </span>
-                <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.07)' }} />
+                <div style={{ flex: 1, height: '1px', background: 'rgba(0,0,0,0.35)' }} />
             </div>
 
-            {/* Horizontally scrollable card row */}
+            {/* 3-column wrapping grid — new row every 3 games, scrolls vertically with standings */}
             <div style={{
-                display: 'flex', gap: '8px',
-                overflowX: 'auto', paddingBottom: '4px',
-                scrollbarWidth: 'thin',
-                scrollbarColor: '#eab308 rgba(0,0,0,0.2)',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(3, 1fr)',
+                gap: '6px',
             }}>
                 {games.map(game => (
                     <GameCard key={game.id} game={game} onClick={() => onGameClick(game.id)} />
