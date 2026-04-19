@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { Shield, Activity, X, Wifi, Users, UserPlus, Download, Upload, Star, Trash2 } from 'lucide-react';
 import { useDialog } from '../AppDialog';
 import { DiscoveryService, type DiscoveredPeer } from '../../services/DiscoveryService';
@@ -37,7 +37,7 @@ export const NodeIdentityPanel: React.FC<Props> = ({
     getStateByNodeId,
     handleConnect,
 }) => {
-    const { showAlert, showConfirm } = useDialog();
+    const { showAlert } = useDialog();
     const [showAddFriend, setShowAddFriend] = useState(false);
     const [friendUuidInput, setFriendUuidInput] = useState('');
     const [friendNicknameInput, setFriendNicknameInput] = useState('');

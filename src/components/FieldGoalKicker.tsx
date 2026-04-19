@@ -30,7 +30,6 @@ const KICKER_Y = FIELD_Y + 55;
 const L_POST_BASE_X = 92;
 const L_POST_HALF   = 50;   // no depth scaling on left post
 const L_CB_BASE_Y   = FIELD_Y + 30;
-const L_UP_TOP_Y    = L_CB_BASE_Y - 54;
 const POST_FOOT     = FIELD_Y + 68;
 
 // ── Right post (player target) — depth canvas position + scaled geometry ──────
@@ -136,11 +135,11 @@ export const FieldGoalKicker: React.FC<Props> = ({ isGameday, myTeamName }) => {
     const aiAccRef     = useRef(0);
     const prevTsRef    = useRef(0);
     const rafRef       = useRef(0);
-    const flashTimeRef = useRef<ReturnType<typeof setTimeout>>();
+    const flashTimeRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-    const [yourScore, setYourScore] = useState(0);
-    const [oppScore,  setOppScore]  = useState(0);
-    const [timeLeft,  setTimeLeft]  = useState(GAME_SECS);
+    const [_yourScore, setYourScore] = useState(0);
+    const [_oppScore,  setOppScore]  = useState(0);
+    const [_timeLeft,  setTimeLeft]  = useState(GAME_SECS);
     const [phase,     setPhase]     = useState<Phase>('IDLE');
     const [gameMode,  setGameMode]  = useState<GameMode>('cpu');
     const [flash,     setFlash]     = useState<{ text: string; good: boolean } | null>(null);

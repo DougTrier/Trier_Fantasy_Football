@@ -13,7 +13,7 @@
  *   Score overrides — inline numeric inputs before completing a week.
  */
 import React, { useState, useMemo } from 'react';
-import { Calendar, Trophy, BarChart2, ChevronRight, CheckCircle, Clock, Info, X, Shield } from 'lucide-react';
+import { Calendar, Trophy, BarChart2, ChevronRight, CheckCircle, Info, X } from 'lucide-react';
 import type { FantasyTeam, League, Matchup } from '../types';
 import {
     generateSchedule, completeWeek,

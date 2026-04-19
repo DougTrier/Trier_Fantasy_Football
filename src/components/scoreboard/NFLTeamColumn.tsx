@@ -133,7 +133,7 @@ function hexToRgb(hex: string): string {
 // ─── Main Column Component ────────────────────────────────────────────────────
 
 export const NFLTeamColumn: React.FC<NFLTeamColumnProps> = ({
-    conference, divisions, selectedTeam, onTeamClick, align,
+    conference, divisions, selectedTeam, onTeamClick,
 }) => {
     return (
         <div style={{

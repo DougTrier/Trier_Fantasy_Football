@@ -51,7 +51,7 @@ export const DynastyService = {
      */
     rolloverRosters(
         teams: FantasyTeam[],
-        settings: DynastySettings,
+        _settings: DynastySettings,
     ): { teams: FantasyTeam[]; releasedPlayers: Player[] } {
         const releasedPlayers: Player[] = [];
 

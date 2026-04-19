@@ -212,7 +212,7 @@ export const SeasonProjectionsDashboard: React.FC = () => {
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                 {POSITIONS.map(pos => (
                     <button key={pos} onClick={() => setPosFilter(pos)} style={{
-                        padding: '5px 14px', borderRadius: '20px', border: 'none',
+                        padding: '5px 14px', borderRadius: '20px',
                         cursor: 'pointer', fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.5px',
                         background: posFilter === pos
                             ? (POSITION_COLORS[pos] || '#eab308')

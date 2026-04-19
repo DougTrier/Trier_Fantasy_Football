@@ -69,8 +69,6 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ icon, label, isActive, onClic
             backgroundBlendMode: 'normal',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
             color: isActive ? '#fff' : 'white', // White text for contrast on dark leather
             fontWeight: isActive ? 800 : 600,
             transition: 'transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease',

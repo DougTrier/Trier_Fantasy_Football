@@ -13,7 +13,6 @@ import { X, ExternalLink, Loader } from 'lucide-react';
 import {
     ScoreboardService,
     type GameDetail,
-    type TeamBoxScore,
 } from '../../services/ScoreboardService';
 import { getTeamTheme } from '../../utils/teamThemes';
 

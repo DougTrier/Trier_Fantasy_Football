@@ -28,7 +28,7 @@ interface ScoutingReportModalProps {
 }
 
 /** ScoutingReportModal — full-page deep-dive overlay. Body scroll locked while open. */
-export const ScoutingReportModal: React.FC<ScoutingReportModalProps> = ({ matchup, onClose, isOpen }) => {
+export const ScoutingReportModal: React.FC<ScoutingReportModalProps> = ({ matchup, onClose }) => {
     // printRef targets the notebook-paper div for react-to-print.
     const printRef = useRef<HTMLDivElement>(null);
     const { primaryPlayer: off, rivalPlayer: def, advantageScore, metric } = matchup;

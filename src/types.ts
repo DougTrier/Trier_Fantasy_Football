@@ -180,6 +180,11 @@ export interface Player {
     draftedRound?: number;     // fantasy draft round (1-based)
     draftedYear?: number;      // season year they were drafted in this fantasy league
     contractYear?: number;     // 1 = first year; increments each season kept
+
+    // NFL roster intelligence — populated by the Sleeper pipeline
+    injuryStatus?: string | null;     // e.g. "IR", "O", "D", "Q"
+    injuryBodyPart?: string | null;   // e.g. "knee", "hamstring"
+    depthChartOrder?: number | null;  // 1 = starter; higher = backup
 }
 
 /**

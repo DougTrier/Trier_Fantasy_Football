@@ -246,7 +246,7 @@ export default function App() {
   });
   // Per-team game status strings shown on locked roster slots (e.g. "Q3 7:42")
   const [gameStatuses, setGameStatuses] = useState<Record<string, string>>({});
-  const [peers, setPeers] = useState<DiscoveredPeer[]>([]);
+  const [_peers, setPeers] = useState<DiscoveredPeer[]>([]);
   const [connectedPeers, setConnectedPeers] = useState<string[]>([]);
   const [hasNewOffers, setHasNewOffers] = useState(false);
   const [activeView, setActiveView] = useState('dashboard');
@@ -723,7 +723,7 @@ export default function App() {
 
       const newRoster = { ...team.roster };
       for (const slot in newRoster) {
-        newRoster[slot as keyof typeof newRoster] = refreshPlayer(newRoster[slot as keyof typeof newRoster]);
+        newRoster[slot as keyof typeof newRoster] = refreshPlayer(newRoster[slot as keyof typeof newRoster] ?? null);
       }
 
       // Safe access to bench
@@ -905,7 +905,7 @@ export default function App() {
               };
               const newRoster = { ...prev.roster };
               for (const k in newRoster) {
-                newRoster[k as keyof typeof newRoster] = updatePlayer(newRoster[k as keyof typeof newRoster]);
+                newRoster[k as keyof typeof newRoster] = updatePlayer(newRoster[k as keyof typeof newRoster] ?? null);
               }
               const newBench = (prev.bench || []).map(updatePlayer) as Player[];
               return { ...prev, roster: newRoster, bench: newBench };
@@ -959,7 +959,7 @@ export default function App() {
           updateActiveTeam(prev => {
             const updateP = (p: Player | null) => (p?.id === activePlayerCard.id ? enrichedPlayer : p);
             const newRoster = { ...prev.roster };
-            for (const k in newRoster) newRoster[k as keyof typeof newRoster] = updateP(newRoster[k as keyof typeof newRoster]);
+            for (const k in newRoster) newRoster[k as keyof typeof newRoster] = updateP(newRoster[k as keyof typeof newRoster] ?? null);
             const newBench = prev.bench.map(updateP) as Player[];
             return { ...prev, roster: newRoster, bench: newBench };
           });
@@ -1093,7 +1093,7 @@ export default function App() {
   };
 
   const handleCreateLeague = async () => {
-    const name = await showPrompt('League name:', 'New League', 'Create New League');
+    const name = await showPrompt('League name:', 'Create New League');
     if (!name?.trim()) return;
     const slot = MultiLeagueService.createLeague(name.trim());
     setLeagues(MultiLeagueService.getRegistry());
@@ -1708,7 +1708,7 @@ export default function App() {
 
     const push = () => {
       const teamSummaries = userTeams.map(t => ({
-        id: t.id, name: t.name, owner: t.owner,
+        id: t.id, name: t.name, owner: t.ownerId,
         wins: t.wins ?? 0, losses: t.losses ?? 0,
         totalPts: t.total_production_pts ?? 0,
       }));

@@ -340,7 +340,7 @@ export const Roster: React.FC<RosterProps> = ({ team, onSelectSlot, onSelectPlay
     const { teamProjection, teamActual } = useMemo(() => {
         // Sum pre-season projected points across all 9 starting slots
         const proj = starters.reduce((acc, slot) => {
-            const p = team.roster[slot.key];
+            const p = team.roster[slot.key as keyof typeof team.roster];
             return acc + (p?.projectedPoints || 0);
         }, 0);
 
@@ -500,7 +500,7 @@ export const Roster: React.FC<RosterProps> = ({ team, onSelectSlot, onSelectPlay
                         border: '1px solid rgba(255,255,255,0.05)'
                     }}>
                         {starters.map((slot) => {
-                            const player = team.roster[slot.key];
+                            const player = team.roster[slot.key as keyof typeof team.roster] ?? null;
                             const isLocked = isPlayerLocked(player, lockedTeams);
                             return (
                                 <RosterSlot

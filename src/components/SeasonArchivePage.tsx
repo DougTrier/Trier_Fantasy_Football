@@ -12,7 +12,7 @@
  * Export — uses html-to-image toPng to capture the summary card as a PNG.
  */
 import React, { useState, useRef } from 'react';
-import { Trophy, Medal, Star, Download, Archive, Users, Crown, Loader } from 'lucide-react';
+import { Trophy, Star, Download, Archive, Users, Loader } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import type { League, FantasyTeam, Player } from '../types';
 import { ScoringEngine } from '../utils/ScoringEngine';
@@ -71,7 +71,7 @@ export const SeasonArchivePage: React.FC<SeasonArchivePageProps> = ({
 
     // Archive the current active season into league.history
     const handleArchiveSeason = () => {
-        const currentYear = ScoringEngine.getOrchestrationStatus().season;
+        const currentYear = ScoringEngine.getOrchestrationStatus().season ?? new Date().getFullYear();
         const champion = liveStandings[0];
         if (!champion) return;
 

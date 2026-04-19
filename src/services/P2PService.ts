@@ -810,7 +810,6 @@ export const P2PService = {
             : '';
         console.log(`[P2P] ← HANDSHAKE valid from ${msg.nodeId}. Protocol v${agreedVersion}${versionNote}. Sending ACK...`);
 
-        const conn = this.connections.get(targetId);
         if (!conn) return;
 
         conn.negotiatedVersion = agreedVersion;

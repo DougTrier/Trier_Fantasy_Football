@@ -843,19 +843,6 @@ const inputStyle: React.CSSProperties = {
     fontSize: '0.95rem'
 };
 
-// actionBtnStyle — ghost button for per-franchise actions (Backup / Import / Edit).
-// Uses no background so it doesn't visually compete with the franchise card.
-const actionBtnStyle: React.CSSProperties = {
-    background: 'none',
-    border: 'none',
-    color: '#9ca3af',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    fontSize: '0.8rem',
-    fontWeight: 700,
-    cursor: 'pointer'
-};
 
 // compactIconBtn — small icon-only ghost button used in compact franchise rows.
 const compactIconBtn: React.CSSProperties = {
