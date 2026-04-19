@@ -7,14 +7,14 @@ import { test, expect } from '@playwright/test';
 import { seedTeam, seedAdmin } from './helpers/seed';
 
 test.describe('Security — Admin Password Storage', () => {
-    test('admin password is stored hashed (sha256: or plain: prefix)', async ({ page }) => {
+    test('admin password is stored as PBKDF2 hash (pbkdf2: prefix)', async ({ page }) => {
         await seedAdmin(page);
         await page.goto('/');
         await page.waitForLoadState('networkidle');
 
         const stored = await page.evaluate(() => localStorage.getItem('trier_admin_pass'));
-        // Must be prefixed — never raw plaintext
-        expect(stored).toMatch(/^(sha256:|plain:)/);
+        // Must be PBKDF2 — never sha256:, plain:, or raw plaintext (upgraded in v1.2.0)
+        expect(stored).toMatch(/^pbkdf2:/);
     });
 
     test('admin password is not empty after seeding', async ({ page }) => {
