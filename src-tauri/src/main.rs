@@ -55,17 +55,13 @@ struct AppState {
     token: String,
 }
 
-/// Generates a 32-char hex session token from timestamp + PID using LCG mixing.
-/// Not cryptographically random, but unique per process start and unguessable locally.
+/// Generates a cryptographically random 32-char hex session token (128 bits of entropy).
+/// Uses the OS CSPRNG via the rand crate — suitable for session authentication.
 fn generate_comm_token() -> String {
-    use std::time::{SystemTime, UNIX_EPOCH};
-    let ts  = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_nanos();
-    let pid = std::process::id() as u128;
-    let a = ts.wrapping_mul(6364136223846793005u128)
-              .wrapping_add(1442695040888963407u128) ^ pid;
-    let b = a.wrapping_mul(2862933555777941757u128)
-              .wrapping_add(3037000499u128);
-    format!("{:032x}", b)
+    use rand::RngCore;
+    let mut bytes = [0u8; 16];
+    rand::thread_rng().fill_bytes(&mut bytes);
+    bytes.iter().map(|b| format!("{:02x}", b)).collect()
 }
 
 // ── Embedded Commissioner Dashboard HTML ──────────────────────────────────────

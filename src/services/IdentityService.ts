@@ -500,7 +500,6 @@ export const IdentityService = {
      * Returns a self-contained string: "pbkdf2:<saltBase64>:<hashBase64>".
      *
      * Requires crypto.subtle — throws if unavailable (no insecure plaintext fallback).
-     * Existing sha256: and plain: hashes are still accepted by verifyPassword() for migration.
      */
     async hashPassword(plaintext: string): Promise<string> {
         if (!crypto?.subtle) throw new Error('[Identity] crypto.subtle required — cannot hash password in an insecure context');
@@ -518,54 +517,36 @@ export const IdentityService = {
     },
 
     /**
-     * Verifies a plaintext password against a stored hash.
-     * Supports three formats (newest first):
-     *   pbkdf2:<salt>:<hash>  — PBKDF2-SHA256, current format
-     *   sha256:<hex>          — legacy SHA-256, auto-migrates on next save
-     *   plain:<text>          — legacy HTTP dev sessions, auto-migrates on next save
+     * Verifies a plaintext password against a PBKDF2-SHA256 stored hash.
+     * Only accepts the current "pbkdf2:<salt>:<hash>" format.
+     * Legacy sha256: and plain: formats are no longer accepted — all passwords
+     * have been PBKDF2 for multiple releases.
      *
      * Returns false (not an error) when crypto.subtle is unavailable.
      */
     async verifyPassword(plaintext: string, stored: string): Promise<boolean> {
         if (!stored) return false;
+        if (!stored.startsWith('pbkdf2:')) return false;
+        if (!crypto?.subtle) return false;
 
-        if (stored.startsWith('pbkdf2:')) {
-            // Current format — extract salt and re-derive to compare
-            if (!crypto?.subtle) return false;
-            const parts = stored.split(':');
-            if (parts.length !== 3) return false;
-            const salt    = Uint8Array.from(atob(parts[1]), c => c.charCodeAt(0));
-            const expected = Uint8Array.from(atob(parts[2]), c => c.charCodeAt(0));
-            const keyMaterial = await crypto.subtle.importKey(
-                'raw', new TextEncoder().encode(plaintext), 'PBKDF2', false, ['deriveBits']
-            );
-            const hashBits = await crypto.subtle.deriveBits(
-                { name: 'PBKDF2', salt, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
-                keyMaterial, 256
-            );
-            // Constant-time comparison using XOR reduction to prevent timing attacks
-            const actual = new Uint8Array(hashBits);
-            if (actual.length !== expected.length) return false;
-            let diff = 0;
-            for (let i = 0; i < actual.length; i++) diff |= actual[i] ^ expected[i];
-            return diff === 0;
-        }
-
-        if (stored.startsWith('sha256:')) {
-            // Legacy SHA-256 — verify then caller should re-hash with PBKDF2 on next save
-            if (!crypto?.subtle) return false;
-            const encoded = new TextEncoder().encode(plaintext);
-            const buffer  = await crypto.subtle.digest('SHA-256', encoded);
-            const hex = Array.from(new Uint8Array(buffer)).map(b => b.toString(16).padStart(2, '0')).join('');
-            return `sha256:${hex}` === stored;
-        }
-
-        if (stored.startsWith('plain:')) {
-            // Legacy plaintext — only used in old HTTP dev sessions, migration path only
-            return plaintext === stored.slice(6);
-        }
-
-        return false;
+        // Extract salt and expected hash from the self-contained string
+        const parts = stored.split(':');
+        if (parts.length !== 3) return false;
+        const salt     = Uint8Array.from(atob(parts[1]), c => c.charCodeAt(0));
+        const expected = Uint8Array.from(atob(parts[2]), c => c.charCodeAt(0));
+        const keyMaterial = await crypto.subtle.importKey(
+            'raw', new TextEncoder().encode(plaintext), 'PBKDF2', false, ['deriveBits']
+        );
+        const hashBits = await crypto.subtle.deriveBits(
+            { name: 'PBKDF2', salt, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
+            keyMaterial, 256
+        );
+        // Constant-time comparison via XOR reduction — prevents timing attacks
+        const actual = new Uint8Array(hashBits);
+        if (actual.length !== expected.length) return false;
+        let diff = 0;
+        for (let i = 0; i < actual.length; i++) diff |= actual[i] ^ expected[i];
+        return diff === 0;
     },
 
     // ─────────────────────────────────────────────────────────────────────────

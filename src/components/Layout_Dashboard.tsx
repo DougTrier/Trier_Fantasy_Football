@@ -23,6 +23,7 @@
 // External imports — lucide-react icons are tree-shaken at build time so only
 // the imported names contribute to bundle size. Each icon is ~1KB gzipped.
 import React, { useState, useEffect } from 'react';
+import { BUILD_INFO } from '../generated/buildInfo';
 import { LayoutDashboard, Users, Trophy, User, Settings, LogOut, BookOpen, Swords, Wallet, Zap, ArrowRightLeft, Wifi, ClipboardList, Gavel, TrendingUp, Archive, ChevronDown, Plus, Trash2, Star } from 'lucide-react';
 // ScoringEngine is read-only here (getOrchestrationStatus); no mutation occurs.
 // It is imported as a module-level singleton — no React state needed for status.
@@ -637,7 +638,7 @@ export const Layout_Dashboard: React.FC<LayoutDashboardProps> = ({
                         letterSpacing: '2px',
                         opacity: 1
                     }}>
-                        © 2026 OFFICIAL
+                        © 2026 OFFICIAL &nbsp;·&nbsp; v{BUILD_INFO.version}
                     </div>
                 </div>
             </aside>

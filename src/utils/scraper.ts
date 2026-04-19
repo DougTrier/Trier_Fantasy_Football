@@ -1,6 +1,16 @@
 // scraper.ts - Multi-Source Player Data Fetcher
 import type { Player } from '../types';
 
+// Races a promise against a timeout — returns null instead of hanging indefinitely.
+// All public scraper functions are wrapped so a slow/dead source never blocks the UI.
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
+    return Promise.race([
+        promise,
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), ms)),
+    ]);
+}
+const SCRAPER_TIMEOUT_MS = 15_000; // 15 seconds per source
+
 // Safely strips HTML and decodes entities without executing any scripts.
 // Uses DOMParser instead of innerHTML so <script> tags and event handlers in
 // externally-sourced HTML (Wikipedia, Google) never execute during parsing.
@@ -41,7 +51,7 @@ export interface ScraperOptions {
     skipGoogle?: boolean;
 }
 
-export const scrapePlayerStats = async (playerName: string, options: ScraperOptions = {}): Promise<Player['historicalStats'] | null> => {
+const _scrapePlayerStats = async (playerName: string, options: ScraperOptions = {}): Promise<Player['historicalStats'] | null> => {
     console.log(`[scraper] Scraping career stats for: ${playerName} ${options.skipGoogle ? '(Skipping Google)' : ''}`);
 
     // Strategy 1: Wikipedia Table Parsing (High Reliability)
@@ -173,12 +183,15 @@ export const scrapePlayerStats = async (playerName: string, options: ScraperOpti
     */
     return null;
 };
+// Timeout-wrapped public export for scrapePlayerStats
+export const scrapePlayerStats = (playerName: string, options: ScraperOptions = {}) =>
+    withTimeout(_scrapePlayerStats(playerName, options), SCRAPER_TIMEOUT_MS);
 
 /**
  * Scrapes a player's headshot or card photo from various sources.
  * Returns a high-res URL or null.
  */
-export const scrapePlayerPhoto = async (playerName: string, options: ScraperOptions = {}): Promise<string | null> => {
+const _scrapePlayerPhoto = async (playerName: string, options: ScraperOptions = {}): Promise<string | null> => {
     // 1. CHECK LOCAL CACHE FIRST
     try {
         const cache = JSON.parse(localStorage.getItem('tff_photo_cache') || '{}');
@@ -234,8 +247,11 @@ export const scrapePlayerPhoto = async (playerName: string, options: ScraperOpti
 
     return null;
 };
+// Timeout-wrapped public export for scrapePlayerPhoto
+export const scrapePlayerPhoto = (playerName: string, options: ScraperOptions = {}) =>
+    withTimeout(_scrapePlayerPhoto(playerName, options), SCRAPER_TIMEOUT_MS);
 
-export const scrapePlayerBio = async (source: string, knownName?: string): Promise<ScrapedBio | null> => {
+const _scrapePlayerBio = async (source: string, knownName?: string): Promise<ScrapedBio | null> => {
     console.log(`[scraper] Starting scrape for: ${source} (Known: ${knownName})`);
 
     // 1. Determine Player Name
@@ -349,3 +365,6 @@ export const scrapePlayerBio = async (source: string, knownName?: string): Promi
     console.log("[scraper] Final Bio:", bio);
     return bio;
 };
+// Timeout-wrapped public export for scrapePlayerBio
+export const scrapePlayerBio = (source: string, knownName?: string) =>
+    withTimeout(_scrapePlayerBio(source, knownName), SCRAPER_TIMEOUT_MS);

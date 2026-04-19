@@ -4234,12 +4234,13 @@ dependencies = [
 
 [[package]]
 name = "trier-fantasy"
-version = "0.0.0"
+version = "3.3.0"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
  "local-ip-address",
  "mdns-sd",
+ "rand 0.8.5",
  "serde",
  "serde_json",
  "tauri",

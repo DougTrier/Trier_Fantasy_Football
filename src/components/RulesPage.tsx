@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import leatherTexture from '../assets/leather_texture.png';
 import { ScoringEngine } from '../utils/ScoringEngine';
+import { BUILD_INFO } from '../generated/buildInfo';
 
 /** Returns the NFL season year currently in focus.
  * Jan–mid-Feb → prior season (playoffs/Super Bowl).
@@ -100,6 +101,9 @@ export const RulesPage: React.FC = () => {
                             ☕ Buy Me a Coffee
                         </a>
                     </div>
+                    <p style={{ margin: '12px 0 0', color: '#6b7280', fontSize: '0.75rem', letterSpacing: '0.05em' }}>
+                        v{BUILD_INFO.version}
+                    </p>
                 </div>
             </div>
 

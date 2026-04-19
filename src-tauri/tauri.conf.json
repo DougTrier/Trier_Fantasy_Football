@@ -7,7 +7,7 @@
         "withGlobalTauri": true
     },
     "package": {
-        "productName": "Trier Fantasy Football 2026",
+        "productName": "Trier Fantasy Football",
         "version": "3.3.0"
     },
     "tauri": {
@@ -71,14 +71,14 @@
             }
         },
         "security": {
-            "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://* wss://* http://localhost:* ws://localhost:*; img-src 'self' data: https:;"
+            "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://* wss://* http://localhost:* ws://localhost:*; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none';"
         },
         "updater": {
             "active": false
         },
         "windows": [
             {
-                "title": "Trier Fantasy Football 2026 Beta Prerelease",
+                "title": "Trier Fantasy Football",
                 "width": 1200,
                 "height": 800,
                 "resizable": true,

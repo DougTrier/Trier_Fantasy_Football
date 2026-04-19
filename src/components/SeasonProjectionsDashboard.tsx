@@ -184,7 +184,7 @@ export const SeasonProjectionsDashboard: React.FC = () => {
                         SEASON PROJECTIONS
                     </h2>
                     <div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '2px' }}>
-                        2025 · Projected vs Actual · {allRows.length} players
+                        {new Date().getFullYear()} · Projected vs Actual · {allRows.length} players
                     </div>
                 </div>
 

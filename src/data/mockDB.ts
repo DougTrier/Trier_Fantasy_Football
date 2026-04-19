@@ -48,7 +48,7 @@ const processPlayers = (players: any[]): Player[] => {
                 // Mapping Orchestrated API fields to internal UI schema
                 const normalized = {
                     ...liveEntry,
-                    year: liveStats.season || 2025,
+                    year: liveStats.season || new Date().getFullYear(),
                     team: liveEntry.team || (p.team || 'NFL'),
                     gamesPlayed: liveEntry.gp || 0,
                     fantasyPoints: liveEntry.pts_ppr || liveEntry.pts_std || 0,
@@ -62,7 +62,7 @@ const processPlayers = (players: any[]): Player[] => {
                     rushingTDs: liveEntry.rush_td || 0,
                 };
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                history = history.filter((h: any) => h.year !== (liveStats.season || 2025));
+                history = history.filter((h: any) => h.year !== (liveStats.season || new Date().getFullYear()));
                 history.push(normalized);
             }
         }
@@ -160,7 +160,7 @@ const nflDefenses: Player[] = nflTeams.map(teamCode => {
         ownership: '50%',
         isEnriched: true,
         historicalStats: dstEntry
-            ? [{ ...dstEntry, year: liveStats.season || 2025, fantasyPoints: dstEntry.pts_ppr || dstEntry.pts_std || 0 }]
+            ? [{ ...dstEntry, year: liveStats.season || new Date().getFullYear(), fantasyPoints: dstEntry.pts_ppr || dstEntry.pts_std || 0 }]
             : [],
         currentSeasonLogs: []
     } as unknown as Player;

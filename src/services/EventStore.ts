@@ -56,7 +56,13 @@ export class EventStore {
             if (!raw) return;
             const parsed: EventLogEntry[] = JSON.parse(raw);
             // Re-validate every stored event — reject anything corrupted
-            this.events = parsed.filter(e => this.validate(e));
+            const valid = parsed.filter(e => this.validate(e));
+            const dropped = parsed.length - valid.length;
+            if (dropped > 0) {
+                // Warn loudly so corrupted history is never silently lost
+                console.warn(`[EventStore] ⚠ Dropped ${dropped} corrupted event(s) during hydration. Total stored: ${parsed.length}, valid: ${valid.length}.`);
+            }
+            this.events = valid;
             this.events.sort((a, b) => a.seq - b.seq);
             console.log(`[EventStore] Hydrated ${this.events.length} events from storage.`);
         } catch (e) {

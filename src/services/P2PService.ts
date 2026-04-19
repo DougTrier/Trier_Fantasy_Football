@@ -59,6 +59,40 @@ import {
 export type { SignalType };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// P2P Message Schema Validators
+// Lightweight type guards that verify required fields exist before we cast.
+// A missing field from a malformed or malicious peer terminates the connection
+// rather than propagating a runtime error deep into the handshake logic.
+// ─────────────────────────────────────────────────────────────────────────────
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function isHandshakeMsg(m: any): m is HandshakeMsg {
+    return typeof m === 'object' && m !== null
+        && m.type === 'HANDSHAKE'
+        && typeof m.magic === 'string'
+        && typeof m.app_family === 'string'
+        && typeof m.nodeId === 'string'
+        && typeof m.publicKey === 'string'
+        && typeof m.nonce === 'string'
+        && typeof m.protocol_version === 'number';
+}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function isHandshakeAck(m: any): m is HandshakeAck {
+    return typeof m === 'object' && m !== null
+        && m.type === 'HANDSHAKE_ACK'
+        && typeof m.nodeId === 'string'
+        && typeof m.publicKey === 'string'
+        && typeof m.signedNonce === 'string'
+        && typeof m.nonce === 'string';
+}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function isHandshakeComplete(m: any): m is HandshakeComplete {
+    return typeof m === 'object' && m !== null
+        && m.type === 'HANDSHAKE_COMPLETE'
+        && typeof m.nodeId === 'string'
+        && typeof m.signedNonce === 'string';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Connection State Machine
 //
 // Transport layer:
@@ -551,16 +585,32 @@ export const P2PService = {
                 const msg = msgObj as { type: string };
 
                 // ── Route handshake messages BEFORE any trust check ──────────
+                // Schema guards reject malformed messages before they reach handler logic.
                 if (msg.type === 'HANDSHAKE') {
-                    await this.handleHandshake(targetId, msg as HandshakeMsg);
+                    if (!isHandshakeMsg(msgObj)) {
+                        console.warn(`[P2P] Malformed HANDSHAKE from ${targetId} — terminating`);
+                        this.terminateConnection(targetId, 'Malformed HANDSHAKE payload');
+                        return;
+                    }
+                    await this.handleHandshake(targetId, msgObj);
                     return;
                 }
                 if (msg.type === 'HANDSHAKE_ACK') {
-                    await this.handleHandshakeAck(targetId, msg as HandshakeAck);
+                    if (!isHandshakeAck(msgObj)) {
+                        console.warn(`[P2P] Malformed HANDSHAKE_ACK from ${targetId} — terminating`);
+                        this.terminateConnection(targetId, 'Malformed HANDSHAKE_ACK payload');
+                        return;
+                    }
+                    await this.handleHandshakeAck(targetId, msgObj);
                     return;
                 }
                 if (msg.type === 'HANDSHAKE_COMPLETE') {
-                    await this.handleHandshakeComplete(targetId, msg as HandshakeComplete);
+                    if (!isHandshakeComplete(msgObj)) {
+                        console.warn(`[P2P] Malformed HANDSHAKE_COMPLETE from ${targetId} — terminating`);
+                        this.terminateConnection(targetId, 'Malformed HANDSHAKE_COMPLETE payload');
+                        return;
+                    }
+                    await this.handleHandshakeComplete(targetId, msgObj);
                     return;
                 }
 
@@ -654,9 +704,19 @@ export const P2PService = {
 
             const msg = msgObj as { type: string };
 
-            if (msg.type === 'HANDSHAKE') { this.handleHandshake(tempId, msg as HandshakeMsg); return; }
-            if (msg.type === 'HANDSHAKE_ACK') { this.handleHandshakeAck(tempId, msg as HandshakeAck); return; }
-            if (msg.type === 'HANDSHAKE_COMPLETE') { this.handleHandshakeComplete(tempId, msg as HandshakeComplete); return; }
+            // Schema guards applied before routing — same security boundary as the LAN path.
+            if (msg.type === 'HANDSHAKE') {
+                if (!isHandshakeMsg(msgObj)) { this.terminateConnection(tempId, 'Malformed HANDSHAKE'); return; }
+                this.handleHandshake(tempId, msgObj); return;
+            }
+            if (msg.type === 'HANDSHAKE_ACK') {
+                if (!isHandshakeAck(msgObj)) { this.terminateConnection(tempId, 'Malformed HANDSHAKE_ACK'); return; }
+                this.handleHandshakeAck(tempId, msgObj); return;
+            }
+            if (msg.type === 'HANDSHAKE_COMPLETE') {
+                if (!isHandshakeComplete(msgObj)) { this.terminateConnection(tempId, 'Malformed HANDSHAKE_COMPLETE'); return; }
+                this.handleHandshakeComplete(tempId, msgObj); return;
+            }
 
             if (conn.state !== 'VERIFIED') {
                 console.warn(`[P2P] Dropping "${msg.type}" from unverified DHT peer ${tempId} (state: ${conn.state})`);
@@ -712,6 +772,13 @@ export const P2PService = {
      * Step 2 (Responder): Validate the HANDSHAKE, sign their nonce, send ACK with our own nonce.
      */
     async handleHandshake(targetId: string, msg: HandshakeMsg) {
+        const conn = this.connections.get(targetId);
+        // Reject re-handshake on an already-verified connection — prevents public key substitution attacks.
+        if (conn && conn.state === 'VERIFIED') {
+            console.warn(`[P2P] ✗ Rejected re-HANDSHAKE from already-VERIFIED peer ${targetId}`);
+            this.terminateConnection(targetId, 'Re-handshake attempt on verified connection');
+            return;
+        }
         // ── Protocol validation ───────────────────────────────────────────────
         if (msg.magic !== APP_MAGIC) {
             console.warn(`[P2P] ✗ Rejected ${targetId}: bad magic "${msg.magic}" (expected "${APP_MAGIC}")`);
@@ -858,7 +925,10 @@ export const P2PService = {
                 );
                 console.log(`[P2P] 🔐 Session key derived for ${targetId} — forward secrecy active.`);
             } catch (e) {
-                console.warn(`[P2P] Session key derivation failed for ${targetId} — falling back to unencrypted.`, e);
+                // Terminate — never fall back to unencrypted on key derivation failure
+                console.error(`[P2P] Session key derivation failed for ${targetId} — terminating connection.`, e);
+                this.terminateConnection(targetId, 'ECDH session key derivation failed');
+                return;
             }
         }
 
@@ -902,7 +972,10 @@ export const P2PService = {
                 );
                 console.log(`[P2P] 🔐 Session key derived for ${targetId} — forward secrecy active.`);
             } catch (e) {
-                console.warn(`[P2P] Session key derivation failed for ${targetId} — falling back to unencrypted.`, e);
+                // Terminate — never fall back to unencrypted on key derivation failure
+                console.error(`[P2P] Session key derivation failed for ${targetId} — terminating connection.`, e);
+                this.terminateConnection(targetId, 'ECDH session key derivation failed');
+                return;
             }
         }
 

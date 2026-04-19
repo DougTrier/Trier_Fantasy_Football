@@ -57,6 +57,7 @@ import { scrapePlayerStats, scrapePlayerPhoto } from './utils/scraper';
 import stadiumBg from './assets/stadium_bg.png';
 import leatherTexture from './assets/leather_texture.png';
 import { isPlayerLocked, NFL_TEAMS, fetchLiveGameData, isGameday } from './utils/gamedayLogic';
+import { safeJsonParse } from './utils/constants';
 import { processWaivers, ensureWaiverFields } from './services/WaiverService';
 import { NotificationService } from './services/NotificationService';
 
@@ -177,6 +178,13 @@ const formatInitialTeam = (): FantasyTeam => ({
 
 import { normalizeTeam } from './utils/dataNormalizer';
 
+// Session-only restart secret — generated once at module load, never persisted.
+// Lives only in memory so XSS cannot steal it from localStorage.
+const SESSION_RESTART_SECRET = crypto.randomUUID();
+
+// Rate-limit for RESTART_REQUEST — max 1 authorized restart per 60 seconds.
+let lastRestartAttemptMs = 0;
+
 export default function App() {
   const { showAlert, showConfirm, showPrompt } = useDialog();
 
@@ -213,7 +221,7 @@ export default function App() {
     const lid = MultiLeagueService.getActiveId() || '';
     const saved = localStorage.getItem(leagueKey.teams(lid));
     try {
-      const parsed = saved ? JSON.parse(saved) : null;
+      const parsed = safeJsonParse<FantasyTeam[]>(saved);
       if (Array.isArray(parsed) && parsed.length > 0) {
         // Normalize EVERY loaded team immediately — ensures missing fields get defaults
         return parsed.map(t => normalizeTeam(t));
@@ -233,7 +241,7 @@ export default function App() {
   const [lockedNFLTeams, setLockedNFLTeams] = useState<string[]>(() => {
     try {
       const stored = localStorage.getItem('trier_locked_nfl_teams');
-      return stored ? JSON.parse(stored) : [];
+      return safeJsonParse<string[]>(stored) ?? [];
     } catch { return []; }
   });
   // Per-team game status strings shown on locked roster slots (e.g. "Q3 7:42")
@@ -334,8 +342,15 @@ export default function App() {
     const unsubControl = P2PService.onData(async (msg: any, peerId: string) => {
       if (msg.type === 'RESTART_REQUEST') {
         console.log("[App] Received Restart Request");
-        const secret = localStorage.getItem('trier_p2p_secret');
-        if (secret && msg.secret === secret) {
+        const now = Date.now();
+        // Rate-limit: ignore if a restart was attempted within the last 60 seconds
+        if (now - lastRestartAttemptMs < 60_000) {
+          console.warn("[App] Restart denied. Rate limit active.");
+          return;
+        }
+        lastRestartAttemptMs = now;
+        // Compare against session-only secret — never stored in localStorage
+        if (msg.secret === SESSION_RESTART_SECRET) {
           console.warn("[App] Restart authorized. Relaunching...");
           try {
             const { relaunch } = await import('@tauri-apps/api/process');
@@ -344,7 +359,7 @@ export default function App() {
             console.error("Relaunch failed", e);
           }
         } else {
-          console.warn("[App] Restart denied. Invalid/No secret.");
+          console.warn("[App] Restart denied. Invalid secret.");
         }
       }
 
@@ -781,6 +796,18 @@ export default function App() {
     setActiveTeamId(newTeam.id);
   };
 
+  // Shared utility: safely return one or more players to the free agent pool.
+  // Deduplicates by player ID so concurrent release paths cannot create duplicates.
+  // All release flows (delete team, trade, waiver drop) must call this instead of
+  // mutating availablePlayers directly.
+  const releasePlayersToPool = (players: Player[]) => {
+    if (players.length === 0) return;
+    setAvailablePlayers(prev => {
+      const existingIds = new Set(prev.map(p => p.id));
+      return [...prev, ...players.filter(p => !existingIds.has(p.id))];
+    });
+  };
+
   const deleteTeam = (teamId: string) => {
     if (!isAdmin) return; // Safeguard
     if (userTeams.length <= 1) {
@@ -794,12 +821,7 @@ export default function App() {
         ...Object.values(target.roster).filter(Boolean) as Player[],
         ...target.bench,
       ];
-      if (releasedPlayers.length > 0) {
-        setAvailablePlayers(prev => {
-          const existingIds = new Set(prev.map(p => p.id));
-          return [...prev, ...releasedPlayers.filter(p => !existingIds.has(p.id))];
-        });
-      }
+      releasePlayersToPool(releasedPlayers);
     }
     setUserTeams(prev => {
       if (prev.length <= 1) {
@@ -1010,12 +1032,10 @@ export default function App() {
   const [league, setLeague] = useState<League>(() => {
     const lid = MultiLeagueService.getActiveId() || '';
     let loaded: League;
-    try {
+    {
       const saved = localStorage.getItem(leagueKey.league(lid));
-      loaded = saved ? JSON.parse(saved) as League
-                     : { id: lid || 'league-1', name: MultiLeagueService.getRegistry().find(s => s.id === lid)?.name || 'My League', teams: [], history: [] };
-    } catch {
-      loaded = { id: lid || 'league-1', name: MultiLeagueService.getRegistry().find(s => s.id === lid)?.name || 'My League', teams: [], history: [] };
+      const fallback: League = { id: lid || 'league-1', name: MultiLeagueService.getRegistry().find(s => s.id === lid)?.name || 'My League', teams: [], history: [] };
+      loaded = safeJsonParse<League>(saved) ?? fallback;
     }
     // One-time migration: move the standalone trier_admin_pass key into league.commPasswordHash.
     // The password now lives in the league object so it syncs to members via SYNC_LEAGUE.
@@ -1026,6 +1046,8 @@ export default function App() {
         localStorage.removeItem('trier_admin_pass');
       }
     }
+    // Purge any legacy trier_p2p_secret from localStorage — secret now lives in session memory only.
+    localStorage.removeItem('trier_p2p_secret');
     return loaded;
   });
   // Keep a ref so the VERIFIED callback always sees the latest league (avoids stale closure)
@@ -1062,8 +1084,8 @@ export default function App() {
     const savedActive = localStorage.getItem(leagueKey.activeTeam(newId));
 
     const slotName = MultiLeagueService.getRegistry().find(s => s.id === newId)?.name || 'New League';
-    setUserTeams(savedTeams ? (JSON.parse(savedTeams) as FantasyTeam[]).map(normalizeTeam) : [normalizeTeam(formatInitialTeam())]);
-    setLeague(savedLeague ? JSON.parse(savedLeague) as League : { id: newId, name: slotName, teams: [], history: [] });
+    setUserTeams((safeJsonParse<FantasyTeam[]>(savedTeams) ?? [normalizeTeam(formatInitialTeam())]).map(normalizeTeam));
+    setLeague(safeJsonParse<League>(savedLeague) ?? { id: newId, name: slotName, teams: [], history: [] });
     setActiveTeamId(savedActive || '');
 
     // Switch EventStore to the new league's event log
@@ -1207,11 +1229,8 @@ export default function App() {
       const wasInBench = filteredBench.length !== prev.bench.length;
 
       if (removed || wasInBench) {
-        // Add back to pool — clear ownerId so the player is a clean free agent
-        setAvailablePlayers(aprev => {
-          if (aprev.find(p => p.id === player.id)) return aprev;
-          return [...aprev, { ...player, ownerId: undefined }];
-        });
+        // Return to free agent pool via shared utility — clears ownerId for clean state
+        releasePlayersToPool([{ ...player, ownerId: undefined }]);
 
         recordTransaction('DROP', `Released ${player.firstName} ${player.lastName} `, `${player.firstName} ${player.lastName} `);
 
