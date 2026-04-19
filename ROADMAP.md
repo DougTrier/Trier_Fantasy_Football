@@ -138,11 +138,12 @@ Deeper data features that make Trier stand out as a research platform.
 - ✅ Export a season summary as a shareable PNG (html-to-image)
 - ✅ Admin: Archive Current Season button captures live standings snapshot into history
 
-### 3.5 Expanded Scouting Intel
-The IntelligenceStore has curated reports for ~20 players. Extend coverage.
-- Scripted intel generation using real player stats (injury history, target share, snap count)
-- Beat reporter social feed per player (pull recent mentions from a curated source list)
-- Sentiment trend: is the scout community bullish or bearish this week?
+### 3.5 Expanded Scouting Intel ✅
+- ✅ Curated IntelligenceStore expanded from 2 → 25 players (top QBs, RBs, WRs, TEs, K)
+- ✅ `generateIntelForPlayer()` — auto-generates contextual intel for ALL players using injury status, depth chart order, performance differential, and ADP; never returns null
+- ✅ `deriveSentimentTrend()` — BULLISH / BEARISH / NEUTRAL derived from perf diff + injury
+- ✅ Beat reporter feed per player (2-3 sourced quotes with outlet, reporter, timestamp, sentiment)
+- ✅ ScoutingReportModal: BULLISH/BEARISH/NEUTRAL banner + BEAT REPORTER FEED section
 
 ---
 

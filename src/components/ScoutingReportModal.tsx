@@ -35,8 +35,8 @@ import { VideoPipelineService, type VideoCandidate } from '../services/VideoPipe
 // videoBlacklist filters out previously flagged low-quality videos per session.
 import { videoBlacklist } from '../services/VideoBlacklistService';
 import type { H2HMatchupResult } from '../utils/H2HEngine';
-// getIntelForPlayer returns curated scouting intel or null for unknown players.
-import { getIntelForPlayer } from '../utils/IntelligenceStore';
+// getIntelForPlayer returns curated intel; generateIntelForPlayer covers all others.
+import { getIntelForPlayer, generateIntelForPlayer, deriveSentimentTrend } from '../utils/IntelligenceStore';
 import { PlayerCard } from './PlayerCard';
 
 interface ScoutingReportModalProps {
@@ -178,7 +178,8 @@ export const ScoutingReportModal: React.FC<ScoutingReportModalProps> = ({ matchu
         const margin = Math.abs(advantageScore - 50);
         const isFavored = isPrimaryView ? advantageScore > 50 : advantageScore < 50;
 
-        const subjectIntel = getIntelForPlayer(subject.lastName);
+        // Always resolve to a full intel object — curated or auto-generated
+        const subjectIntel = getIntelForPlayer(subject.lastName) ?? generateIntelForPlayer(subject);
 
         // Headline randomly selected from 3 templates for variety on each open.
         const headlines = [
@@ -188,12 +189,8 @@ export const ScoutingReportModal: React.FC<ScoutingReportModalProps> = ({ matchu
         ];
         const headline = headlines[Math.floor(Math.random() * headlines.length)];
 
-        // Social sentiment: curated text from IntelligenceStore or generated fallback.
-        // Social Sentiment
-        const socialIntel = subjectIntel?.socialIntelligence ||
-            `${subject.lastName} arrives with high expectations.The tape suggests a pivotal role in the ${metric.toLowerCase()} game script.`;
-
-        const scoutSentiment = subjectIntel?.scoutSentiment || ['High Ceiling', 'Volume Dependent', 'Red Zone Target'];
+        const socialIntel = subjectIntel.socialIntelligence;
+        const scoutSentiment = subjectIntel.scoutSentiment;
 
         // Tape Analysis: advantage string vs caution string based on isFavored flag.
         // Tape Analysis
@@ -213,7 +210,10 @@ export const ScoutingReportModal: React.FC<ScoutingReportModalProps> = ({ matchu
             dataBreakdown,
             conclusion,
             scoutSentiment,
-            tacticalNote: `Coach's Tip: Focus on ${subject.lastName}'s ${metric.toLowerCase()} efficiency.`
+            tacticalNote: `Coach's Tip: Focus on ${subject.lastName}'s ${metric.toLowerCase()} efficiency.`,
+            sentimentTrend: subjectIntel.sentimentTrend ?? deriveSentimentTrend(subject),
+            reporterFeed: subjectIntel.reporterFeed ?? [],
+            trendingNews: subjectIntel.trendingNews,
         };
     }, [activePlayerId, off.id, def?.id, advantageScore, metric]);
 
@@ -357,6 +357,18 @@ export const ScoutingReportModal: React.FC<ScoutingReportModalProps> = ({ matchu
 
                             {/* Section 1 Header */}
                             <div style={{ position: 'relative', zIndex: 5, borderBottom: '3px solid #111827', paddingBottom: '20px', marginBottom: '30px' }}>
+                                {/* Sentiment banner — color-coded BULLISH / BEARISH / NEUTRAL */}
+                                <div style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: '6px',
+                                    background: report.sentimentTrend === 'BULLISH' ? 'rgba(16,185,129,0.12)' : report.sentimentTrend === 'BEARISH' ? 'rgba(239,68,68,0.12)' : 'rgba(100,116,139,0.12)',
+                                    border: `1px solid ${report.sentimentTrend === 'BULLISH' ? '#10b981' : report.sentimentTrend === 'BEARISH' ? '#ef4444' : '#64748b'}`,
+                                    borderRadius: '20px', padding: '3px 12px', marginBottom: '12px',
+                                    fontFamily: "'Architects Daughter', cursive", fontSize: '0.8rem', fontWeight: 900,
+                                    color: report.sentimentTrend === 'BULLISH' ? '#065f46' : report.sentimentTrend === 'BEARISH' ? '#991b1b' : '#475569',
+                                }}>
+                                    <span>{report.sentimentTrend === 'BULLISH' ? '📈' : report.sentimentTrend === 'BEARISH' ? '📉' : '➡️'}</span>
+                                    WAR ROOM: {report.sentimentTrend}
+                                </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
 
                                     <div style={{ flex: 1, paddingRight: '20px' }}>
@@ -438,6 +450,35 @@ export const ScoutingReportModal: React.FC<ScoutingReportModalProps> = ({ matchu
                                         ))}
                                     </div>
                                 </section>
+
+                                {/* Beat Reporter Feed — shown only when entries exist */}
+                                {report.reporterFeed.length > 0 && (
+                                    <section>
+                                        <h3 style={{ fontFamily: "'Architects Daughter', cursive", fontSize: '1.2rem', color: '#b91c1c', fontWeight: 900, marginBottom: '10px', textDecoration: 'underline' }}>
+                                            // BEAT REPORTER FEED
+                                        </h3>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                            {report.reporterFeed.map((item, i) => (
+                                                <div key={i} style={{
+                                                    background: 'rgba(17,24,39,0.04)',
+                                                    borderLeft: `3px solid ${item.sentiment === 'bullish' ? '#10b981' : item.sentiment === 'bearish' ? '#ef4444' : '#94a3b8'}`,
+                                                    padding: '8px 12px',
+                                                    borderRadius: '0 4px 4px 0',
+                                                }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                                                        <p style={{ fontFamily: "'Special Elite', cursive", fontSize: '0.95rem', color: '#1f2937', margin: 0, flex: 1 }}>
+                                                            {item.headline}
+                                                        </p>
+                                                        <span style={{ fontSize: '0.65rem', color: '#94a3b8', whiteSpace: 'nowrap', marginTop: '2px' }}>{item.timestamp}</span>
+                                                    </div>
+                                                    <div style={{ fontSize: '0.7rem', color: '#6b7280', marginTop: '4px', fontWeight: 700 }}>
+                                                        {item.reporter} · {item.outlet}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </section>
+                                )}
 
                                 <section>
                                     <h3 style={{ fontFamily: "'Architects Daughter', cursive", fontSize: '1.2rem', color: '#b91c1c', fontWeight: 900, marginBottom: '10px', textDecoration: 'underline' }}>
