@@ -30,7 +30,7 @@ Items marked **[Partial]** have architecture already in place — they just need
 ---
 
 ## Phase 2 — Core Feature Expansion
-*Target: v1.4.x – v1.5.x — 2–4 months*
+*Target: v1.4.x – v1.5.x — In Progress*
 
 Significant new features that build directly on the existing architecture.
 
@@ -61,22 +61,29 @@ shrink/grow cleanly at any window size.
 - Minimum readable size: ~720px tall window
 - Do this before or alongside any view that introduces new sidebar items
 
-### 2.2 Draft Simulator
-The player pool, ADP data, and roster structure are all already modeled — no new data needed.
-- Snake draft with configurable number of teams (2–16)
-- AI auto-pick opponents that follow ADP with configurable "reach" variance
-- Live pick clock with configurable timer (30s / 60s / 90s)
-- Draft board view showing all picks by round and team
-- Auto-save draft results directly to a new FantasyTeam
-- Mock draft mode (no consequences — just practice)
+### 2.2 Draft Simulator ✅
+*Shipped: v1.4.0*
+- ✅ Snake draft with configurable number of teams (2–16)
+- ✅ AI auto-pick opponents that follow ADP with positional need awareness
+- ✅ Live pick clock with configurable timer (Off / 30s / 60s / 90s)
+- ✅ Draft board view showing all picks by round and team
+- ✅ Auto-save draft results directly to a new FantasyTeam (Real Draft mode)
+- ✅ Mock draft mode (no consequences — just practice)
+- ✅ Results screen with draft grade (A+→C) based on projected points
+- ✅ HOW TO USE help overlay
+- ✅ Auto-fills team/owner name from logged-in user
+- ✅ Responsive zoom scaling with window size
 
-### 2.4 Waiver Wire
-Currently players are added/dropped freely. A real waiver system adds competitive integrity.
-- FAAB (Free Agent Acquisition Budget) waiver model — each team starts with 100 FAAB, bids blind
-- Priority waiver fallback for undrafted free agents (no cost)
-- Weekly waiver processing window (Tuesday night → Wednesday morning)
-- Commissioner can override and force-process waivers at any time
-- Waiver history log per team (visible in Settings > Transaction History)
+### 2.4 Waiver Wire ✅
+*Shipped: v1.4.0*
+- ✅ FAAB (Free Agent Acquisition Budget) waiver model — each team starts with $100, bids blind
+- ✅ Priority waiver fallback — $0 bid uses waiver priority order
+- ✅ Weekly waiver processing window (Tuesday 02:00 AM countdown timer)
+- ✅ Commissioner can override and force-process waivers at any time
+- ✅ Waiver history log per team (transaction log entries)
+- ✅ Rolling waiver priority — winner drops to bottom of order
+- ✅ Optional drop player on claim submission
+- ✅ HOW TO USE help overlay
 
 ### 2.5 Head-to-Head Weekly Schedule
 The H2H engine scores matchups but there's no concept of weekly opponents.
