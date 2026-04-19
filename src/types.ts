@@ -249,10 +249,29 @@ export interface FantasyTeam {
     points_escrowed?: number; // Held while an outgoing trade offer is open
     points_spent?: number;
     ownerId?: string;
+    // H2H Season Record — updated each time the commissioner completes a week
+    wins?: number;
+    losses?: number;
+    ties?: number;
+    weeklyScores?: number[];  // Points scored per week (index 0 = week 1)
     // Waiver Wire — FAAB budget, priority order, and pending claims
     faabBalance?: number;       // Free Agent Acquisition Budget (default 100)
     waiverPriority?: number;    // Lower number = higher priority; worst record gets 1
     waiverBids?: WaiverBid[];   // Pending blind bids awaiting Tuesday processing
+}
+
+/**
+ * Matchup — a single head-to-head game between two teams in a given week.
+ * Scores are recorded when the week is marked complete by the commissioner.
+ */
+export interface Matchup {
+    id: string;
+    week: number;
+    homeTeamId: string;
+    awayTeamId: string;
+    homeScore?: number;  // Actual points scored; undefined until week is complete
+    awayScore?: number;
+    completed: boolean;
 }
 
 /**
@@ -269,6 +288,10 @@ export interface League {
         maxPlayers: number;
         pointsFormat: 'PPR' | 'Half PPR' | 'Standard';
     };
+    // H2H Weekly Schedule
+    schedule?: Matchup[];
+    currentWeek?: number;   // Active week (1-indexed); commissioner advances it
+    numWeeks?: number;      // 14 or 16 regular-season weeks
     history?: {
         year: number;
         champion: string;

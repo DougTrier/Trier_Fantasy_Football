@@ -500,7 +500,6 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('trier_fantasy_all_teams_v3', JSON.stringify(userTeams));
     sessionStorage.setItem('trier_fantasy_active_id', activeTeamId);
-    // Also update localStorage as a fallback for the primary window
     localStorage.setItem('trier_fantasy_active_id', activeTeamId);
   }, [userTeams, activeTeamId]);
 
@@ -974,13 +973,18 @@ export default function App() {
   }, [availablePlayers.filter(p => !p.isEnriched).length, isScraping]);
 
 
-  // League State (Standings)
-  const [league] = useState<League>({
-    id: 'league-1',
-    name: "Trier's Fantasy League",
-    teams: [],
-    history: []
+  // League State (Standings + H2H Schedule)
+  const [league, setLeague] = useState<League>(() => {
+    try {
+      const saved = localStorage.getItem('trier_fantasy_league_v1');
+      if (saved) return JSON.parse(saved) as League;
+    } catch { /* fall through */ }
+    return { id: 'league-1', name: "Trier's Fantasy League", teams: [], history: [] };
   });
+  // Persist schedule and currentWeek whenever league changes
+  useEffect(() => {
+    localStorage.setItem('trier_fantasy_league_v1', JSON.stringify(league));
+  }, [league]);
 
   // Derived League State (Merges My Team with others + Updates History Points)
   const displayLeague = useMemo(() => {
@@ -1786,7 +1790,15 @@ export default function App() {
 
       {activeView === 'rules' && <RulesPage />}
       {activeView === 'h2h' && (
-        <H2HPage userTeam={myTeam} allTeams={userTeams} allPlayers={availablePlayers} />
+        <H2HPage
+          userTeam={myTeam}
+          allTeams={userTeams}
+          allPlayers={availablePlayers}
+          league={league}
+          isAdmin={isAdmin}
+          onLeagueChange={setLeague}
+          onTeamsChange={setUserTeams}
+        />
       )}
 
       {activeView === 'players' && (
