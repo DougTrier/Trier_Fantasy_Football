@@ -51,15 +51,14 @@ const TeamRow: React.FC<{
             style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '6px',
-                padding: '5px 8px',
-                borderRadius: '6px',
+                gap: '8px',
+                padding: '6px 8px',
+                borderRadius: '8px',
                 cursor: 'pointer',
-                marginBottom: '2px',
+                marginBottom: '3px',
                 flexDirection: align === 'right' ? 'row-reverse' : 'row',
-                // Highlight selected team with a subtle team-colored border
                 background: isSelected
-                    ? `rgba(${hexToRgb(theme.primary)}, 0.15)`
+                    ? `rgba(${hexToRgb(theme.primary)}, 0.18)`
                     : isLive ? 'rgba(239,68,68,0.08)' : 'transparent',
                 border: isSelected
                     ? `1px solid ${theme.primary}60`
@@ -67,57 +66,53 @@ const TeamRow: React.FC<{
                 transition: 'background 0.15s',
             }}
             onMouseEnter={e => {
-                if (!isSelected) (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.05)';
+                if (!isSelected) (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.06)';
             }}
             onMouseLeave={e => {
                 if (!isSelected) (e.currentTarget as HTMLDivElement).style.background =
                     isLive ? 'rgba(239,68,68,0.08)' : 'transparent';
             }}
         >
-            {/* Team logo — ESPN CDN, same source used on player cards */}
+            {/* Team logo — ESPN CDN, same source as player cards */}
             <img
                 src={theme.logoUrl}
                 alt={abbr}
                 style={{
-                    width: 22, height: 22,
+                    width: 30, height: 30,
                     objectFit: 'contain',
                     flexShrink: 0,
-                    filter: isLive ? `drop-shadow(0 0 4px ${theme.primary})` : 'none',
+                    filter: isLive ? `drop-shadow(0 0 5px ${theme.primary})` : 'none',
                     animation: isLive ? 'pulse 1.5s infinite' : 'none',
-                    opacity: isSelected ? 1 : 0.85,
+                    opacity: isSelected ? 1 : 0.9,
                 }}
             />
 
-            {/* Abbreviation */}
-            <span style={{
-                fontSize: '0.7rem', fontWeight: 800,
-                color: isSelected ? '#fff' : '#d1d5db',
-                letterSpacing: '0.5px', minWidth: '28px',
-                textAlign: align === 'right' ? 'right' : 'left',
-            }}>
-                {abbr}
-            </span>
-
-            {/* Record or live score */}
-            <span style={{
-                fontSize: '0.62rem', color: isLive ? '#ef4444' : '#6b7280',
-                fontWeight: isLive ? 700 : 400, flexShrink: 0,
-                marginLeft: align === 'left' ? 'auto' : undefined,
-                marginRight: align === 'right' ? 'auto' : undefined,
-            }}>
-                {isLive && scoreLabel ? scoreLabel : recLabel}
-            </span>
-
-            {/* Live status badge */}
-            {isLive && liveGame && (
-                <span style={{
-                    fontSize: '0.55rem', color: '#ef4444', fontWeight: 700,
-                    background: 'rgba(239,68,68,0.15)', padding: '1px 4px',
-                    borderRadius: '4px', whiteSpace: 'nowrap', flexShrink: 0,
+            {/* Name + record stacked vertically — record sits tight under the abbr */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{
+                    fontSize: '0.8rem', fontWeight: 800,
+                    color: isSelected ? '#fff' : '#e5e7eb',
+                    letterSpacing: '0.5px', lineHeight: 1,
+                    textAlign: align === 'right' ? 'right' : 'left',
                 }}>
-                    {liveGame.statusDetail}
-                </span>
-            )}
+                    {abbr}
+                </div>
+                <div style={{
+                    fontSize: '0.68rem',
+                    color: isLive ? '#ef4444' : '#6b7280',
+                    fontWeight: isLive ? 700 : 500,
+                    lineHeight: 1, marginTop: '2px',
+                    textAlign: align === 'right' ? 'right' : 'left',
+                }}>
+                    {isLive && scoreLabel ? scoreLabel : recLabel}
+                    {/* Quarter status on a second micro-line when live */}
+                    {isLive && liveGame && (
+                        <span style={{ display: 'block', fontSize: '0.58rem', color: '#ef4444', marginTop: '1px' }}>
+                            {liveGame.statusDetail}
+                        </span>
+                    )}
+                </div>
+            </div>
         </div>
     );
 };
@@ -140,8 +135,7 @@ export const NFLTeamColumn: React.FC<NFLTeamColumnProps> = ({
     return (
         <div style={{
             width: '100%',
-            maxWidth: '170px',
-            // Align the column to the edge nearest the main content
+            maxWidth: '200px',
             marginLeft: align === 'right' ? 'auto' : undefined,
             marginRight: align === 'left'  ? 'auto' : undefined,
             overflowY: 'auto',
@@ -151,9 +145,9 @@ export const NFLTeamColumn: React.FC<NFLTeamColumnProps> = ({
         }}>
             {/* Conference header */}
             <div style={{
-                fontSize: '0.65rem', fontWeight: 900, letterSpacing: '2px',
+                fontSize: '0.7rem', fontWeight: 900, letterSpacing: '2px',
                 color: conference === 'AFC' ? '#3b82f6' : '#10b981',
-                textTransform: 'uppercase', marginBottom: '10px',
+                textTransform: 'uppercase', marginBottom: '8px',
                 textAlign: align === 'right' ? 'right' : 'left',
                 paddingLeft: align === 'left' ? '8px' : undefined,
                 paddingRight: align === 'right' ? '8px' : undefined,
@@ -163,18 +157,15 @@ export const NFLTeamColumn: React.FC<NFLTeamColumnProps> = ({
 
             {/* Division groups */}
             {Object.entries(divisions).map(([divName, teams]) => (
-                <div key={divName} style={{ marginBottom: '12px' }}>
-                    {/* Division label */}
+                <div key={divName} style={{ marginBottom: '8px' }}>
+                    {/* Thin divider line instead of a text label — saves vertical space */}
                     <div style={{
-                        fontSize: '0.55rem', color: '#4b5563', fontWeight: 600,
-                        textTransform: 'uppercase', letterSpacing: '1px',
+                        height: '1px',
+                        background: 'rgba(255,255,255,0.06)',
                         marginBottom: '4px',
-                        textAlign: align === 'right' ? 'right' : 'left',
-                        paddingLeft: align === 'left' ? '8px' : undefined,
-                        paddingRight: align === 'right' ? '8px' : undefined,
-                    }}>
-                        {divName.replace('AFC ', '').replace('NFC ', '')} {/* "East", "North" etc. */}
-                    </div>
+                        marginLeft: align === 'left' ? '8px' : undefined,
+                        marginRight: align === 'right' ? '8px' : undefined,
+                    }} title={divName} />
 
                     {/* Team rows */}
                     {teams.map(abbr => (
