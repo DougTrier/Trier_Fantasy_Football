@@ -3,6 +3,8 @@
 > Last updated: 2026-04-19  
 > Current release: v1.2.0
 
+> **New:** Live NFL Scoreboard added to Phase 2 (see §2.1)
+
 This roadmap is organized into four phases based on complexity and dependency order.
 Items marked **[Partial]** have architecture already in place — they just need completion.
 
@@ -44,7 +46,51 @@ Tauri supports native system tray. Minimal footprint while the app is "running i
 
 Significant new features that build directly on the existing architecture.
 
-### 2.1 Draft Simulator
+### 2.1 Live NFL Scoreboard on League Standings Page ⭐
+Show live NFL game scores directly on the League Standings page so managers can track
+all active games without leaving the app. Ties directly into the existing gameday lock
+system and fantasy scoring pipeline.
+
+**Data sources (both already integrated or accessible without an API key):**
+- **Primary**: Sleeper API game scores — officially documented and already used by the
+  stats pipeline
+- **Fallback**: ESPN unofficial scoreboard endpoint
+  (`site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard`) — stable, no key
+  required, returns live scores, quarter, time remaining, and team stats
+- Fetched via the **Tauri Rust HTTP client** — no CORS restrictions, clean 60-second polling
+
+**Scoreboard strip** (above or alongside the standings panel):
+- Each active game shows: home team / away team / score / quarter + time remaining
+- Pre-game: shows kickoff time and day
+- Final: shows final score with a "FINAL" badge
+- Auto-refreshes every 60 seconds during Sunday/Monday/Thursday windows only — no
+  unnecessary polling on off-days
+
+**Game detail modal** (click any game):
+- Full box score: passing yards, rushing yards, receiving, TDs, turnovers per team
+- Scoring summary: who scored, what quarter, running score
+- YouTube highlight reel via the existing **VideoPipelineService** — searches for
+  "[Team A] vs [Team B] highlights [week]" automatically
+- "Your players in this game" section — highlights any fantasy roster players from either
+  team with their live stat line
+
+**Fantasy integration:**
+- Small colored dot on each standing row player indicating which game they're in
+  (green = active and scoring, yellow = active game no stats yet, grey = bye/not playing)
+- "Last scoring play" ticker at the top of the standings — e.g. "Tyreek Hill 34-yd TD catch"
+- Connects to the existing game day lock indicator — locked teams show their live score
+  automatically
+
+**Implementation notes:**
+- New `ScoreboardService.ts` — handles polling, caching, and subscriber pattern (same
+  pattern as DiscoveryService)
+- New `LiveScoreboard` React component embedded in `LeagueTable.tsx`
+- New `GameDetailModal` component reusing the existing modal shell and
+  `UniversalVideoPlayer` for highlights
+- Poll only fires when `lockedNFLTeams.length > 0` (i.e., gameday is active) to avoid
+  wasting requests during the off-season
+
+### 2.2 Draft Simulator
 The player pool, ADP data, and roster structure are all already modeled — no new data needed.
 - Snake draft with configurable number of teams (2–16)
 - AI auto-pick opponents that follow ADP with configurable "reach" variance
@@ -53,7 +99,7 @@ The player pool, ADP data, and roster structure are all already modeled — no n
 - Auto-save draft results directly to a new FantasyTeam
 - Mock draft mode (no consequences — just practice)
 
-### 2.2 Waiver Wire
+### 2.4 Waiver Wire
 Currently players are added/dropped freely. A real waiver system adds competitive integrity.
 - FAAB (Free Agent Acquisition Budget) waiver model — each team starts with 100 FAAB, bids blind
 - Priority waiver fallback for undrafted free agents (no cost)
@@ -61,7 +107,7 @@ Currently players are added/dropped freely. A real waiver system adds competitiv
 - Commissioner can override and force-process waivers at any time
 - Waiver history log per team (visible in Settings > Transaction History)
 
-### 2.3 Head-to-Head Weekly Schedule
+### 2.5 Head-to-Head Weekly Schedule
 The H2H engine scores matchups but there's no concept of weekly opponents.
 - Commissioner generates a full-season schedule (14 or 16 regular-season weeks)
 - Each week shows your matchup opponent and live point differential
@@ -69,14 +115,14 @@ The H2H engine scores matchups but there's no concept of weekly opponents.
 - Playoff bracket (top 4 teams by record, weeks 15–17)
 - Tiebreaker: total points scored (already tracked)
 
-### 2.4 Trade Analyzer
+### 2.6 Trade Analyzer
 The Production Points economy is unique — give managers better tools to evaluate it.
 - Fairness score: compares points-per-game of players being traded (last 4 weeks)
 - Historical trade log browser (all completed trades in league history)
 - Trade veto system: commissioner can block a trade within 24 hours of acceptance
 - "Counter offer" button directly from an incoming offer
 
-### 2.5 Push Notifications (Tauri Native)
+### 2.7 Push Notifications (Tauri Native)
 - Trade offer received
 - Trade offer accepted or declined
 - Peer connection established
