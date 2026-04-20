@@ -1,0 +1,203 @@
+[
+  {
+    "timestamp": "2026-04-20T09:56:51.529Z",
+    "mode": "offseason",
+    "playerCount": 816,
+    "summary": {
+      "newPlayers": 566,
+      "teamChanges": 36,
+      "injuries": 0,
+      "returns": 0,
+      "practiceSquad": 0,
+      "depthShifts": 0,
+      "removed": 2312
+    },
+    "highlights": {
+      "trades": [
+        {
+          "id": "1166",
+          "name": "Kirk Cousins",
+          "position": "QB",
+          "from": "ATL",
+          "to": "LV",
+          "status": "Active"
+        },
+        {
+          "id": "1373",
+          "name": "Geno Smith",
+          "position": "QB",
+          "from": "LV",
+          "to": "NYJ",
+          "status": "Active"
+        },
+        {
+          "id": "2216",
+          "name": "Mike Evans",
+          "position": "WR",
+          "from": "TB",
+          "to": "SF",
+          "status": "Active"
+        },
+        {
+          "id": "4950",
+          "name": "Christian Kirk",
+          "position": "WR",
+          "from": "HOU",
+          "to": "SF",
+          "status": "Active"
+        },
+        {
+          "id": "4983",
+          "name": "DJ Moore",
+          "position": "WR",
+          "from": "CHI",
+          "to": "BUF",
+          "status": "Active"
+        },
+        {
+          "id": "5119",
+          "name": "Jason Sanders",
+          "position": "K",
+          "from": "MIA",
+          "to": "NYG",
+          "status": "Active"
+        },
+        {
+          "id": "5133",
+          "name": "Tyler Conklin",
+          "position": "TE",
+          "from": "LAC",
+          "to": "DET",
+          "status": "Active"
+        },
+        {
+          "id": "5848",
+          "name": "Marquise Brown",
+          "position": "WR",
+          "from": "KC",
+          "to": "PHI",
+          "status": "Active"
+        },
+        {
+          "id": "5849",
+          "name": "Kyler Murray",
+          "position": "QB",
+          "from": "ARI",
+          "to": "MIN",
+          "status": "Active"
+        },
+        {
+          "id": "5857",
+          "name": "Noah Fant",
+          "position": "TE",
+          "from": "CIN",
+          "to": "NO",
+          "status": "Active"
+        },
+        {
+          "id": "5892",
+          "name": "David Montgomery",
+          "position": "RB",
+          "from": "DET",
+          "to": "HOU",
+          "status": "Active"
+        },
+        {
+          "id": "6083",
+          "name": "Matt Gay",
+          "position": "K",
+          "from": "FA",
+          "to": "LV",
+          "status": "Active"
+        },
+        {
+          "id": "6271",
+          "name": "Olamide Zaccheaus",
+          "position": "WR",
+          "from": "CHI",
+          "to": "ATL",
+          "status": "Active"
+        },
+        {
+          "id": "6768",
+          "name": "Tua Tagovailoa",
+          "position": "QB",
+          "from": "MIA",
+          "to": "ATL",
+          "status": "Active"
+        },
+        {
+          "id": "6828",
+          "name": "AJ Dillon",
+          "position": "RB",
+          "from": "PHI",
+          "to": "CAR",
+          "status": "Active"
+        },
+        {
+          "id": "7021",
+          "name": "Rico Dowdle",
+          "position": "RB",
+          "from": "CAR",
+          "to": "PIT",
+          "status": "Active"
+        },
+        {
+          "id": "7090",
+          "name": "Darnell Mooney",
+          "position": "WR",
+          "from": "ATL",
+          "to": "NYG",
+          "status": "Active"
+        },
+        {
+          "id": "7526",
+          "name": "Jaylen Waddle",
+          "position": "WR",
+          "from": "MIA",
+          "to": "DEN",
+          "status": "Active"
+        },
+        {
+          "id": "7561",
+          "name": "Elijah Mitchell",
+          "position": "RB",
+          "from": "FA",
+          "to": "NE",
+          "status": "Active"
+        },
+        {
+          "id": "7562",
+          "name": "Tutu Atwell",
+          "position": "WR",
+          "from": "LAR",
+          "to": "MIA",
+          "status": "Active"
+        }
+      ],
+      "injuries": [],
+      "returns": [],
+      "rookies": [
+        {
+          "id": "13407",
+          "name": "Carson Towt",
+          "position": "TE",
+          "team": "IND",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        },
+        {
+          "id": "13440",
+          "name": "Damien Alford",
+          "position": "WR",
+          "team": "NO",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        }
+      ],
+      "promoted": []
+    }
+  }
+]
