@@ -86,7 +86,7 @@ jobs:
 
       - name: Create lock reminder issue
         if: steps.season-check.outputs.active == 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         with:
           script: |
             const window = '${{ steps.window.outputs.label }}';
