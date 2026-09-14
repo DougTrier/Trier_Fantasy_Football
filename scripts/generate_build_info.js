@@ -8,6 +8,7 @@ const __dirname = path.dirname(__filename);
 
 const TARGET_FILE = path.join(__dirname, '../src/generated/buildInfo.ts');
 const DIR = path.dirname(TARGET_FILE);
+const packageInfo = JSON.parse(fs.readFileSync(path.join(__dirname, '../package.json'), 'utf8'));
 
 if (!fs.existsSync(DIR)) {
     fs.mkdirSync(DIR, { recursive: true });
@@ -22,7 +23,7 @@ const content = `
 export const BUILD_INFO = {
     timestamp: ${timestamp},
     hash: '${hash}',
-    version: '1.0.0'
+    version: '${packageInfo.version}'
 };
 `;
 

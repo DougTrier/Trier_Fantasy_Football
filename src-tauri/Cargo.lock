@@ -4234,7 +4234,7 @@ dependencies = [
 
 [[package]]
 name = "trier-fantasy"
-version = "3.3.0"
+version = "3.3.2"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
