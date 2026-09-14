@@ -16,20 +16,15 @@ async function enterAdmin(page: import('@playwright/test').Page, password: strin
     const loginBtn = page.getByRole('button', { name: /LOG IN/i }).first();
     await loginBtn.waitFor({ state: 'visible', timeout: 8_000 });
     await loginBtn.click();
-    await page.waitForTimeout(300);
-
-    // Fill the AppDialog prompt with the password
-    const promptInput = page.locator('input[type="text"]').last();
-    if (await promptInput.isVisible({ timeout: 3_000 }).catch(() => false)) {
-        await promptInput.fill(password);
-        const confirmBtn = page.locator('button').filter({ hasText: /^(OK|CONFIRM)$/i }).first();
-        await confirmBtn.click();
-    }
-    await page.waitForTimeout(500);
+    const promptInput = page.getByPlaceholder('Password', { exact: true });
+    await promptInput.fill(password);
+    await page.getByRole('button', { name: 'CONFIRM', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'EXIT ADMIN', exact: true })).toBeVisible();
 }
 
 test.describe('Admin — Authentication', () => {
     test.beforeEach(async ({ page }) => {
+        await page.route('**/football/nfl/scoreboard**', route => route.fulfill({ json: { events: [] } }));
         await seedTeamAndAdmin(page);
         await page.goto('/');
         await page.waitForLoadState('networkidle');
@@ -100,8 +95,8 @@ test.describe('Admin — Game Day Locking', () => {
         await expect(page.getByRole('button', { name: 'LOCK ALL', exact: true })).toBeVisible({ timeout: 8_000 });
     });
 
-    test('UNLOCK ALL button is visible', async ({ page }) => {
-        await expect(page.getByRole('button', { name: 'UNLOCK ALL' })).toBeVisible({ timeout: 8_000 });
+    test('CLEAR MANUAL LOCKS button is visible', async ({ page }) => {
+        await expect(page.getByRole('button', { name: 'CLEAR MANUAL LOCKS' })).toBeVisible({ timeout: 8_000 });
     });
 
     test('LOCK ALL sets NFL teams in localStorage', async ({ page }) => {
@@ -115,12 +110,12 @@ test.describe('Admin — Game Day Locking', () => {
         expect(locked.length).toBeGreaterThan(0);
     });
 
-    test('UNLOCK ALL clears locked teams', async ({ page }) => {
+    test('CLEAR MANUAL LOCKS clears locked teams', async ({ page }) => {
         // Lock first
         await page.getByRole('button', { name: 'LOCK ALL', exact: true }).click();
         await page.waitForTimeout(200);
         // Then unlock
-        await page.getByRole('button', { name: 'UNLOCK ALL' }).click();
+        await page.getByRole('button', { name: 'CLEAR MANUAL LOCKS' }).click();
         await page.waitForTimeout(300);
 
         const locked = await page.evaluate(() =>

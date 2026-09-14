@@ -20,8 +20,7 @@
  *   Locking is applied at the UI level in executeSwap() and enforced via
  *   isPlayerLocked() on every roster action.
  *
- * The `lockedNFLTeams` array in App.tsx state drives this — it is set manually
- * (simulate Sunday) or could be wired to a live NFL schedule API in future.
+ * Live schedule locks and commissioner-added locks are kept separately.
  *
  * @module gamedayLogic
  */
@@ -60,7 +59,7 @@ export const getAutomaticLockedTeams = (date: Date): string[] => {
 
 /**
  * Returns true if today is a typical NFL gameday (Sun / Mon / Thu).
- * Used to gate the auto-poll interval — no need to hit the API on off-days.
+ * Used for the gameday UI only. Schedule polling must run on every day.
  */
 export const isGameday = (date: Date = new Date()): boolean => {
     const day = date.getDay();
@@ -75,6 +74,54 @@ export const isGameday = (date: Date = new Date()): boolean => {
 export interface LiveGameData {
     lockedTeams: string[];
     statuses: Record<string, string>; // team abbr → display string e.g. "Q3 7:42"
+    games: ScheduledGame[];
+}
+
+export interface ScheduledGame {
+    teams: string[];
+    kickoff: number;
+    state: 'pre' | 'in' | 'post';
+    status: string;
+}
+
+export const liveLocksAt = (games: ScheduledGame[], now = Date.now()): string[] =>
+    [...new Set(games.filter(game => game.state === 'in' ||
+        (game.state === 'pre' && game.kickoff <= now)).flatMap(game => game.teams))];
+
+export function parseScoreboard(data: unknown, now = Date.now()): LiveGameData {
+    if (!data || typeof data !== 'object' || !('events' in data) || !Array.isArray(data.events)) {
+        throw new Error('Invalid ESPN scoreboard');
+    }
+    const games: ScheduledGame[] = [];
+    for (const event of data.events) {
+        const competition = event?.competitions?.[0];
+        const type = competition?.status?.type;
+        if (!competition || !type || !Array.isArray(competition.competitors)) {
+            throw new Error('Invalid ESPN game');
+        }
+        if (/postponed|canceled|cancelled/i.test(type.name ?? '')) continue;
+        if (!['pre', 'in', 'post'].includes(type.state)) throw new Error('Unknown game state');
+        const kickoff = Date.parse(competition.date ?? event.date);
+        if (!Number.isFinite(kickoff)) throw new Error('Missing kickoff time');
+        const teams = competition.competitors.map((competitor: { team?: { abbreviation?: string } }) => {
+            const raw = competitor.team?.abbreviation?.toUpperCase();
+            const team = raw === 'WSH' ? 'WAS' : raw === 'LA' ? 'LAR' : raw;
+            if (!team || !NFL_TEAMS.includes(team)) throw new Error('Unknown NFL team');
+            return team;
+        });
+        if (teams.length !== 2) throw new Error('Incomplete game');
+        const period = competition.status.period ?? 0;
+        const seconds = competition.status.clock ?? 0;
+        const clock = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+        const status = type.state === 'pre' ? 'Kickoff' : /halftime/i.test(type.detail ?? '')
+            ? 'Halftime' : `${period > 4 ? 'OT' : `Q${period}`} ${clock}`;
+        games.push({ teams, kickoff, state: type.state, status });
+    }
+    return {
+        games,
+        lockedTeams: liveLocksAt(games, now),
+        statuses: Object.fromEntries(games.flatMap(game => game.teams.map(team => [team, game.status]))),
+    };
 }
 
 /**
@@ -82,47 +129,13 @@ export interface LiveGameData {
  * Returns locked teams + per-team status strings. No API key required.
  */
 export const fetchLiveGameData = async (): Promise<LiveGameData> => {
-    try {
         const res = await fetch(
-            'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard'
+            'https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
+            { signal: AbortSignal.timeout(10_000) }
         );
         if (!res.ok) throw new Error(`ESPN API returned ${res.status}`);
-        const data = await res.json();
-        const lockedTeams: string[] = [];
-        const statuses: Record<string, string> = {};
-
-        for (const event of (data.events || [])) {
-            const competition = event.competitions?.[0];
-            if (!competition) continue;
-            const state = competition.status?.type?.state;
-            if (state !== 'in') continue;
-
-            // Build a readable status string: "Q3 7:42" or "Halftime"
-            const detail: string = competition.status?.type?.detail ?? '';
-            const period: number = competition.status?.period ?? 0;
-            const clockSecs: number = competition.status?.clock ?? 0;
-            const mm = String(Math.floor(clockSecs / 60)).padStart(2, '0');
-            const ss = String(clockSecs % 60).padStart(2, '0');
-            const statusStr = detail.toLowerCase().includes('halftime')
-                ? 'Halftime'
-                : period > 4
-                    ? `OT ${mm}:${ss}`
-                    : `Q${period} ${mm}:${ss}`;
-
-            for (const competitor of (competition.competitors || [])) {
-                const abbr = competitor.team?.abbreviation?.toUpperCase();
-                if (abbr && NFL_TEAMS.includes(abbr)) {
-                    lockedTeams.push(abbr);
-                    statuses[abbr] = statusStr;
-                }
-            }
-        }
-        console.log(`[GamedayLogic] Live locked teams: ${lockedTeams.join(', ') || 'none'}`);
-        return { lockedTeams, statuses };
-    } catch (e) {
-        console.warn('[GamedayLogic] Failed to fetch live NFL schedule:', e);
-        return { lockedTeams: [], statuses: {} };
-    }
+        // Errors propagate: callers must retain their last successful snapshot.
+        return parseScoreboard(await res.json());
 };
 
 /**

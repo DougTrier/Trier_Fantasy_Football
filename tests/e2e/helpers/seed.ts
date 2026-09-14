@@ -5,7 +5,7 @@
  *
  * Usage:
  *   await seedTeam(page);           // Injects a pre-built team + activates it
- *   await seedAdmin(page);          // Injects admin password (plain:admin123)
+ *   await seedAdmin(page);          // Injects a PBKDF2 commissioner password
  *   await clearAll(page);           // Wipes all trier_ keys from localStorage
  *
  * Architecture note:
@@ -14,6 +14,7 @@
  */
 
 import type { Page } from '@playwright/test';
+import { pbkdf2Sync } from 'node:crypto';
 
 // ─── Minimal Player factory ───────────────────────────────────────────────────
 
@@ -40,6 +41,8 @@ export const makePlayer = (
 export const TEST_TEAM_ID = 'e2e-team-001';
 export const TEST_TEAM_2_ID = 'e2e-team-002';
 export const ADMIN_PASSWORD = 'admin123';
+const salt = Buffer.from('test-only-comm-salt');
+const ADMIN_HASH = `pbkdf2:${salt.toString('base64')}:${pbkdf2Sync(ADMIN_PASSWORD, salt, 100_000, 32, 'sha256').toString('base64')}`;
 
 export const testTeam = () => ({
     id: TEST_TEAM_ID,
@@ -125,13 +128,12 @@ export async function seedTwoTeams(page: Page): Promise<void> {
 }
 
 /**
- * Seed admin password as plain:admin123 — verifiable without SHA-256 in the seed.
- * The app's verifyPassword() handles the plain: prefix.
+ * Seed the current league commissioner password format (PBKDF2).
  */
 export async function seedAdmin(page: Page): Promise<void> {
-    await page.addInitScript(() => {
-        localStorage.setItem('trier_admin_pass', 'plain:admin123');
-    });
+    await page.addInitScript((adminHash) => {
+        localStorage.setItem('trier_fantasy_league_v1', JSON.stringify({ id: 'e2e-league', name: 'Test League', teams: [], history: [], commPasswordHash: adminHash }));
+    }, ADMIN_HASH);
 }
 
 /**
@@ -143,8 +145,8 @@ export async function seedTeamAndAdmin(page: Page): Promise<void> {
         localStorage.setItem('trier_fantasy_all_teams_v3', JSON.stringify([data.team]));
         localStorage.setItem('trier_fantasy_active_id', data.id);
         sessionStorage.setItem('trier_fantasy_active_id', data.id);
-        localStorage.setItem('trier_admin_pass', 'plain:admin123');
-    }, { team, id: TEST_TEAM_ID });
+        localStorage.setItem('trier_fantasy_league_v1', JSON.stringify({ id: 'e2e-league', name: 'Test League', teams: [], history: [], commPasswordHash: data.adminHash }));
+    }, { team, id: TEST_TEAM_ID, adminHash: ADMIN_HASH });
 }
 
 /**
@@ -157,8 +159,8 @@ export async function seedTwoTeamsAndAdmin(page: Page): Promise<void> {
         localStorage.setItem('trier_fantasy_all_teams_v3', JSON.stringify([data.t1, data.t2]));
         localStorage.setItem('trier_fantasy_active_id', data.id);
         sessionStorage.setItem('trier_fantasy_active_id', data.id);
-        localStorage.setItem('trier_admin_pass', 'plain:admin123');
-    }, { t1, t2, id: TEST_TEAM_ID });
+        localStorage.setItem('trier_fantasy_league_v1', JSON.stringify({ id: 'e2e-league', name: 'Test League', teams: [], history: [], commPasswordHash: data.adminHash }));
+    }, { t1, t2, id: TEST_TEAM_ID, adminHash: ADMIN_HASH });
 }
 
 /**

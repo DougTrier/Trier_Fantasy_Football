@@ -48,6 +48,7 @@ interface SettingsPageProps {
     onCreateTeam: (name: string, owner: string, password?: string) => void;
     onImportTeam: (team: FantasyTeam) => void;
     lockedNFLTeams: string[];
+    manualLockedNFLTeams: string[];
     onToggleLock: (team: string) => void;
     onLockAll: () => void;
     onUnlockAll: () => void;
@@ -78,6 +79,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     onCreateTeam,
     onImportTeam,
     lockedNFLTeams,
+    manualLockedNFLTeams,
     onToggleLock,
     onLockAll,
     onUnlockAll,
@@ -291,14 +293,16 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                                                 <RefreshCw size={11} /> {fetchingSchedule ? 'FETCHING...' : 'LIVE SCHEDULE'}
                                             </button>
                                             <button onClick={onLockAll} title="Lock all 32 NFL teams (simulate full Sunday)." style={{ ...btnStyle, fontSize: '0.7rem', padding: '5px 10px', background: 'rgba(239,68,68,0.2)', border: '1px solid #ef4444', color: '#ef4444' }}>LOCK ALL</button>
-                                            <button onClick={onUnlockAll} title="Unlock all teams — open season mode." style={{ ...btnStyle, fontSize: '0.7rem', padding: '5px 10px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', color: '#9ca3af' }}>UNLOCK ALL</button>
+                                            <button onClick={onUnlockAll} title="Clear commissioner-added locks. Teams whose games have started stay locked automatically." style={{ ...btnStyle, fontSize: '0.7rem', padding: '5px 10px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.2)', color: '#9ca3af' }}>CLEAR MANUAL LOCKS</button>
                                         </div>
+                                        <p style={{ fontSize: '0.72rem', color: '#9ca3af' }}>Manual locks stay until cleared. Live-game locks end automatically after the game.</p>
                                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
                                             {NFL_TEAMS.map(team => (
                                                 <button
                                                     key={team}
                                                     onClick={() => onToggleLock(team)}
-                                                    title={lockedNFLTeams.includes(team) ? `Unlock ${team}` : `Lock ${team}`}
+                                                    disabled={lockedNFLTeams.includes(team) && !manualLockedNFLTeams.includes(team)}
+                                                    title={manualLockedNFLTeams.includes(team) ? `Clear manual lock for ${team}` : lockedNFLTeams.includes(team) ? `${team} is locked automatically until the game ends` : `Lock ${team} manually`}
                                                     style={{
                                                         padding: '3px 6px', borderRadius: '3px', fontSize: '0.6rem', fontWeight: 900,
                                                         cursor: 'pointer', border: '1px solid', transition: 'all 0.1s',

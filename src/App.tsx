@@ -19,17 +19,15 @@
  *   GlobalEventStore is the synchronization and audit layer.
  *   Every roster mutation (executeSwap) writes a canonical EventLogEntry,
  *   broadcasts it to verified peers, and also applies it to local React state.
- *   Inbound events from peers are applied via applyRosterMoveEvent() — the same
- *   pure function used locally, ensuring both paths produce identical state.
+ *   Inbound events are checked against local game locks before storage and
+ *   applied through the pure applyRosterMoveEvent() transformer.
  *
  * P2P LIFECYCLE:
  *   Discovery → Connect Request → Handshake (VERIFYING) → VERIFIED → Sync
  *   Auto-sync fires only on VERIFIED — not on raw transport connect.
  *   Game data is gated on VERIFIED throughout the stack.
  *
- * KEY EXPORTS (used by peers and tests):
- *   applyRosterMoveEvent() — canonical pure state transformer for ROSTER_MOVE events.
- *   RosterMovePayload     — the wire payload type for roster change events.
+ * Peer roster validation and transformations live in utils/rosterMoves.ts.
  */
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useDialog } from './components/AppDialog';
@@ -56,7 +54,10 @@ import { WaiverPage } from './components/WaiverPage';
 import { scrapePlayerStats, scrapePlayerPhoto } from './utils/scraper';
 import stadiumBg from './assets/stadium_bg.png';
 import leatherTexture from './assets/leather_texture.png';
-import { isPlayerLocked, NFL_TEAMS, fetchLiveGameData, isGameday } from './utils/gamedayLogic';
+import { isPlayerLocked, NFL_TEAMS, isGameday } from './utils/gamedayLogic';
+import { useGameLocks } from './hooks/useGameLocks';
+import { applyRosterMoveEvent, validateRosterMove, preservesLockedPlayers } from './utils/rosterMoves';
+import type { RosterMovePayload } from './utils/rosterMoves';
 import { safeJsonParse } from './utils/constants';
 import { processWaivers, ensureWaiverFields } from './services/WaiverService';
 import { NotificationService } from './services/NotificationService';
@@ -76,87 +77,10 @@ import type { ScoringRuleset } from './types';
 import { completeWeek } from './services/ScheduleService';
 import type { EventLogEntry } from './types/P2P';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ROSTER_MOVE Event Payload
-// Self-describing: contains enough info for any peer to apply the exact
-// same transformation to their local state without additional context.
-// ─────────────────────────────────────────────────────────────────────────────
-export interface RosterMovePayload {
-  teamId: string;
-  candidatePlayerId: string;
-  targetPlayerId: string | null;
-  targetSlot: string;
-  sourceSlot: string | null; // null = was on bench
-}
-
 // Per-session monotonic sequence counter. Starts at 1 each session.
 let _localSeq = 0;
 const nextSeq = () => ++_localSeq;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// applyRosterMoveEvent — canonical, pure state transformer
-// Used in BOTH the local and inbound peer paths. Same input = same output.
-// ─────────────────────────────────────────────────────────────────────────────
-// eslint-disable-next-line react-refresh/only-export-components
-export const applyRosterMoveEvent = (teams: FantasyTeam[], event: EventLogEntry): FantasyTeam[] => {
-  const p = event.payload as RosterMovePayload;
-  if (!p?.teamId || !p?.candidatePlayerId) {
-    console.warn('[EventStore] applyRosterMoveEvent: invalid payload', event);
-    return teams;
-  }
-
-  return teams.map(team => {
-    if (team.id !== p.teamId) return team;
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const newRoster = { ...team.roster } as any;
-    let newBench = [...team.bench];
-
-    const allPlayers = [...Object.values(team.roster).filter(Boolean), ...team.bench] as Player[];
-    const candidate = allPlayers.find(pl => pl.id === p.candidatePlayerId);
-    if (!candidate) {
-      console.warn(`[EventStore] applyRosterMoveEvent: candidate ${p.candidatePlayerId} not found in team ${p.teamId}`);
-      return team;
-    }
-
-    const targetPlayer = p.targetPlayerId
-      ? allPlayers.find(pl => pl.id === p.targetPlayerId) ?? null
-      : null;
-
-    // 1. Remove candidate from source position
-    if (p.sourceSlot) {
-      newRoster[p.sourceSlot] = null;
-    } else {
-      newBench = newBench.filter(pl => pl.id !== p.candidatePlayerId);
-    }
-
-    // 2. Place candidate at target, displace any existing player back to source
-    if (targetPlayer && p.targetPlayerId) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const targetStarterSlot = Object.keys(team.roster).find(k => (team.roster as any)[k]?.id === p.targetPlayerId);
-      if (targetStarterSlot) {
-        newRoster[targetStarterSlot] = candidate;
-      } else {
-        newBench.push(candidate);
-      }
-      if (p.sourceSlot) {
-        newRoster[p.sourceSlot] = targetPlayer;
-      } else {
-        newBench = newBench.filter(pl => pl.id !== p.targetPlayerId);
-        newBench.push(targetPlayer);
-      }
-    } else {
-      if (p.targetSlot.startsWith('bench')) {
-        newBench.push(candidate);
-      } else {
-        newRoster[p.targetSlot] = candidate;
-      }
-    }
-
-    const uniqueBench = Array.from(new Map(newBench.map(pl => [pl.id, pl])).values());
-    return { ...team, roster: newRoster, bench: uniqueBench };
-  });
-};
 const formatInitialTeam = (): FantasyTeam => ({
   id: 'user-team',
   name: "Default Team",
@@ -236,16 +160,8 @@ export default function App() {
     return sessionStorage.getItem('trier_fantasy_active_id') || localStorage.getItem(leagueKey.activeTeam(lid)) || '';
   });
 
-  // Anti-Cheat: Game Day Locking Logic (Team-Specific)
-  // Persisted across sessions so the commissioner's lock state survives a reload.
-  const [lockedNFLTeams, setLockedNFLTeams] = useState<string[]>(() => {
-    try {
-      const stored = localStorage.getItem('trier_locked_nfl_teams');
-      return safeJsonParse<string[]>(stored) ?? [];
-    } catch { return []; }
-  });
-  // Per-team game status strings shown on locked roster slots (e.g. "Q3 7:42")
-  const [gameStatuses, setGameStatuses] = useState<Record<string, string>>({});
+  const [isAdmin, setIsAdmin] = useState(false);
+  const { lockedNFLTeams, manualLockedNFLTeams, gameStatuses, setManualLocks, refresh: refreshGameLocks, getLockedTeams } = useGameLocks(isAdmin);
   const [, setPeers] = useState<DiscoveredPeer[]>([]);
   const [connectedPeers, setConnectedPeers] = useState<string[]>([]);
   const [hasNewOffers, setHasNewOffers] = useState(false);
@@ -283,8 +199,13 @@ export default function App() {
       } else if (msg.type === 'SYNC_TEAMS') {
         // Only update if the received data is newer or different to prevent loops
         const incomingTeams = msg.payload as FantasyTeam[];
+        if (!preservesLockedPlayers(userTeamsRef.current, incomingTeams, getLockedTeams())) {
+          console.warn('[Sideband] Rejected snapshot that changes locked players');
+          return;
+        }
         if (JSON.stringify(incomingTeams) !== JSON.stringify(userTeams)) {
           console.log("[Sideband] Received sync from peer", msg.senderId);
+          userTeamsRef.current = incomingTeams;
           setUserTeams(incomingTeams);
         }
       } else if (msg.type === 'SYNC_LEAGUE') {
@@ -396,9 +317,16 @@ export default function App() {
             console.error(`[App] SYNC_RESPONSE: invalid signature for event ${event.id} from ${event.author} — dropping`);
             continue;
           }
+          const incomingLocks = getLockedTeams();
+          if (event.type === 'ROSTER_MOVE' && !validateRosterMove(userTeamsRef.current, event, incomingLocks)) {
+            console.warn('[App] Rejected invalid or locked roster move from sync', event.id);
+            continue;
+          }
           const accepted = GlobalEventStore.add(event);
           if (accepted && event.type === 'ROSTER_MOVE') {
-            setUserTeams(prev => applyRosterMoveEvent(prev, event));
+            const nextTeams = applyRosterMoveEvent(userTeamsRef.current, event, incomingLocks);
+            userTeamsRef.current = nextTeams;
+            setUserTeams(nextTeams);
             applied++;
           }
         }
@@ -429,6 +357,11 @@ export default function App() {
           return;
         }
 
+        const incomingLocks = getLockedTeams();
+        if (event.type === 'ROSTER_MOVE' && !validateRosterMove(userTeamsRef.current, event, incomingLocks)) {
+          console.warn('[App] Rejected invalid or locked roster move from peer', event.id);
+          return;
+        }
         // Append to EventStore — deduplication and validation handled internally
         const accepted = GlobalEventStore.add(event);
         if (!accepted) {
@@ -438,7 +371,9 @@ export default function App() {
 
         // Apply to local React state using the canonical pure function
         if (event.type === 'ROSTER_MOVE') {
-          setUserTeams(prev => applyRosterMoveEvent(prev, event));
+          const nextTeams = applyRosterMoveEvent(userTeamsRef.current, event, incomingLocks);
+          userTeamsRef.current = nextTeams;
+          setUserTeams(nextTeams);
           console.log(`[App] ✅ ROSTER_MOVE applied from peer (seq: ${event.seq})`);
         }
       }
@@ -449,7 +384,7 @@ export default function App() {
       unsubConn();
       unsubControl();
     };
-  }, [userTeams, activeTeamId]);
+  }, [userTeams, activeTeamId, teamRef, getLockedTeams]);
 
   // Subscribe to Discovery Service
   useEffect(() => {
@@ -621,12 +556,12 @@ export default function App() {
     if (!win.__TAURI__) return;
     const unlisteners: (() => void)[] = [];
     import('@tauri-apps/api/event').then(({ listen }) => {
-      // Lock All / Unlock All from tray right-click menu
-      listen<void>('TRAY_LOCK_ALL',   () => setLockedNFLTeams([...NFL_TEAMS])).then(fn => unlisteners.push(fn));
-      listen<void>('TRAY_UNLOCK_ALL', () => setLockedNFLTeams([])).then(fn => unlisteners.push(fn));
+      // Manual lock changes from the tray require an active commissioner session.
+      listen<void>('TRAY_LOCK_ALL',   () => setManualLocks([...NFL_TEAMS])).then(fn => unlisteners.push(fn));
+      listen<void>('TRAY_UNLOCK_ALL', () => setManualLocks([])).then(fn => unlisteners.push(fn));
     });
     return () => unlisteners.forEach(fn => fn());
-  }, []);
+  }, [setManualLocks]);
 
   // Keep the tray badge in sync with pending trade offer state
   useEffect(() => {
@@ -637,31 +572,6 @@ export default function App() {
       invoke('update_tray_badge', { hasOffers: hasNewOffers }).catch(() => {});
     });
   }, [hasNewOffers]);
-
-  // Persist locked NFL teams across sessions
-  useEffect(() => {
-    localStorage.setItem('trier_locked_nfl_teams', JSON.stringify(lockedNFLTeams));
-  }, [lockedNFLTeams]);
-
-  // Auto-poll live NFL game data on gamedays (Sun / Mon / Thu).
-  // Fires once on startup when it's a gameday, then every 60 minutes.
-  // Keeps lockedNFLTeams and gameStatuses fresh without commissioner action.
-  useEffect(() => {
-    if (!isGameday()) return; // no-op on off-days
-    const prevLockedRef = { current: [] as string[] };
-    const poll = async () => {
-      const { lockedTeams, statuses } = await fetchLiveGameData();
-      // Notify only when new teams become locked (not on every poll)
-      const newlyLocked = lockedTeams.filter(t => !prevLockedRef.current.includes(t));
-      if (newlyLocked.length > 0) NotificationService.gamedayLock(newlyLocked.length);
-      prevLockedRef.current = lockedTeams;
-      setLockedNFLTeams(lockedTeams);
-      setGameStatuses(statuses);
-    };
-    poll(); // immediate fetch on mount
-    const id = setInterval(poll, 60 * 60 * 1000); // re-poll every hour
-    return () => clearInterval(id);
-  }, []);
 
   // Inactivity Logout Logic (5 Minutes)
   useEffect(() => {
@@ -765,7 +675,6 @@ export default function App() {
   // league.commPasswordHash so it syncs to all P2P members via SYNC_LEAGUE.
   // Members can only admin if they know the original plaintext password.
   // ─────────────────────────────────────────────────────────────────────────────
-  const [isAdmin, setIsAdmin] = useState(false);
 
   // Brute-force protection: tracks failed login attempts and lockout expiry.
   // Stored in refs (session-only) so it resets on app restart.
@@ -1171,6 +1080,10 @@ export default function App() {
   }, [league, userTeams]);
 
   const addToRoster = (player: Player, targetSlot?: string) => {
+    if (isPlayerLocked(player, getLockedTeams())) {
+      showAlert("This player's game is in progress.", 'Player Locked');
+      return;
+    }
     if (!targetSlot) return;
 
     // Single-Owner Ownership Enforcement
@@ -1213,6 +1126,10 @@ export default function App() {
   };
 
   const RemoveFromRoster = (player: Player) => {
+    if (isPlayerLocked(player, getLockedTeams())) {
+      showAlert("This player's game is in progress.", 'Player Locked');
+      return;
+    }
     updateActiveTeam(prev => {
       const newRoster = { ...prev.roster };
       let removed = false;
@@ -1243,7 +1160,7 @@ export default function App() {
   };
 
   const movePlayer = (player: Player) => {
-    if (isPlayerLocked(player, lockedNFLTeams)) {
+    if (isPlayerLocked(player, getLockedTeams())) {
       triggerShake(player.id);
       showAlert(`${player.firstName} ${player.lastName} is currently playing and cannot be moved.`, "Player Locked");
       return;
@@ -1294,7 +1211,7 @@ export default function App() {
     if (!swapCandidate) return;
 
     // Check if swapCandidate is locked
-    if (isPlayerLocked(swapCandidate, lockedNFLTeams)) {
+    if (isPlayerLocked(swapCandidate, getLockedTeams())) {
       triggerShake(swapCandidate.id);
       showAlert(`${swapCandidate.firstName} ${swapCandidate.lastName} is locked — their game is in progress.`, "Player Locked");
       setSwapCandidate(null);
@@ -1302,7 +1219,7 @@ export default function App() {
     }
 
     // Check if targetPlayer is locked (if we are swapping with another player)
-    if (targetPlayer && isPlayerLocked(targetPlayer, lockedNFLTeams)) {
+    if (targetPlayer && isPlayerLocked(targetPlayer, getLockedTeams())) {
       triggerShake(targetPlayer.id);
       showAlert(`${targetPlayer.firstName} ${targetPlayer.lastName} is locked — their game is in progress.`, "Player Locked");
       setSwapCandidate(null);
@@ -1490,6 +1407,10 @@ export default function App() {
     // 1. Find the player being traded
     const playerToTrade = [...Object.values(myTeam.roster), ...myTeam.bench].find(p => p?.id === offer.targetPlayerId);
     if (!playerToTrade) return;
+    if (isPlayerLocked(playerToTrade, getLockedTeams())) {
+      showAlert("This player's game is in progress. Complete the trade after the game.", 'Player Locked');
+      return;
+    }
 
     // 2. Remove player from my team (Seller)
     const sellerRoster = { ...myTeam.roster };
@@ -1659,7 +1580,7 @@ export default function App() {
 
       // Lock grid change from dashboard
       listen<{ set: string[] }>('COMM_SET_LOCKS', e => {
-        setLockedNFLTeams(e.payload.set ?? []);
+        setManualLocks(e.payload.set ?? []);
       }).then(fn => unlisteners.push(fn));
 
       // Trade approve / decline from dashboard — locate offer by ID, delegate to existing handlers
@@ -1968,9 +1889,9 @@ export default function App() {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', gap: '10px' }}>
+              {isAdmin && <div style={{ display: 'flex', gap: '10px' }}>
                 <button
-                  onClick={() => setLockedNFLTeams(lockedNFLTeams.length > 0 ? [] : [...NFL_TEAMS])}
+                  onClick={() => setManualLocks(manualLockedNFLTeams.length > 0 ? [] : [...NFL_TEAMS])}
                   style={{
                     padding: '8px 16px',
                     borderRadius: '8px',
@@ -1985,18 +1906,20 @@ export default function App() {
                   onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
                   onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
                 >
-                  {lockedNFLTeams.length > 0 ? 'UNLOCK ALL' : 'SIMULATE SUNDAY (LOCK ALL)'}
+                  {manualLockedNFLTeams.length > 0 ? 'CLEAR MANUAL LOCKS' : 'LOCK ALL'}
                 </button>
-              </div>
+              </div>}
             </div>
 
             {/* QUICK TEAM TOGGLES */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+            {isAdmin && <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
               {['KC', 'SF', 'BAL', 'DET', 'DAL', 'PHI', 'BUF', 'CIN', 'MIA', 'GB'].map(team => (
                 <button
                   key={team}
+                  disabled={lockedNFLTeams.includes(team) && !manualLockedNFLTeams.includes(team)}
+                  title={manualLockedNFLTeams.includes(team) ? `Clear manual lock for ${team}` : lockedNFLTeams.includes(team) ? `${team} is locked automatically until the game ends` : `Lock ${team} manually`}
                   onClick={() => {
-                    setLockedNFLTeams(prev =>
+                    setManualLocks(prev =>
                       prev.includes(team) ? prev.filter(t => t !== team) : [...prev, team]
                     );
                   }}
@@ -2016,7 +1939,7 @@ export default function App() {
                   {team}
                 </button>
               ))}
-            </div>
+            </div>}
           </div>
 
           {myTeam ? (
@@ -2246,19 +2169,17 @@ export default function App() {
           onCreateTeam={createNewTeam}
           onImportTeam={handleImport}
           lockedNFLTeams={lockedNFLTeams}
-          onToggleLock={(team) => setLockedNFLTeams(prev => prev.includes(team) ? prev.filter(t => t !== team) : [...prev, team])}
-          onLockAll={() => setLockedNFLTeams([...NFL_TEAMS])}
-          onUnlockAll={() => setLockedNFLTeams([])}
+          manualLockedNFLTeams={manualLockedNFLTeams}
+          onToggleLock={(team) => setManualLocks(prev => prev.includes(team) ? prev.filter(t => t !== team) : [...prev, team])}
+          onLockAll={() => setManualLocks([...NFL_TEAMS])}
+          onUnlockAll={() => setManualLocks([])}
           onFetchSchedule={async () => {
-            const { lockedTeams, statuses } = await fetchLiveGameData();
-            setLockedNFLTeams(lockedTeams);
-            setGameStatuses(statuses);
-            showAlert(
-              lockedTeams.length > 0
-                ? `${lockedTeams.length} teams are currently in active games: ${lockedTeams.join(', ')}`
-                : 'No NFL games are in progress right now. All rosters are open.',
-              lockedTeams.length > 0 ? 'Teams Locked' : 'No Active Games'
-            );
+            const success = await refreshGameLocks();
+            const teams = getLockedTeams();
+            showAlert(success
+              ? (teams.length ? `Locked teams: ${teams.join(', ')}. Manual locks remain until cleared.` : 'No teams are currently locked.')
+              : 'Could not refresh the NFL schedule. Existing locks have been preserved.',
+              success ? 'Game Day Locks' : 'Schedule Unavailable');
           }}
           scoringRuleset={league.settings?.ruleset ?? SCORING_PRESETS.PPR}
           onUpdateRuleset={handleUpdateRuleset}
@@ -2308,7 +2229,7 @@ export default function App() {
                 // Physical ownership check comes first — a stale ownerId should never block release
                 const isOwnedByMe = Object.values(myTeam?.roster || {}).concat(myTeam?.bench || []).some(p => p && p.id === activePlayerCard.id);
                 if (isOwnedByMe) {
-                  if (isPlayerLocked(activePlayerCard, lockedNFLTeams)) {
+                  if (isPlayerLocked(activePlayerCard, getLockedTeams())) {
                     await showAlert("Cannot modify roster — this player's game is in progress.", "Player Locked");
                     return;
                   }
@@ -2322,7 +2243,7 @@ export default function App() {
                   await showAlert("This player is owned by another coach. Use 'Make Trade Offer' instead.", "Player Owned");
                   return;
                 }
-                if (isPlayerLocked(activePlayerCard, lockedNFLTeams)) {
+                if (isPlayerLocked(activePlayerCard, getLockedTeams())) {
                   await showAlert("Cannot modify roster — this player's game is in progress.", "Player Locked");
                   return;
                 }

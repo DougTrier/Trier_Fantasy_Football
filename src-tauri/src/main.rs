@@ -147,7 +147,7 @@ tr:last-child td{border-bottom:none}
     <div class="ptitle">&#128274; Game Day Locks
       <div style="display:flex;gap:5px">
         <button class="btn btn-r" onclick="setAllLocks(true)">Lock All</button>
-        <button class="btn btn-g" onclick="setAllLocks(false)">Unlock All</button>
+        <button class="btn btn-g" onclick="setAllLocks(false)">Clear Manual Locks</button>
       </div>
     </div>
     <div class="lock-grid" id="locks">Loading...</div>
@@ -567,7 +567,7 @@ fn build_tray_menu() -> SystemTrayMenu {
     let show      = CustomMenuItem::new("show",       "Show App");
     let trades    = CustomMenuItem::new("trades",     "No Pending Trades").disabled();
     let lock_all  = CustomMenuItem::new("lock_all",   "Lock All Teams");
-    let unlock_all= CustomMenuItem::new("unlock_all", "Unlock All Teams");
+    let unlock_all= CustomMenuItem::new("unlock_all", "Clear Manual Locks");
     let quit      = CustomMenuItem::new("quit",       "Quit");
 
     SystemTrayMenu::new()
