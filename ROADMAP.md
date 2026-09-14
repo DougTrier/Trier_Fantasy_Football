@@ -3,7 +3,7 @@
 > Last updated: 2026-09-14
 > Current version: v3.3.2
 
-**Project status: feature-complete; break/fix maintenance only.** The phases and ideas below are a historical planning record, not an active feature backlog. Future changes should address defects, regressions, documentation accuracy, or release maintenance. New features and broad refactors are outside the current scope.
+**Project status: feature-complete; break/fix maintenance by default.** The phases and ideas below are a historical planning record, not an active feature backlog. Current work addresses defects, regressions, documentation accuracy, or release maintenance. New features may be considered when there is strong user demand; none are currently planned. Broad refactors are outside the current scope.
 
 ---
 

@@ -24,7 +24,7 @@ This is not a wrapper around ESPN or Yahoo. It is a fully self-contained league 
 
 ## Windows Downloads
 
-**Project status: feature-complete.** Current development is limited to break/fix maintenance, regression testing, documentation corrections, and releases. New features and broad refactors are outside the current scope.
+**Project status: feature-complete.** Current development focuses on break/fix maintenance, regression testing, documentation corrections, and releases. New features may be considered when there is strong user demand; none are currently planned. Broad refactors are outside the current scope.
 
 Download the **Windows x64 MSI installer** or **EXE setup installer** from the [latest release](https://github.com/DougTrier/Trier_Fantasy_Football/releases/latest). Either format installs the same application.
 

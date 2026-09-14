@@ -1,6 +1,6 @@
 # Trier Fantasy Football — Roadmap
 
-**Feature-complete — break/fix maintenance only.** See the git log and changelog for completed work. The older ideas below are historical and are not planned development.
+**Feature-complete — break/fix maintenance by default.** New features may be considered when there is strong user demand; none are currently planned. See the git log and changelog for completed work. The older ideas below are historical and are not planned development.
 
 ## Completed in v3.3.2
 

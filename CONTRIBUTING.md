@@ -31,7 +31,7 @@ Good areas for contribution:
 - Documentation corrections
 - Build and release maintenance
 
-The project is feature-complete. New features and broad refactors are outside the current scope; keep changes focused on a demonstrated defect or maintenance need.
+The project is feature-complete. Keep changes focused on a demonstrated defect or maintenance need. New features may be considered when there is strong user demand; discuss the request with the maintainer before starting implementation. No new features are currently planned, and broad refactors are outside the current scope.
 
 ---
 
