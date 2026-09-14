@@ -25,12 +25,13 @@ When contributing, try to respect those principles.
 
 Good areas for contribution:
 
-- UI/UX improvements (cards, animations, layout)
-- Performance optimizations
 - Bug fixes
-- Accessibility improvements
-- Documentation
-- Non-core feature enhancements
+- Regression tests
+- Performance or accessibility defects with reproducible failures
+- Documentation corrections
+- Build and release maintenance
+
+The project is feature-complete. New features and broad refactors are outside the current scope; keep changes focused on a demonstrated defect or maintenance need.
 
 ---
 

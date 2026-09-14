@@ -3,8 +3,7 @@
 > Last updated: 2026-09-14
 > Current version: v3.3.2
 
-This roadmap is organized into four phases based on complexity and dependency order.
-Items marked **[Partial]** have architecture already in place — they just need completion.
+**Project status: feature-complete; break/fix maintenance only.** The phases and ideas below are a historical planning record, not an active feature backlog. Future changes should address defects, regressions, documentation accuracy, or release maintenance. New features and broad refactors are outside the current scope.
 
 ---
 

@@ -1,6 +1,6 @@
 # Trier Fantasy Football — Roadmap
 
-All v1.0.0 features are complete. See git log for history.
+**Feature-complete — break/fix maintenance only.** See the git log and changelog for completed work. The older ideas below are historical and are not planned development.
 
 ## Completed in v3.3.2
 
@@ -12,7 +12,7 @@ All v1.0.0 features are complete. See git log for history.
 
 See [CHANGELOG.md](CHANGELOG.md) and the [locking guide](docs/gameday-locking.md).
 
-## Post-v1.0 Ideas
+## Historical Post-v1.0 Ideas — Not Active
 
 - **Kicker FG miss penalty** — add `-1 pt` for missed field goals (currently only missed XP is penalized).
 - **D/ST sack yardage bonus** — some leagues award bonus points for sacks > 3 in a game.

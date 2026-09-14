@@ -24,6 +24,8 @@ This is not a wrapper around ESPN or Yahoo. It is a fully self-contained league 
 
 ## Windows Downloads
 
+**Project status: feature-complete.** Current development is limited to break/fix maintenance, regression testing, documentation corrections, and releases. New features and broad refactors are outside the current scope.
+
 Download the **Windows x64 MSI installer** or **EXE setup installer** from the [latest release](https://github.com/DougTrier/Trier_Fantasy_Football/releases/latest). Either format installs the same application.
 
 Version **3.3.2** improves game-day locks and reminders. Read the [changelog](CHANGELOG.md) and [game-day locking guide](docs/gameday-locking.md) for the new controls and upgrade notes.
