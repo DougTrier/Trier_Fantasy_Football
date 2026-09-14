@@ -283,13 +283,15 @@ export const RulesPage: React.FC = () => {
                     icon={<Lock size={32} color="#ef4444" />}
                     title="Game Day Locking"
                     content={[
-                        "Commissioner locks NFL teams during live games",
+                        "The app checks the NFL schedule every 60 seconds, on every day",
+                        "Cached kickoff times lock players when games start",
                         "Locked players cannot be swapped or dropped",
-                        "Live Schedule button auto-locks active games via ESPN",
-                        "Individual team toggles or Lock All / Unlock All",
-                        "Lock state persists across sessions",
+                        "Only a logged-in commissioner can add or clear manual locks",
+                        "LOCK ALL and team toggles add manual locks that survive refreshes",
+                        "CLEAR MANUAL LOCKS leaves live-game locks in place",
+                        "Failed schedule refreshes preserve existing locks",
+                        "Open the app before kickoff to load the schedule",
                         "System tray notification fires when teams lock",
-                        "Prevents lineup changes after kickoff",
                     ]}
                 />
 
@@ -391,7 +393,7 @@ export const RulesPage: React.FC = () => {
 
                         <FaqSection icon={<BookOpen size={22} />} title="Getting Started">
                             <li><strong>Default Team:</strong> Every fresh install includes a <strong>Default Team</strong> with no password — just click it to enter the app. It is a placeholder; delete it once real franchises are set up.</li>
-                            <li><strong>Commissioner Setup:</strong> Go to <strong>Settings</strong>, then click the <strong>Commissioner Mode</strong> toggle. On first run the app detects no password and walks you through creating one — no prior password needed. Once set, that password gates all admin functions.</li>
+                            <li><strong>Commissioner Setup:</strong> Go to <strong>Settings → Commissioner Center</strong>, then click <strong>LOG IN</strong>. On first run the app walks you through creating a commissioner password. Once set, that password gates the commissioner controls.</li>
                             <li><strong>Add Franchises:</strong> While in Commissioner Mode, go to <strong>Settings → Manage Franchises → ADD FRANCHISE</strong>. Each team needs a name, owner name, and franchise password the owner will use to log in.</li>
                             <li><strong>Remove Default Team:</strong> Once all real franchises are created, delete the Default Team from <strong>Settings → Manage Franchises</strong>. Any players on it return to the free agent pool automatically.</li>
                             <li><strong>Share the App:</strong> Other league members install on their own machine and connect via the Network page (LAN auto-discovers; internet uses the relay). Their app syncs team data from yours on connect.</li>

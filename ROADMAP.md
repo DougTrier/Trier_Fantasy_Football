@@ -1,7 +1,7 @@
 # Trier Fantasy Football — Product Roadmap
 
-> Last updated: 2026-04-19  
-> Current release: v2.0.0-dev
+> Last updated: 2026-09-14
+> Current version: v3.3.2
 
 This roadmap is organized into four phases based on complexity and dependency order.
 Items marked **[Partial]** have architecture already in place — they just need completion.
@@ -18,14 +18,16 @@ Items marked **[Partial]** have architecture already in place — they just need
 - ⏭ Deep-link support (`trierfantasy://join/<code>`) — deferred; requires OS URL scheme registration
 
 ### 1.2 Live Schedule Auto-Locking ✅
-- ✅ Hourly gameday polling via useEffect (Sun/Mon/Thu only)
+- ✅ Schedule refresh every 60 seconds on every day, with cached kickoff timers (v3.3.2)
+- ✅ Separate persistent manual locks; API failures retain the last successful schedule (v3.3.2)
+- ✅ Incoming roster moves and snapshots enforce receiver-side locks (v3.3.2)
 - ✅ System tray notification when teams lock
 - ✅ Game status string on locked player badges ("LOCKED · Q3 7:42")
 
 ### 1.3 System Tray Integration ✅
 - ✅ Badge count for pending trade offers (update_tray_badge command)
 - ✅ Notification when a peer connects or disconnects
-- ✅ Lock All / Unlock All actions from tray menu on gameday
+- ✅ Commissioner-only Lock All / Clear Manual Locks actions; live-game locks stay enforced (v3.3.2)
 
 ---
 

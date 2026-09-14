@@ -4,6 +4,15 @@ Internal security audit completed 2026-04-18.
 Internal penetration test completed 2026-04-19.
 **All 15 tasks complete. Shipped in v1.2.0.**
 
+## v3.3.2 Follow-Up — 2026-09-14
+
+- Manual lock controls require an active commissioner session, including tray/dashboard callbacks.
+- Schedule failures preserve existing locks; cached kickoff times continue to enforce known games.
+- Incoming roster moves are checked before entering the event log. Full-team snapshots must preserve locked players.
+- Compatible npm dependency updates removed all reported high and moderate findings at validation time. `npm audit --audit-level=high` passes.
+- Six low-severity findings remain in the `elliptic` / browser crypto polyfill dependency chain. The suggested forced downgrade is a breaking change and was not applied.
+- Validation: 92 unit tests, 16 targeted Playwright tests, TypeScript, lint, and production build pass. This follow-up is scoped to locking and release dependencies, not a new audit of the entire application.
+
 ---
 
 ## Critical — Credential Storage

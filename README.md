@@ -22,6 +22,12 @@ Trier Fantasy Football is a desktop fantasy football application built with **Ta
 
 This is not a wrapper around ESPN or Yahoo. It is a fully self-contained league management system with enterprise-grade security.
 
+## Windows Downloads
+
+Download the **Windows x64 MSI installer** or **EXE setup installer** from the [latest release](https://github.com/DougTrier/Trier_Fantasy_Football/releases/latest). Either format installs the same application.
+
+Version **3.3.2** improves game-day locks and reminders. Read the [changelog](CHANGELOG.md) and [game-day locking guide](docs/gameday-locking.md) for the new controls and upgrade notes.
+
 ---
 
 ## Screenshots
@@ -86,7 +92,7 @@ This is not a wrapper around ESPN or Yahoo. It is a fully self-contained league 
 - League standings, head-to-head matchup analysis with 0–100 advantage scoring
 - Trade center with Production Points economy and escrow protection
 - Waiver wire with sealed FAAB bidding — processes every Tuesday at 2AM
-- Commissioner admin mode with password-protected controls and game day lock overrides
+- Commissioner admin mode with password-protected controls and persistent manual game-day locks
 - Encrypted `.tff` backup files — export and import your entire league
 - Dynasty mode with keeper tracking, contract years, and draft pick trading
 
@@ -96,7 +102,7 @@ This is not a wrapper around ESPN or Yahoo. It is a fully self-contained league 
 - **Invite codes** for cross-network play — generate a code, share it out-of-band
 - **ECDSA P-256 mutual authentication** — every peer connection goes through a 3-message cryptographic handshake before any game data flows
 - **Forward-secret session encryption** — ephemeral ECDH P-256 key exchange derives a per-connection AES-GCM-256 session key; compromising long-term identity keys cannot expose past sessions
-- **Deterministic event log** — every roster move is signed, deduplicated, and replayed identically on all peers
+- **Signed roster events** — peers verify signatures, reject duplicate events, and check moves against their local game locks before applying them
 
 ### Security (v3.3.0)
 - **PBKDF2-SHA256** password hashing (100,000 iterations, random salt) — team and commissioner passwords
@@ -121,8 +127,15 @@ This is not a wrapper around ESPN or Yahoo. It is a fully self-contained league 
 - Season projections dashboard with projected vs actual comparison
 
 ### Anti-Cheat
-- **Game day locking** — players on active NFL teams cannot be moved in or out of starting lineups while their game is in progress
-- Commissioner can lock teams manually or auto-fetch the live NFL schedule
+
+- **Automatic game locks** — the app refreshes ESPN's schedule every 60 seconds on every day. Cached kickoff times lock players between refreshes, including sessions that cross midnight.
+- **Manual commissioner locks** — **LOCK ALL** and individual team controls add restrictions that survive refreshes and restarts. Only a logged-in commissioner can change them.
+- **CLEAR MANUAL LOCKS** removes commissioner-added restrictions. Live-game locks remain until a successful schedule refresh reports the game finished.
+- **Outage protection** — failed or malformed schedule responses preserve the last successful schedule and existing locks.
+- **Peer validation** — incoming roster moves and full-team snapshots cannot move or remove players locked on the receiving app.
+- **Schedule reminders** — GitHub creates one advisory per upcoming NFL game date, skips started games, and checks existing open and closed reminders to avoid duplicates. It cannot inspect your app's current locks.
+
+Open the app before kickoff to load the schedule. See [Game-Day Locking](docs/gameday-locking.md) for step-by-step instructions and limitations.
 
 ### NFL Data Pipeline
 - Automated GitHub Actions pipeline refreshes player pool and live stats weekly via Sleeper API
@@ -146,7 +159,7 @@ This is not a wrapper around ESPN or Yahoo. It is a fully self-contained league 
 | Internet Discovery | WebSocket relay + DHT (Trystero) |
 | Local tab sync | BroadcastChannel |
 | Animations | Framer Motion |
-| CI | GitHub Actions — typecheck, lint, security audit, E2E tests |
+| CI | GitHub Actions — dependency audit, typecheck, lint, unit tests; Playwright browser tests run locally |
 
 ---
 
@@ -168,33 +181,36 @@ Initiator → Responder : HANDSHAKE_COMPLETE { sign(nonce_B + ephKey_A) }
 Both sides verify the other's ECDSA signature before the connection is trusted. Ephemeral keys are bound into the signed payloads to prevent key substitution attacks. After `VERIFIED`, both peers independently derive the same AES-GCM-256 session key via ECDH — all subsequent messages are encrypted.
 
 ### Event System
-Every roster mutation is represented as a signed `EventLogEntry` — not a raw state mutation. Peers exchange events, not snapshots. The `applyRosterMoveEvent()` function is a pure transformer: same event in → same state out, on every peer.
+
+Roster moves use signed `EventLogEntry` records. Receivers verify signatures and validate the move against their current roster and locks before adding it to `EventStore`. `src/utils/rosterMoves.ts` contains the validation and pure transformer. Full-team snapshots also travel through `SyncService`; these are checked to preserve locked players. This is a hybrid of React state, snapshots, and event-based updates.
 
 ---
 
 ## Getting Started
 
 ### Prerequisites
-- [Node.js](https://nodejs.org) 18+
+- [Node.js](https://nodejs.org) 22.12+ (the release workflow also supports Node 20.19+)
 - [Rust](https://www.rust-lang.org/tools/install) (stable)
 - [Tauri CLI](https://tauri.app/v1/guides/getting-started/prerequisites)
 
 ### Development
 ```bash
-npm install
+npm ci
 npm run tauri dev
 ```
 
 ### Build
 ```bash
-npm run tauri build
+npm run tauri -- build --bundles msi,nsis
 ```
+
+On Windows, the MSI is written to `src-tauri/target/release/bundle/msi/` and the EXE setup installer to `src-tauri/target/release/bundle/nsis/`. The GitHub release workflow builds both formats from a `v*` tag and uploads them to a draft release for verification before publication. See [Contributing](CONTRIBUTING.md) for validation and release steps.
 
 > **Note:** P2P networking requires the Tauri desktop build. Running as a plain browser (`npm run dev`) disables Discovery and P2P — the UI still works in that mode for roster and UI testing.
 
 ### First Run
 1. Launch the app — a **Default Team** is pre-loaded with no password required.
-2. Go to **Settings** and click the **Commissioner Mode** toggle. On first run it will prompt you to create your commissioner password.
+2. Go to **Settings → Commissioner Center** and click **LOG IN**. On first run it will prompt you to create your commissioner password.
 3. Use **Settings → Manage Franchises → ADD FRANCHISE** to create teams for each league member.
 4. Delete the Default Team once all real franchises are set up — its players return to the free agent pool automatically.
 5. Other league members connect via the **Network** page (LAN auto-discovers; internet uses the relay).
@@ -205,6 +221,8 @@ npm run tauri build
 
 ```
 src/
+  hooks/
+    useGameLocks.ts         — Schedule refresh, kickoff timers, commissioner control guard
   services/
     IdentityService.ts      — ECDSA keypair, PBKDF2 passwords, AES-GCM secret storage
     P2PService.ts           — WebRTC transport, mutual auth, ECDH session encryption
@@ -212,10 +230,12 @@ src/
     RelayService.ts         — WebSocket relay for internet peer discovery
     DHTService.ts           — DHT fallback (Trystero) for peer discovery
     EventStore.ts           — Append-only canonical event log
+    GameLockStore.ts        — Separate manual locks and persisted live schedule
     VideoPipelineService.ts — Multi-tier YouTube video search for scouting
   utils/
     SyncService.ts          — Sideband sync (BroadcastChannel + P2P broadcast)
     gamedayLogic.ts         — Game day locking rules
+    rosterMoves.ts          — Peer roster-move and full-snapshot lock validation
     ScoringEngine.ts        — Live stat validation and fantasy point calculation
     H2HEngine.ts            — Head-to-head advantage scoring algorithm
   types/
@@ -227,6 +247,8 @@ src/
     ScoutingReportModal.tsx  — Player intelligence and video highlights
 relay-server/
   server.js                 — WebSocket signaling relay (deploy to Railway/Render)
+scripts/
+  gameday_reminder.mjs       — Schedule-aware GitHub reminder selection and deduplication
 ```
 
 ---
@@ -234,6 +256,8 @@ relay-server/
 ## Security
 
 A full enterprise security audit was completed in v3.3.0 covering authentication, P2P trust, cryptographic key management, session security, input validation, and CSP hardening. See [Code Audit.md](Code%20Audit.md) for the complete audit log with severity ratings and regression risk analysis.
+
+The v3.3.2 follow-up adds game-lock validation and compatible dependency updates. At release validation, `npm audit --audit-level=high` passes; six low-severity findings remain in the browser crypto polyfill dependency chain. See [SECURITY_TASKS.md](SECURITY_TASKS.md) for the follow-up record.
 
 To report a vulnerability, open a GitHub issue marked `[SECURITY]`.
 
