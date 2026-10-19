@@ -24,7 +24,7 @@
     "@tauri-apps/api": "^1.6.0",
     "framer-motion": "^12.29.0",
     "html-to-image": "^1.11.13",
-    "lucide-react": "^0.563.0",
+    "lucide-react": "^1.8.0",
     "qrcode.react": "^4.2.0",
     "react": "19.0.0",
     "react-dom": "19.0.0",
