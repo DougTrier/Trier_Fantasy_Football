@@ -137,7 +137,6 @@ jobs:
 
             echo "added=${ADDED}"     >> $GITHUB_OUTPUT
             echo "removed=${REMOVED}" >> $GITHUB_OUTPUT
-            echo "files=${CHANGED_FILES}" >> $GITHUB_OUTPUT
             echo "👥 Changes detected: +${ADDED} added, -${REMOVED} removed"
           fi
 
