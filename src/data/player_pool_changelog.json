@@ -1,5 +1,639 @@
 [
   {
+    "timestamp": "2026-10-26T14:41:09.904Z",
+    "mode": "in-season",
+    "playerCount": 893,
+    "summary": {
+      "newPlayers": 195,
+      "teamChanges": 87,
+      "injuries": 142,
+      "returns": 0,
+      "practiceSquad": 0,
+      "depthShifts": 68,
+      "removed": 118
+    },
+    "highlights": {
+      "trades": [
+        {
+          "id": "829",
+          "name": "Andy Dalton",
+          "position": "QB",
+          "from": "PHI",
+          "to": "ATL",
+          "status": "Active"
+        },
+        {
+          "id": "1433",
+          "name": "Brandon McManus",
+          "position": "K",
+          "from": "GB",
+          "to": "LAR",
+          "status": "Active"
+        },
+        {
+          "id": "5119",
+          "name": "Jason Sanders",
+          "position": "K",
+          "from": "NYG",
+          "to": "NYJ",
+          "status": "Active"
+        },
+        {
+          "id": "5374",
+          "name": "Justin Watson",
+          "position": "WR",
+          "from": "HOU",
+          "to": "KC",
+          "status": "Active"
+        },
+        {
+          "id": "5859",
+          "name": "A.J. Brown",
+          "position": "WR",
+          "from": "PHI",
+          "to": "NE",
+          "status": "Active"
+        },
+        {
+          "id": "5917",
+          "name": "Mecole Hardman Jr.",
+          "position": "WR",
+          "from": "BUF",
+          "to": "IND",
+          "status": "Active"
+        },
+        {
+          "id": "5970",
+          "name": "Greg Dortch",
+          "position": "WR",
+          "from": "DET",
+          "to": "BUF",
+          "status": "Active"
+        },
+        {
+          "id": "6111",
+          "name": "Jake Browning",
+          "position": "QB",
+          "from": "TB",
+          "to": "LAC",
+          "status": "Active"
+        },
+        {
+          "id": "6920",
+          "name": "Isaiah Hodgins",
+          "position": "WR",
+          "from": "NYG",
+          "to": "PIT",
+          "status": "Active"
+        },
+        {
+          "id": "6927",
+          "name": "Quez Watkins",
+          "position": "WR",
+          "from": "PHI",
+          "to": "IND",
+          "status": "Active"
+        },
+        {
+          "id": "6931",
+          "name": "DeeJay Dallas",
+          "position": "RB",
+          "from": "JAX",
+          "to": "MIN",
+          "status": "Active"
+        },
+        {
+          "id": "7039",
+          "name": "Cody White",
+          "position": "WR",
+          "from": "SEA",
+          "to": "LV",
+          "status": "Active"
+        },
+        {
+          "id": "7535",
+          "name": "Hunter Long",
+          "position": "TE",
+          "from": "JAX",
+          "to": "ARI",
+          "status": "Inactive"
+        },
+        {
+          "id": "7537",
+          "name": "Jaret Patterson",
+          "position": "RB",
+          "from": "LAC",
+          "to": "CLE",
+          "status": "Active"
+        },
+        {
+          "id": "7559",
+          "name": "Ihmir Smith-Marsette",
+          "position": "WR",
+          "from": "ARI",
+          "to": "CAR",
+          "status": "Active"
+        },
+        {
+          "id": "7561",
+          "name": "Elijah Mitchell",
+          "position": "RB",
+          "from": "NE",
+          "to": "PHI",
+          "status": "Active"
+        },
+        {
+          "id": "7562",
+          "name": "Tutu Atwell",
+          "position": "WR",
+          "from": "MIA",
+          "to": "LAR",
+          "status": "Active"
+        },
+        {
+          "id": "7946",
+          "name": "Jack Stoll",
+          "position": "TE",
+          "from": "CLE",
+          "to": "SF",
+          "status": "Active"
+        },
+        {
+          "id": "8143",
+          "name": "Jerome Ford",
+          "position": "RB",
+          "from": "WAS",
+          "to": "ARI",
+          "status": "Active"
+        },
+        {
+          "id": "8170",
+          "name": "James Mitchell",
+          "position": "TE",
+          "from": "CAR",
+          "to": "DAL",
+          "status": "Active"
+        }
+      ],
+      "injuries": [
+        {
+          "id": "829",
+          "name": "Andy Dalton",
+          "position": "QB",
+          "team": "ATL",
+          "status": "O",
+          "bodyPart": "Coach's Decision",
+          "notes": null
+        },
+        {
+          "id": "1737",
+          "name": "Case Keenum",
+          "position": "QB",
+          "team": "CHI",
+          "status": "O",
+          "bodyPart": "Coach's Decision",
+          "notes": null
+        },
+        {
+          "id": "2133",
+          "name": "Davante Adams",
+          "position": "WR",
+          "team": "LAR",
+          "status": "IR",
+          "bodyPart": "Hamstring",
+          "notes": "Surgery"
+        },
+        {
+          "id": "2216",
+          "name": "Mike Evans",
+          "position": "WR",
+          "team": "SF",
+          "status": "O",
+          "bodyPart": "Achilles",
+          "notes": "Tendinitis"
+        },
+        {
+          "id": "2307",
+          "name": "Marcus Mariota",
+          "position": "QB",
+          "team": "WAS",
+          "status": "O",
+          "bodyPart": "Knee - MCL",
+          "notes": "Sprain"
+        },
+        {
+          "id": "3286",
+          "name": "Demarcus Robinson",
+          "position": "WR",
+          "team": "SF",
+          "status": "IR",
+          "bodyPart": "Ankle",
+          "notes": null
+        },
+        {
+          "id": "4034",
+          "name": "Christian McCaffrey",
+          "position": "RB",
+          "team": "SF",
+          "status": "Q",
+          "bodyPart": "Calf",
+          "notes": null
+        },
+        {
+          "id": "4137",
+          "name": "James Conner",
+          "position": "RB",
+          "team": "ARI",
+          "status": "IR",
+          "bodyPart": "Foot",
+          "notes": null
+        },
+        {
+          "id": "4177",
+          "name": "Mack Hollins",
+          "position": "WR",
+          "team": "NE",
+          "status": "IR",
+          "bodyPart": "Calf",
+          "notes": null
+        },
+        {
+          "id": "4199",
+          "name": "Aaron Jones Sr.",
+          "position": "RB",
+          "team": "MIN",
+          "status": "Q",
+          "bodyPart": "Undisclosed",
+          "notes": null
+        },
+        {
+          "id": "4866",
+          "name": "Saquon Barkley",
+          "position": "RB",
+          "team": "PHI",
+          "status": "Q",
+          "bodyPart": "Hamstring",
+          "notes": null
+        },
+        {
+          "id": "4881",
+          "name": "Lamar Jackson",
+          "position": "QB",
+          "team": "BAL",
+          "status": "O",
+          "bodyPart": "Ankle",
+          "notes": "Sprain"
+        },
+        {
+          "id": "4981",
+          "name": "Calvin Ridley",
+          "position": "WR",
+          "team": "TEN",
+          "status": "O",
+          "bodyPart": "Hip",
+          "notes": null
+        },
+        {
+          "id": "4983",
+          "name": "DJ Moore",
+          "position": "WR",
+          "team": "BUF",
+          "status": "O",
+          "bodyPart": "Shoulder - AC Joint",
+          "notes": "Sprain"
+        },
+        {
+          "id": "4995",
+          "name": "Ian Thomas",
+          "position": "TE",
+          "team": "LV",
+          "status": "Q",
+          "bodyPart": "Shoulder",
+          "notes": null
+        },
+        {
+          "id": "5008",
+          "name": "Durham Smythe",
+          "position": "TE",
+          "team": "BAL",
+          "status": "IR",
+          "bodyPart": "Achilles",
+          "notes": "Surgery"
+        },
+        {
+          "id": "5409",
+          "name": "Tanner Hudson",
+          "position": "TE",
+          "team": "CIN",
+          "status": "IR",
+          "bodyPart": "Pectoral",
+          "notes": "Strain"
+        },
+        {
+          "id": "5854",
+          "name": "Drew Lock",
+          "position": "QB",
+          "team": "SEA",
+          "status": "O",
+          "bodyPart": "Elbow",
+          "notes": null
+        },
+        {
+          "id": "5892",
+          "name": "David Montgomery",
+          "position": "RB",
+          "team": "HOU",
+          "status": "O",
+          "bodyPart": "Groin",
+          "notes": null
+        },
+        {
+          "id": "5927",
+          "name": "Terry McLaurin",
+          "position": "WR",
+          "team": "WAS",
+          "status": "O",
+          "bodyPart": "Knee",
+          "notes": null
+        }
+      ],
+      "returns": [],
+      "rookies": [
+        {
+          "id": "13268",
+          "name": "Elijah Sarratt",
+          "position": "WR",
+          "team": "BAL",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        },
+        {
+          "id": "13269",
+          "name": "Fernando Mendoza",
+          "position": "QB",
+          "team": "LV",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        },
+        {
+          "id": "13270",
+          "name": "CJ Daniels",
+          "position": "WR",
+          "team": "LAR",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        },
+        {
+          "id": "13272",
+          "name": "Carson Beck",
+          "position": "QB",
+          "team": "ARI",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        },
+        {
+          "id": "13273",
+          "name": "Josh Cuevas",
+          "position": "TE",
+          "team": "BAL",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        },
+        {
+          "id": "13274",
+          "name": "Germie Bernard",
+          "position": "WR",
+          "team": "PIT",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        },
+        {
+          "id": "13275",
+          "name": "Ty Simpson",
+          "position": "QB",
+          "team": "LAR",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        },
+        {
+          "id": "13276",
+          "name": "Omar Cooper Jr.",
+          "position": "WR",
+          "team": "NYJ",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        },
+        {
+          "id": "13277",
+          "name": "CJ Donaldson",
+          "position": "RB",
+          "team": "NO",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        },
+        {
+          "id": "13278",
+          "name": "Max Klare",
+          "position": "TE",
+          "team": "LAR",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        },
+        {
+          "id": "13279",
+          "name": "Carnell Tate",
+          "position": "WR",
+          "team": "TEN",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        },
+        {
+          "id": "13282",
+          "name": "Jack Endries",
+          "position": "TE",
+          "team": "CIN",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        },
+        {
+          "id": "13285",
+          "name": "Malachi Fields",
+          "position": "WR",
+          "team": "NYG",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        },
+        {
+          "id": "13287",
+          "name": "Jeremiyah Love",
+          "position": "RB",
+          "team": "ARI",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        },
+        {
+          "id": "13288",
+          "name": "Nicholas Singleton",
+          "position": "RB",
+          "team": "TEN",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        },
+        {
+          "id": "13289",
+          "name": "Drew Allar",
+          "position": "QB",
+          "team": "PIT",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        },
+        {
+          "id": "13292",
+          "name": "Lake McRee",
+          "position": "TE",
+          "team": "PIT",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        },
+        {
+          "id": "13293",
+          "name": "Ja'Kobi Lane",
+          "position": "WR",
+          "team": "BAL",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        },
+        {
+          "id": "13294",
+          "name": "Makai Lemon",
+          "position": "WR",
+          "team": "PHI",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        },
+        {
+          "id": "13295",
+          "name": "Behren Morton",
+          "position": "QB",
+          "team": "NE",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        },
+        {
+          "id": "13296",
+          "name": "Caleb Douglas",
+          "position": "WR",
+          "team": "MIA",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        },
+        {
+          "id": "13297",
+          "name": "Reggie Virgil",
+          "position": "WR",
+          "team": "ARI",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        },
+        {
+          "id": "13298",
+          "name": "KC Concepcion Jr.",
+          "position": "WR",
+          "team": "CLE",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        },
+        {
+          "id": "13299",
+          "name": "Nate Boerkircher",
+          "position": "TE",
+          "team": "JAX",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        },
+        {
+          "id": "13301",
+          "name": "Antonio Williams",
+          "position": "WR",
+          "team": "WAS",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        },
+        {
+          "id": "13303",
+          "name": "Cade Klubnik",
+          "position": "QB",
+          "team": "NYJ",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        },
+        {
+          "id": "13305",
+          "name": "Mike Washington Jr.",
+          "position": "RB",
+          "team": "LV",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        },
+        {
+          "id": "13306",
+          "name": "Taylen Green",
+          "position": "QB",
+          "team": "CLE",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        },
+        {
+          "id": "13307",
+          "name": "Marlin Klein",
+          "position": "TE",
+          "team": "HOU",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        },
+        {
+          "id": "13308",
+          "name": "Bauer Sharp",
+          "position": "TE",
+          "team": "TB",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        }
+      ],
+      "promoted": []
+    }
+  },
+  {
     "timestamp": "2026-04-20T09:56:51.529Z",
     "mode": "offseason",
     "playerCount": 816,
