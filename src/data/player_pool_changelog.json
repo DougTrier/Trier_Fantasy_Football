@@ -1,5 +1,340 @@
 [
   {
+    "timestamp": "2026-10-28T14:42:40.933Z",
+    "mode": "in-season",
+    "playerCount": 902,
+    "summary": {
+      "newPlayers": 11,
+      "teamChanges": 2,
+      "injuries": 34,
+      "returns": 39,
+      "practiceSquad": 0,
+      "depthShifts": 24,
+      "removed": 2
+    },
+    "highlights": {
+      "trades": [
+        {
+          "id": "12062",
+          "name": "Cam Grandy",
+          "position": "TE",
+          "from": "MIN",
+          "to": "CIN",
+          "status": "Active"
+        },
+        {
+          "id": "13603",
+          "name": "Gregory Desrosiers",
+          "position": "RB",
+          "from": "LAC",
+          "to": "NYG",
+          "status": "Active"
+        }
+      ],
+      "injuries": [
+        {
+          "id": "2307",
+          "name": "Marcus Mariota",
+          "position": "QB",
+          "team": "WAS",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Knee - MCL",
+          "notes": "Sprain"
+        },
+        {
+          "id": "4881",
+          "name": "Lamar Jackson",
+          "position": "QB",
+          "team": "BAL",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Ankle",
+          "notes": "Sprain"
+        },
+        {
+          "id": "4981",
+          "name": "Calvin Ridley",
+          "position": "WR",
+          "team": "TEN",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Hip",
+          "notes": null
+        },
+        {
+          "id": "4983",
+          "name": "DJ Moore",
+          "position": "WR",
+          "team": "BUF",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Shoulder - AC Joint",
+          "notes": "Sprain"
+        },
+        {
+          "id": "5854",
+          "name": "Drew Lock",
+          "position": "QB",
+          "team": "SEA",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Elbow",
+          "notes": null
+        },
+        {
+          "id": "6271",
+          "name": "Olamide Zaccheaus",
+          "position": "WR",
+          "team": "ATL",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Shoulder",
+          "notes": null
+        },
+        {
+          "id": "7525",
+          "name": "DeVonta Smith",
+          "position": "WR",
+          "team": "PHI",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Hamstring",
+          "notes": null
+        },
+        {
+          "id": "7547",
+          "name": "Amon-Ra St. Brown",
+          "position": "WR",
+          "team": "DET",
+          "status": "Q",
+          "bodyPart": "Ankle",
+          "notes": null
+        },
+        {
+          "id": "7720",
+          "name": "Kene Nwangwu",
+          "position": "RB",
+          "team": "NYJ",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Knee",
+          "notes": null
+        },
+        {
+          "id": "7757",
+          "name": "Ben Skowronek",
+          "position": "WR",
+          "team": "PIT",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Calf",
+          "notes": null
+        },
+        {
+          "id": "8129",
+          "name": "Dameon Pierce",
+          "position": "RB",
+          "team": "PHI",
+          "status": "Q",
+          "bodyPart": "Undisclosed",
+          "notes": null
+        },
+        {
+          "id": "8154",
+          "name": "Brian Robinson Jr.",
+          "position": "RB",
+          "team": "ATL",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Hamstring",
+          "notes": null
+        },
+        {
+          "id": "8155",
+          "name": "Breece Hall",
+          "position": "RB",
+          "team": "NYJ",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Quadriceps",
+          "notes": null
+        },
+        {
+          "id": "8223",
+          "name": "Velus Jones Jr.",
+          "position": "RB",
+          "team": "SEA",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Hamstring",
+          "notes": null
+        },
+        {
+          "id": "8414",
+          "name": "Britain Covey",
+          "position": "WR",
+          "team": "PHI",
+          "status": "Q",
+          "bodyPart": "Knee",
+          "notes": null
+        },
+        {
+          "id": "8676",
+          "name": "Rashid Shaheed",
+          "position": "WR",
+          "team": "SEA",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Knee",
+          "notes": null
+        },
+        {
+          "id": "8917",
+          "name": "KaVontae Turpin",
+          "position": "WR",
+          "team": "DAL",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Ribs",
+          "notes": null
+        },
+        {
+          "id": "9486",
+          "name": "Dontayvion Wicks",
+          "position": "WR",
+          "team": "PHI",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Ankle",
+          "notes": null
+        },
+        {
+          "id": "9508",
+          "name": "Tyjae Spears",
+          "position": "RB",
+          "team": "TEN",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Knee",
+          "notes": null
+        },
+        {
+          "id": "9753",
+          "name": "Zach Charbonnet",
+          "position": "RB",
+          "team": "SEA",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Knee - ACL",
+          "notes": "Surgery"
+        }
+      ],
+      "returns": [
+        {
+          "id": "829",
+          "name": "Andy Dalton",
+          "position": "QB",
+          "team": "ATL",
+          "wasStatus": "O"
+        },
+        {
+          "id": "1737",
+          "name": "Case Keenum",
+          "position": "QB",
+          "team": "CHI",
+          "wasStatus": "O"
+        },
+        {
+          "id": "2359",
+          "name": "Ameer Abdullah",
+          "position": "RB",
+          "team": "JAX",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "4995",
+          "name": "Ian Thomas",
+          "position": "TE",
+          "team": "LV",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "6828",
+          "name": "AJ Dillon",
+          "position": "RB",
+          "team": "CAR",
+          "wasStatus": "O"
+        },
+        {
+          "id": "7567",
+          "name": "Kenny Gainwell",
+          "position": "RB",
+          "team": "TB",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "7583",
+          "name": "Sam Ehlinger",
+          "position": "QB",
+          "team": "DEN",
+          "wasStatus": "O"
+        },
+        {
+          "id": "7602",
+          "name": "Kylen Granson",
+          "position": "TE",
+          "team": "TEN",
+          "wasStatus": "O"
+        },
+        {
+          "id": "8112",
+          "name": "Drake London",
+          "position": "WR",
+          "team": "ATL",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "8117",
+          "name": "Jalen Tolbert",
+          "position": "WR",
+          "team": "MIA",
+          "wasStatus": "O"
+        }
+      ],
+      "rookies": [
+        {
+          "id": "13349",
+          "name": "Eli Stowers",
+          "position": "TE",
+          "team": "PHI",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        },
+        {
+          "id": "14058",
+          "name": "Malick Meiga",
+          "position": "WR",
+          "team": "SEA",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        },
+        {
+          "id": "14080",
+          "name": "Barika Kpeenu",
+          "position": "RB",
+          "team": "TB",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        }
+      ],
+      "promoted": []
+    }
+  },
+  {
     "timestamp": "2026-10-26T14:41:09.904Z",
     "mode": "in-season",
     "playerCount": 893,
