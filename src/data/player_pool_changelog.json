@@ -1,5 +1,271 @@
 [
   {
+    "timestamp": "2026-10-30T14:42:29.280Z",
+    "mode": "in-season",
+    "playerCount": 897,
+    "summary": {
+      "newPlayers": 5,
+      "teamChanges": 1,
+      "injuries": 34,
+      "returns": 6,
+      "practiceSquad": 0,
+      "depthShifts": 4,
+      "removed": 10
+    },
+    "highlights": {
+      "trades": [
+        {
+          "id": "11199",
+          "name": "Emari Demercado",
+          "position": "RB",
+          "from": "DAL",
+          "to": "HOU",
+          "status": "Active"
+        }
+      ],
+      "injuries": [
+        {
+          "id": "1466",
+          "name": "Travis Kelce",
+          "position": "TE",
+          "team": "KC",
+          "status": "Q",
+          "bodyPart": "Ankle",
+          "notes": null
+        },
+        {
+          "id": "4144",
+          "name": "Jonnu Smith",
+          "position": "TE",
+          "team": "GB",
+          "status": "O",
+          "bodyPart": "Coach's Decision",
+          "notes": null
+        },
+        {
+          "id": "4995",
+          "name": "Ian Thomas",
+          "position": "TE",
+          "team": "LV",
+          "status": "Q",
+          "bodyPart": "Shoulder",
+          "notes": null
+        },
+        {
+          "id": "5859",
+          "name": "A.J. Brown",
+          "position": "WR",
+          "team": "NE",
+          "status": "Q",
+          "bodyPart": "Ankle",
+          "notes": null
+        },
+        {
+          "id": "5927",
+          "name": "Terry McLaurin",
+          "position": "WR",
+          "team": "WAS",
+          "status": "IR",
+          "previousStatus": "O",
+          "bodyPart": "Knee",
+          "notes": "Surgery"
+        },
+        {
+          "id": "5947",
+          "name": "Jakobi Meyers",
+          "position": "WR",
+          "team": "JAX",
+          "status": "Q",
+          "bodyPart": "Hamstring",
+          "notes": null
+        },
+        {
+          "id": "6828",
+          "name": "AJ Dillon",
+          "position": "RB",
+          "team": "CAR",
+          "status": "O",
+          "bodyPart": "Coach's Decision",
+          "notes": null
+        },
+        {
+          "id": "6865",
+          "name": "Colby Parkinson",
+          "position": "TE",
+          "team": "LAR",
+          "status": "Q",
+          "bodyPart": "Ribs",
+          "notes": null
+        },
+        {
+          "id": "7567",
+          "name": "Kenny Gainwell",
+          "position": "RB",
+          "team": "TB",
+          "status": "Q",
+          "bodyPart": "Hip",
+          "notes": null
+        },
+        {
+          "id": "7716",
+          "name": "John Bates",
+          "position": "TE",
+          "team": "WAS",
+          "status": "Q",
+          "bodyPart": "Shoulder",
+          "notes": null
+        },
+        {
+          "id": "8129",
+          "name": "Dameon Pierce",
+          "position": "RB",
+          "team": "PHI",
+          "status": "IR",
+          "previousStatus": "Q",
+          "bodyPart": "Undisclosed",
+          "notes": null
+        },
+        {
+          "id": "8132",
+          "name": "Tyler Allgeier",
+          "position": "RB",
+          "team": "ARI",
+          "status": "Q",
+          "bodyPart": "Toe",
+          "notes": null
+        },
+        {
+          "id": "8135",
+          "name": "Treylon Burks",
+          "position": "WR",
+          "team": "WAS",
+          "status": "Q",
+          "bodyPart": "Foot",
+          "notes": null
+        },
+        {
+          "id": "8137",
+          "name": "George Pickens",
+          "position": "WR",
+          "team": "DAL",
+          "status": "Q",
+          "bodyPart": "Shoulder",
+          "notes": null
+        },
+        {
+          "id": "8167",
+          "name": "Christian Watson",
+          "position": "WR",
+          "team": "GB",
+          "status": "Q",
+          "bodyPart": "Undisclosed",
+          "notes": null
+        },
+        {
+          "id": "8172",
+          "name": "Greg Dulcich",
+          "position": "TE",
+          "team": "MIA",
+          "status": "Q",
+          "bodyPart": "Ankle",
+          "notes": null
+        },
+        {
+          "id": "8489",
+          "name": "Drew Ogletree",
+          "position": "TE",
+          "team": "IND",
+          "status": "Q",
+          "bodyPart": "Knee",
+          "notes": null
+        },
+        {
+          "id": "10232",
+          "name": "Michael Wilson",
+          "position": "WR",
+          "team": "ARI",
+          "status": "Q",
+          "bodyPart": "Ribs",
+          "notes": "Soreness"
+        },
+        {
+          "id": "10236",
+          "name": "Dalton Kincaid",
+          "position": "TE",
+          "team": "BUF",
+          "status": "Q",
+          "bodyPart": "Chest",
+          "notes": null
+        },
+        {
+          "id": "10871",
+          "name": "Luke Schoonmaker",
+          "position": "TE",
+          "team": "DAL",
+          "status": "Q",
+          "bodyPart": "Groin",
+          "notes": null
+        }
+      ],
+      "returns": [
+        {
+          "id": "2307",
+          "name": "Marcus Mariota",
+          "position": "QB",
+          "team": "WAS",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "7547",
+          "name": "Amon-Ra St. Brown",
+          "position": "WR",
+          "team": "DET",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "7720",
+          "name": "Kene Nwangwu",
+          "position": "RB",
+          "team": "NYJ",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "11643",
+          "name": "Jaylen Wright",
+          "position": "RB",
+          "team": "MIA",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "12501",
+          "name": "Matthew Golden",
+          "position": "WR",
+          "team": "GB",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "13272",
+          "name": "Carson Beck",
+          "position": "QB",
+          "team": "ARI",
+          "wasStatus": "Q"
+        }
+      ],
+      "rookies": [
+        {
+          "id": "13580",
+          "name": "Carsen Ryan",
+          "position": "TE",
+          "team": "CLE",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        }
+      ],
+      "promoted": []
+    }
+  },
+  {
     "timestamp": "2026-10-28T14:42:40.933Z",
     "mode": "in-season",
     "playerCount": 902,
