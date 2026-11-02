@@ -1,5 +1,293 @@
 [
   {
+    "timestamp": "2026-11-02T17:36:01.664Z",
+    "mode": "in-season",
+    "playerCount": 897,
+    "summary": {
+      "newPlayers": 1,
+      "teamChanges": 0,
+      "injuries": 70,
+      "returns": 27,
+      "practiceSquad": 0,
+      "depthShifts": 12,
+      "removed": 1
+    },
+    "highlights": {
+      "trades": [],
+      "injuries": [
+        {
+          "id": "829",
+          "name": "Andy Dalton",
+          "position": "QB",
+          "team": "ATL",
+          "status": "O",
+          "bodyPart": "Coach's Decision",
+          "notes": null
+        },
+        {
+          "id": "3214",
+          "name": "Hunter Henry",
+          "position": "TE",
+          "team": "NE",
+          "status": "O",
+          "bodyPart": "Foot",
+          "notes": null
+        },
+        {
+          "id": "4219",
+          "name": "Jeremy McNichols",
+          "position": "RB",
+          "team": "WAS",
+          "status": "Q",
+          "bodyPart": "Undisclosed",
+          "notes": null
+        },
+        {
+          "id": "4351",
+          "name": "Tim Patrick",
+          "position": "WR",
+          "team": "NYJ",
+          "status": "O",
+          "bodyPart": "Coach's Decision",
+          "notes": null
+        },
+        {
+          "id": "4443",
+          "name": "Pharaoh Brown",
+          "position": "TE",
+          "team": "IND",
+          "status": "O",
+          "bodyPart": "Coach's Decision",
+          "notes": null
+        },
+        {
+          "id": "4454",
+          "name": "Kendrick Bourne",
+          "position": "WR",
+          "team": "ARI",
+          "status": "O",
+          "bodyPart": "Ankle",
+          "notes": "Sprain"
+        },
+        {
+          "id": "4881",
+          "name": "Lamar Jackson",
+          "position": "QB",
+          "team": "BAL",
+          "status": "O",
+          "previousStatus": "Q",
+          "bodyPart": "Thumb",
+          "notes": null
+        },
+        {
+          "id": "5849",
+          "name": "Kyler Murray",
+          "position": "QB",
+          "team": "MIN",
+          "status": "Q",
+          "bodyPart": "Hamstring",
+          "notes": null
+        },
+        {
+          "id": "5859",
+          "name": "A.J. Brown",
+          "position": "WR",
+          "team": "NE",
+          "status": "O",
+          "previousStatus": "Q",
+          "bodyPart": "Ankle",
+          "notes": null
+        },
+        {
+          "id": "6865",
+          "name": "Colby Parkinson",
+          "position": "TE",
+          "team": "LAR",
+          "status": "O",
+          "previousStatus": "Q",
+          "bodyPart": "Ribs",
+          "notes": null
+        },
+        {
+          "id": "7083",
+          "name": "Tyler Huntley",
+          "position": "QB",
+          "team": "BAL",
+          "status": "O",
+          "bodyPart": "Toe",
+          "notes": null
+        },
+        {
+          "id": "7525",
+          "name": "DeVonta Smith",
+          "position": "WR",
+          "team": "PHI",
+          "status": "O",
+          "previousStatus": "Q",
+          "bodyPart": "Hamstring",
+          "notes": null
+        },
+        {
+          "id": "7547",
+          "name": "Amon-Ra St. Brown",
+          "position": "WR",
+          "team": "DET",
+          "status": "Q",
+          "bodyPart": "Undisclosed",
+          "notes": null
+        },
+        {
+          "id": "7583",
+          "name": "Sam Ehlinger",
+          "position": "QB",
+          "team": "DEN",
+          "status": "O",
+          "bodyPart": "Coach's Decision",
+          "notes": null
+        },
+        {
+          "id": "7602",
+          "name": "Kylen Granson",
+          "position": "TE",
+          "team": "TEN",
+          "status": "O",
+          "bodyPart": "Coach's Decision",
+          "notes": null
+        },
+        {
+          "id": "7670",
+          "name": "Joshua Palmer",
+          "position": "WR",
+          "team": "BUF",
+          "status": "O",
+          "bodyPart": "Hamstring",
+          "notes": null
+        },
+        {
+          "id": "7757",
+          "name": "Ben Skowronek",
+          "position": "WR",
+          "team": "PIT",
+          "status": "O",
+          "previousStatus": "Q",
+          "bodyPart": "Calf",
+          "notes": null
+        },
+        {
+          "id": "8110",
+          "name": "Jake Ferguson",
+          "position": "TE",
+          "team": "DAL",
+          "status": "O",
+          "bodyPart": "Ankle",
+          "notes": null
+        },
+        {
+          "id": "8112",
+          "name": "Drake London",
+          "position": "WR",
+          "team": "ATL",
+          "status": "Q",
+          "bodyPart": "Head",
+          "notes": null
+        },
+        {
+          "id": "8122",
+          "name": "Zonovan Knight",
+          "position": "RB",
+          "team": "ARI",
+          "status": "O",
+          "bodyPart": "Concussion",
+          "notes": null
+        }
+      ],
+      "returns": [
+        {
+          "id": "1466",
+          "name": "Travis Kelce",
+          "position": "TE",
+          "team": "KC",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "4199",
+          "name": "Aaron Jones Sr.",
+          "position": "RB",
+          "team": "MIN",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "4866",
+          "name": "Saquon Barkley",
+          "position": "RB",
+          "team": "PHI",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "4981",
+          "name": "Calvin Ridley",
+          "position": "WR",
+          "team": "TEN",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "4995",
+          "name": "Ian Thomas",
+          "position": "TE",
+          "team": "LV",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "5947",
+          "name": "Jakobi Meyers",
+          "position": "WR",
+          "team": "JAX",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "6271",
+          "name": "Olamide Zaccheaus",
+          "position": "WR",
+          "team": "ATL",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "7526",
+          "name": "Jaylen Waddle",
+          "position": "WR",
+          "team": "DEN",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "7567",
+          "name": "Kenny Gainwell",
+          "position": "RB",
+          "team": "TB",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "7716",
+          "name": "John Bates",
+          "position": "TE",
+          "team": "WAS",
+          "wasStatus": "Q"
+        }
+      ],
+      "rookies": [
+        {
+          "id": "13923",
+          "name": "Joshua Pitsenberger",
+          "position": "RB",
+          "team": "HOU",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        }
+      ],
+      "promoted": []
+    }
+  },
+  {
     "timestamp": "2026-10-30T14:42:29.280Z",
     "mode": "in-season",
     "playerCount": 897,
