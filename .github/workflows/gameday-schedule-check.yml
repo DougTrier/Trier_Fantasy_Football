@@ -1,0 +1,34 @@
+name: Game Day Schedule Health
+
+on:
+  pull_request:
+    branches: [main, master]
+    paths:
+      - 'scripts/gameday_reminder.mjs'
+      - 'tests/unit/gamedayReminder.test.ts'
+      - '.github/workflows/gameday*.yml'
+  schedule:
+    - cron: '43 9 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  schedule-health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Test reminder request and failure handling
+        run: node --experimental-strip-types --test tests/unit/gamedayReminder.test.ts
+      - name: Check live NFL schedule without creating reminders
+        run: |
+          node --input-type=module <<'NODE'
+          import { fetchUpcomingGameDays } from './scripts/gameday_reminder.mjs';
+          const days = await fetchUpcomingGameDays();
+          console.log(`Schedule available: ${days.reduce((count, day) => count + day.games.length, 0)} upcoming games across ${days.length} game dates.`);
+          NODE

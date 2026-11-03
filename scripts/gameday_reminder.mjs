@@ -19,11 +19,46 @@ export function upcomingGameDays(data, now = Date.now()) {
     return [...days].map(([date, games]) => ({ date, games: games.sort((a, b) => a.kickoff - b.kickoff) }));
 }
 
-export async function runReminder({ github, context, note = '', now = Date.now(), fetchImpl = fetch }) {
-    const stamp = ms => new Date(ms).toISOString().slice(0, 10).replaceAll('-', '');
-    const response = await fetchImpl(`https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${stamp(now)}-${stamp(now + 86400000)}`, { signal: AbortSignal.timeout(10000) });
-    if (!response.ok) throw new Error(`NFL schedule returned ${response.status}; no reminder created`);
-    const days = upcomingGameDays(await response.json(), now);
+/** Fetch every Eastern calendar date touched by the next 24 hours before writing issues.
+ * ESPN's NFL scoreboard rejects date ranges with HTTP 400; single dates also
+ * preserve late-night games whose Eastern date differs from their UTC date.
+ */
+export async function fetchUpcomingGameDays({ now = Date.now(), fetchImpl = fetch, sleep = ms => new Promise(resolve => setTimeout(resolve, ms)) } = {}) {
+    const format = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit' });
+    const first = Date.parse(`${format.format(new Date(now))}T00:00:00Z`);
+    const last = Date.parse(`${format.format(new Date(now + 86400000))}T00:00:00Z`);
+    const events = new Map();
+    // Calendar arithmetic in UTC avoids skipping a date across the spring DST change.
+    for (let date = first; date <= last; date += 86400000) {
+        const stamp = new Date(date).toISOString().slice(0, 10).replaceAll('-', '');
+        const url = `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${stamp}`;
+        let response;
+        for (let attempt = 0; attempt < 3; attempt++) {
+            try {
+                response = await fetchImpl(url, { signal: AbortSignal.timeout(10000) });
+            } catch (error) {
+                if (attempt === 2) throw new Error(`NFL schedule request failed for ${stamp}; no reminder created`, { cause: error });
+                await sleep(500 * 2 ** attempt);
+                continue;
+            }
+            if (response.ok) break;
+            if (attempt === 2 || (response.status !== 429 && response.status < 500)) {
+                throw new Error(`NFL schedule returned ${response.status} for ${stamp}; no reminder created`);
+            }
+            await sleep(500 * 2 ** attempt);
+        }
+        const data = await response.json();
+        if (!Array.isArray(data?.events)) throw new Error(`Invalid NFL scoreboard for ${stamp}; no reminder created`);
+        for (const event of data.events) {
+            // A provider may include the same event in adjacent scoreboards.
+            events.set(event.id ?? JSON.stringify(event), event);
+        }
+    }
+    return upcomingGameDays({ events: [...events.values()] }, now);
+}
+
+export async function runReminder({ github, context, note = '', now = Date.now(), fetchImpl = fetch, sleep }) {
+    const days = await fetchUpcomingGameDays({ now, fetchImpl, sleep });
     if (!days.length) return 0;
     const issues = await github.paginate(github.rest.issues.listForRepo, { ...context.repo, state: 'all', labels: 'game-day', per_page: 100 });
     let created = 0;

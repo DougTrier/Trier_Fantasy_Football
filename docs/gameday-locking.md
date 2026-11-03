@@ -37,6 +37,10 @@ These checks use the receiver's current state. A move rejected while a player is
 
 The daily workflow checks for games scheduled within the next 24 hours. It groups upcoming games by their Eastern calendar date, labels kickoff times with the correct daylight-saving offset, skips games that have already started, and searches both open and closed reminders before creating an advisory for that date.
 
+The reminder fetches each Eastern calendar date separately because ESPN's NFL scoreboard rejects the date-range request with HTTP 400. Network failures, HTTP 429, and server errors get at most three attempts per date with a short backoff. Permanent errors such as HTTP 400 fail immediately. Every requested date must succeed and contain an events array before any reminder is created; an empty array is a valid no-game day.
+
+**Game Day Schedule Health** checks the same live fetch daily, on relevant pull requests, and on manual dispatch. It has read-only repository permissions and never creates issues or sends game-day notifications. Unit tests in the regular CI workflow cover provider failures and date boundaries without contacting ESPN. The existing reminder still runs daily at 10:17 UTC; the health check is scheduled for 09:43 UTC. Scheduled runs can be delayed by GitHub.
+
 GitHub Actions can run late. The reminder is an advisory, not the mechanism that locks players. GitHub cannot inspect your local app or confirm that the commissioner took an action. Close a reminder after reviewing it; the app continues enforcing locks independently.
 
 ## Implementation and regression checks
