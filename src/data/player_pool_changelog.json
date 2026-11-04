@@ -1,5 +1,338 @@
 [
   {
+    "timestamp": "2026-11-04T15:51:54.543Z",
+    "mode": "in-season",
+    "playerCount": 904,
+    "summary": {
+      "newPlayers": 10,
+      "teamChanges": 3,
+      "injuries": 35,
+      "returns": 45,
+      "practiceSquad": 0,
+      "depthShifts": 24,
+      "removed": 3
+    },
+    "highlights": {
+      "trades": [
+        {
+          "id": "11579",
+          "name": "Audric Estime",
+          "position": "RB",
+          "from": "CLE",
+          "to": "NO",
+          "status": "Active"
+        },
+        {
+          "id": "11648",
+          "name": "Kedon Slovis",
+          "position": "QB",
+          "from": "GB",
+          "to": "BAL",
+          "status": "Active"
+        },
+        {
+          "id": "13418",
+          "name": "Robert Henry Jr.",
+          "position": "RB",
+          "from": "SEA",
+          "to": "WAS",
+          "status": "Active"
+        }
+      ],
+      "injuries": [
+        {
+          "id": "421",
+          "name": "Matthew Stafford",
+          "position": "QB",
+          "team": "LAR",
+          "status": "Q",
+          "bodyPart": "Arm",
+          "notes": null
+        },
+        {
+          "id": "2216",
+          "name": "Mike Evans",
+          "position": "WR",
+          "team": "SF",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Achilles",
+          "notes": "Tendinitis"
+        },
+        {
+          "id": "3214",
+          "name": "Hunter Henry",
+          "position": "TE",
+          "team": "NE",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Foot",
+          "notes": null
+        },
+        {
+          "id": "4017",
+          "name": "Deshaun Watson",
+          "position": "QB",
+          "team": "CLE",
+          "status": "Q",
+          "bodyPart": "Concussion",
+          "notes": null
+        },
+        {
+          "id": "4219",
+          "name": "Jeremy McNichols",
+          "position": "RB",
+          "team": "WAS",
+          "status": "IR",
+          "previousStatus": "Q",
+          "bodyPart": "Foot",
+          "notes": null
+        },
+        {
+          "id": "4454",
+          "name": "Kendrick Bourne",
+          "position": "WR",
+          "team": "ARI",
+          "status": "IR",
+          "previousStatus": "O",
+          "bodyPart": "Lower Leg",
+          "notes": "Fracture"
+        },
+        {
+          "id": "5859",
+          "name": "A.J. Brown",
+          "position": "WR",
+          "team": "NE",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Ankle",
+          "notes": null
+        },
+        {
+          "id": "5872",
+          "name": "Deebo Samuel Sr.",
+          "position": "WR",
+          "team": "SF",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Hamstring",
+          "notes": null
+        },
+        {
+          "id": "5892",
+          "name": "David Montgomery",
+          "position": "RB",
+          "team": "HOU",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Groin",
+          "notes": null
+        },
+        {
+          "id": "5947",
+          "name": "Jakobi Meyers",
+          "position": "WR",
+          "team": "JAX",
+          "status": "Q",
+          "bodyPart": "Hamstring",
+          "notes": null
+        },
+        {
+          "id": "6865",
+          "name": "Colby Parkinson",
+          "position": "TE",
+          "team": "LAR",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Ribs",
+          "notes": null
+        },
+        {
+          "id": "7525",
+          "name": "DeVonta Smith",
+          "position": "WR",
+          "team": "PHI",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Hamstring",
+          "notes": null
+        },
+        {
+          "id": "7597",
+          "name": "Kenny Yeboah",
+          "position": "TE",
+          "team": "ARI",
+          "status": "O",
+          "bodyPart": "Undisclosed",
+          "notes": null
+        },
+        {
+          "id": "7670",
+          "name": "Joshua Palmer",
+          "position": "WR",
+          "team": "BUF",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Hamstring",
+          "notes": null
+        },
+        {
+          "id": "8110",
+          "name": "Jake Ferguson",
+          "position": "TE",
+          "team": "DAL",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Ankle",
+          "notes": "Sprain"
+        },
+        {
+          "id": "8122",
+          "name": "Zonovan Knight",
+          "position": "RB",
+          "team": "ARI",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Concussion",
+          "notes": null
+        },
+        {
+          "id": "8154",
+          "name": "Brian Robinson Jr.",
+          "position": "RB",
+          "team": "ATL",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Hamstring",
+          "notes": null
+        },
+        {
+          "id": "8155",
+          "name": "Breece Hall",
+          "position": "RB",
+          "team": "NYJ",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Quadriceps",
+          "notes": null
+        },
+        {
+          "id": "8223",
+          "name": "Velus Jones Jr.",
+          "position": "RB",
+          "team": "SEA",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Hamstring",
+          "notes": null
+        },
+        {
+          "id": "8414",
+          "name": "Britain Covey",
+          "position": "WR",
+          "team": "PHI",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Knee",
+          "notes": null
+        }
+      ],
+      "returns": [
+        {
+          "id": "829",
+          "name": "Andy Dalton",
+          "position": "QB",
+          "team": "ATL",
+          "wasStatus": "O"
+        },
+        {
+          "id": "4144",
+          "name": "Jonnu Smith",
+          "position": "TE",
+          "team": "GB",
+          "wasStatus": "O"
+        },
+        {
+          "id": "4351",
+          "name": "Tim Patrick",
+          "position": "WR",
+          "team": "NYJ",
+          "wasStatus": "O"
+        },
+        {
+          "id": "4443",
+          "name": "Pharaoh Brown",
+          "position": "TE",
+          "team": "IND",
+          "wasStatus": "O"
+        },
+        {
+          "id": "6828",
+          "name": "AJ Dillon",
+          "position": "RB",
+          "team": "CAR",
+          "wasStatus": "O"
+        },
+        {
+          "id": "7538",
+          "name": "Zach Wilson",
+          "position": "QB",
+          "team": "NO",
+          "wasStatus": "O"
+        },
+        {
+          "id": "7547",
+          "name": "Amon-Ra St. Brown",
+          "position": "WR",
+          "team": "DET",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "7583",
+          "name": "Sam Ehlinger",
+          "position": "QB",
+          "team": "DEN",
+          "wasStatus": "O"
+        },
+        {
+          "id": "8112",
+          "name": "Drake London",
+          "position": "WR",
+          "team": "ATL",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "8138",
+          "name": "James Cook III",
+          "position": "RB",
+          "team": "BUF",
+          "wasStatus": "Q"
+        }
+      ],
+      "rookies": [
+        {
+          "id": "13286",
+          "name": "Jadarian Price",
+          "position": "RB",
+          "team": "SEA",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        },
+        {
+          "id": "13743",
+          "name": "Joseph Manjack",
+          "position": "WR",
+          "team": "NYJ",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        }
+      ],
+      "promoted": []
+    }
+  },
+  {
     "timestamp": "2026-11-02T17:36:01.664Z",
     "mode": "in-season",
     "playerCount": 897,
