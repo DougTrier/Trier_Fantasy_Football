@@ -1,5 +1,305 @@
 [
   {
+    "timestamp": "2026-11-09T18:01:09.288Z",
+    "mode": "in-season",
+    "playerCount": 899,
+    "summary": {
+      "newPlayers": 1,
+      "teamChanges": 1,
+      "injuries": 77,
+      "returns": 29,
+      "practiceSquad": 0,
+      "depthShifts": 14,
+      "removed": 5
+    },
+    "highlights": {
+      "trades": [
+        {
+          "id": "3257",
+          "name": "Jacoby Brissett",
+          "position": "QB",
+          "from": "ARI",
+          "to": "BAL",
+          "status": "Active"
+        }
+      ],
+      "injuries": [
+        {
+          "id": "829",
+          "name": "Andy Dalton",
+          "position": "QB",
+          "team": "ATL",
+          "status": "O",
+          "bodyPart": "Coach's Decision",
+          "notes": null
+        },
+        {
+          "id": "1737",
+          "name": "Case Keenum",
+          "position": "QB",
+          "team": "CHI",
+          "status": "O",
+          "bodyPart": "Coach's Decision",
+          "notes": null
+        },
+        {
+          "id": "2216",
+          "name": "Mike Evans",
+          "position": "WR",
+          "team": "SF",
+          "status": "O",
+          "previousStatus": "Q",
+          "bodyPart": "Achilles",
+          "notes": "Tendinitis"
+        },
+        {
+          "id": "2471",
+          "name": "Michael Burton",
+          "position": "RB",
+          "team": "CLE",
+          "status": "Q",
+          "bodyPart": "Calf",
+          "notes": null
+        },
+        {
+          "id": "4017",
+          "name": "Deshaun Watson",
+          "position": "QB",
+          "team": "CLE",
+          "status": "O",
+          "previousStatus": "Q",
+          "bodyPart": "Concussion",
+          "notes": null
+        },
+        {
+          "id": "4046",
+          "name": "Patrick Mahomes",
+          "position": "QB",
+          "team": "KC",
+          "status": "Q",
+          "bodyPart": "Elbow",
+          "notes": null
+        },
+        {
+          "id": "4054",
+          "name": "Mo Alie-Cox",
+          "position": "TE",
+          "team": "IND",
+          "status": "Q",
+          "bodyPart": "Groin",
+          "notes": null
+        },
+        {
+          "id": "4351",
+          "name": "Tim Patrick",
+          "position": "WR",
+          "team": "NYJ",
+          "status": "O",
+          "bodyPart": "Coach's Decision",
+          "notes": null
+        },
+        {
+          "id": "4443",
+          "name": "Pharaoh Brown",
+          "position": "TE",
+          "team": "IND",
+          "status": "O",
+          "bodyPart": "Coach's Decision",
+          "notes": null
+        },
+        {
+          "id": "4950",
+          "name": "Christian Kirk",
+          "position": "WR",
+          "team": "SF",
+          "status": "IR",
+          "previousStatus": "Q",
+          "bodyPart": "Knee - Meniscus",
+          "notes": null
+        },
+        {
+          "id": "5849",
+          "name": "Kyler Murray",
+          "position": "QB",
+          "team": "MIN",
+          "status": "O",
+          "previousStatus": "Q",
+          "bodyPart": "Hamstring",
+          "notes": "Soreness"
+        },
+        {
+          "id": "5850",
+          "name": "Josh Jacobs",
+          "position": "RB",
+          "team": "GB",
+          "status": "Q",
+          "bodyPart": "Hand",
+          "notes": null
+        },
+        {
+          "id": "5859",
+          "name": "A.J. Brown",
+          "position": "WR",
+          "team": "NE",
+          "status": "O",
+          "previousStatus": "Q",
+          "bodyPart": "Knee",
+          "notes": null
+        },
+        {
+          "id": "5872",
+          "name": "Deebo Samuel Sr.",
+          "position": "WR",
+          "team": "SF",
+          "status": "O",
+          "previousStatus": "Q",
+          "bodyPart": "Hamstring",
+          "notes": null
+        },
+        {
+          "id": "5938",
+          "name": "Lil'Jordan Humphrey",
+          "position": "WR",
+          "team": "DEN",
+          "status": "O",
+          "bodyPart": "Coach's Decision",
+          "notes": null
+        },
+        {
+          "id": "6271",
+          "name": "Olamide Zaccheaus",
+          "position": "WR",
+          "team": "ATL",
+          "status": "Q",
+          "bodyPart": "Concussion",
+          "notes": null
+        },
+        {
+          "id": "6797",
+          "name": "Justin Herbert",
+          "position": "QB",
+          "team": "LAC",
+          "status": "Q",
+          "bodyPart": "Finger",
+          "notes": null
+        },
+        {
+          "id": "6828",
+          "name": "AJ Dillon",
+          "position": "RB",
+          "team": "CAR",
+          "status": "O",
+          "bodyPart": "Coach's Decision",
+          "notes": null
+        },
+        {
+          "id": "7049",
+          "name": "Jauan Jennings",
+          "position": "WR",
+          "team": "MIN",
+          "status": "O",
+          "previousStatus": "Q",
+          "bodyPart": "Calf",
+          "notes": null
+        },
+        {
+          "id": "7525",
+          "name": "DeVonta Smith",
+          "position": "WR",
+          "team": "PHI",
+          "status": "O",
+          "previousStatus": "Q",
+          "bodyPart": "Hamstring",
+          "notes": null
+        }
+      ],
+      "returns": [
+        {
+          "id": "3214",
+          "name": "Hunter Henry",
+          "position": "TE",
+          "team": "NE",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "3286",
+          "name": "Demarcus Robinson",
+          "position": "WR",
+          "team": "SF",
+          "wasStatus": "IR"
+        },
+        {
+          "id": "4034",
+          "name": "Christian McCaffrey",
+          "position": "RB",
+          "team": "SF",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "4035",
+          "name": "Alvin Kamara",
+          "position": "RB",
+          "team": "NO",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "4177",
+          "name": "Mack Hollins",
+          "position": "WR",
+          "team": "NE",
+          "wasStatus": "IR"
+        },
+        {
+          "id": "4195",
+          "name": "Jake Elliott",
+          "position": "K",
+          "team": "PHI",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "4866",
+          "name": "Saquon Barkley",
+          "position": "RB",
+          "team": "PHI",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "4983",
+          "name": "DJ Moore",
+          "position": "WR",
+          "team": "BUF",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "6039",
+          "name": "Ty Johnson",
+          "position": "RB",
+          "team": "BUF",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "6865",
+          "name": "Colby Parkinson",
+          "position": "TE",
+          "team": "LAR",
+          "wasStatus": "Q"
+        }
+      ],
+      "rookies": [
+        {
+          "id": "13281",
+          "name": "Jordyn Tyson",
+          "position": "WR",
+          "team": "NO",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        }
+      ],
+      "promoted": []
+    }
+  },
+  {
     "timestamp": "2026-11-06T15:29:26.107Z",
     "mode": "in-season",
     "playerCount": 903,
