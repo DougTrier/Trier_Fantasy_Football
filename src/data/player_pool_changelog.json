@@ -1,5 +1,371 @@
 [
   {
+    "timestamp": "2026-11-11T15:43:30.811Z",
+    "mode": "in-season",
+    "playerCount": 902,
+    "summary": {
+      "newPlayers": 7,
+      "teamChanges": 7,
+      "injuries": 38,
+      "returns": 38,
+      "practiceSquad": 0,
+      "depthShifts": 15,
+      "removed": 4
+    },
+    "highlights": {
+      "trades": [
+        {
+          "id": "260",
+          "name": "Josh Johnson",
+          "position": "QB",
+          "from": "CIN",
+          "to": "ARI",
+          "status": "Active"
+        },
+        {
+          "id": "1166",
+          "name": "Kirk Cousins",
+          "position": "QB",
+          "from": "LV",
+          "to": "MIN",
+          "status": "Active"
+        },
+        {
+          "id": "1479",
+          "name": "Keenan Allen",
+          "position": "WR",
+          "from": "IND",
+          "to": "SF",
+          "status": "Active"
+        },
+        {
+          "id": "9500",
+          "name": "Josh Downs",
+          "position": "WR",
+          "from": "IND",
+          "to": "KC",
+          "status": "Active"
+        },
+        {
+          "id": "10937",
+          "name": "Jake Moody",
+          "position": "K",
+          "from": "BAL",
+          "to": "ATL",
+          "status": "Active"
+        },
+        {
+          "id": "11168",
+          "name": "Xavier Smith",
+          "position": "WR",
+          "from": "SF",
+          "to": "LAR",
+          "status": "Active"
+        },
+        {
+          "id": "13428",
+          "name": "Joey Aguilar",
+          "position": "QB",
+          "from": "JAX",
+          "to": "ARI",
+          "status": "Active"
+        }
+      ],
+      "injuries": [
+        {
+          "id": "2216",
+          "name": "Mike Evans",
+          "position": "WR",
+          "team": "SF",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Achilles",
+          "notes": "Tendinitis"
+        },
+        {
+          "id": "5849",
+          "name": "Kyler Murray",
+          "position": "QB",
+          "team": "MIN",
+          "status": "D",
+          "previousStatus": "O",
+          "bodyPart": "Hamstring",
+          "notes": "Strain"
+        },
+        {
+          "id": "5850",
+          "name": "Josh Jacobs",
+          "position": "RB",
+          "team": "GB",
+          "status": "O",
+          "previousStatus": "Q",
+          "bodyPart": "Finger",
+          "notes": "Surgery"
+        },
+        {
+          "id": "5859",
+          "name": "A.J. Brown",
+          "position": "WR",
+          "team": "NE",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Knee",
+          "notes": null
+        },
+        {
+          "id": "5872",
+          "name": "Deebo Samuel Sr.",
+          "position": "WR",
+          "team": "SF",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Hamstring",
+          "notes": null
+        },
+        {
+          "id": "5892",
+          "name": "David Montgomery",
+          "position": "RB",
+          "team": "HOU",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Groin",
+          "notes": null
+        },
+        {
+          "id": "6011",
+          "name": "Gardner Minshew II",
+          "position": "QB",
+          "team": "ARI",
+          "status": "IR",
+          "bodyPart": "Elbow",
+          "notes": null
+        },
+        {
+          "id": "7049",
+          "name": "Jauan Jennings",
+          "position": "WR",
+          "team": "MIN",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Calf",
+          "notes": null
+        },
+        {
+          "id": "7559",
+          "name": "Ihmir Smith-Marsette",
+          "position": "WR",
+          "team": "CAR",
+          "status": "O",
+          "bodyPart": "Undisclosed",
+          "notes": null
+        },
+        {
+          "id": "7611",
+          "name": "Rhamondre Stevenson",
+          "position": "RB",
+          "team": "NE",
+          "status": "D",
+          "previousStatus": "O",
+          "bodyPart": "Knee",
+          "notes": null
+        },
+        {
+          "id": "7670",
+          "name": "Joshua Palmer",
+          "position": "WR",
+          "team": "BUF",
+          "status": "IR",
+          "previousStatus": "O",
+          "bodyPart": "Hamstring",
+          "notes": null
+        },
+        {
+          "id": "7757",
+          "name": "Ben Skowronek",
+          "position": "WR",
+          "team": "PIT",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Calf",
+          "notes": null
+        },
+        {
+          "id": "8110",
+          "name": "Jake Ferguson",
+          "position": "TE",
+          "team": "DAL",
+          "status": "O",
+          "previousStatus": "Q",
+          "bodyPart": "Knee",
+          "notes": null
+        },
+        {
+          "id": "8122",
+          "name": "Zonovan Knight",
+          "position": "RB",
+          "team": "ARI",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Concussion",
+          "notes": null
+        },
+        {
+          "id": "8135",
+          "name": "Treylon Burks",
+          "position": "WR",
+          "team": "WAS",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Foot",
+          "notes": null
+        },
+        {
+          "id": "8137",
+          "name": "George Pickens",
+          "position": "WR",
+          "team": "DAL",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Hamstring",
+          "notes": null
+        },
+        {
+          "id": "8146",
+          "name": "Garrett Wilson",
+          "position": "WR",
+          "team": "NYJ",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Concussion",
+          "notes": null
+        },
+        {
+          "id": "8161",
+          "name": "Malik Willis",
+          "position": "QB",
+          "team": "MIA",
+          "status": "IR",
+          "previousStatus": "Q",
+          "bodyPart": "Groin",
+          "notes": null
+        },
+        {
+          "id": "8207",
+          "name": "Tyler Goodson",
+          "position": "RB",
+          "team": "DAL",
+          "status": "O",
+          "previousStatus": "Q",
+          "bodyPart": "Knee",
+          "notes": "Sprain"
+        },
+        {
+          "id": "8583",
+          "name": "Stone Smartt",
+          "position": "TE",
+          "team": "NO",
+          "status": "O",
+          "bodyPart": "Undisclosed",
+          "notes": null
+        }
+      ],
+      "returns": [
+        {
+          "id": "829",
+          "name": "Andy Dalton",
+          "position": "QB",
+          "team": "ATL",
+          "wasStatus": "O"
+        },
+        {
+          "id": "2471",
+          "name": "Michael Burton",
+          "position": "RB",
+          "team": "CLE",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "4017",
+          "name": "Deshaun Watson",
+          "position": "QB",
+          "team": "CLE",
+          "wasStatus": "O"
+        },
+        {
+          "id": "4351",
+          "name": "Tim Patrick",
+          "position": "WR",
+          "team": "NYJ",
+          "wasStatus": "O"
+        },
+        {
+          "id": "4443",
+          "name": "Pharaoh Brown",
+          "position": "TE",
+          "team": "IND",
+          "wasStatus": "O"
+        },
+        {
+          "id": "6271",
+          "name": "Olamide Zaccheaus",
+          "position": "WR",
+          "team": "ATL",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "6828",
+          "name": "AJ Dillon",
+          "position": "RB",
+          "team": "CAR",
+          "wasStatus": "O"
+        },
+        {
+          "id": "7538",
+          "name": "Zach Wilson",
+          "position": "QB",
+          "team": "NO",
+          "wasStatus": "O"
+        },
+        {
+          "id": "7602",
+          "name": "Kylen Granson",
+          "position": "TE",
+          "team": "TEN",
+          "wasStatus": "O"
+        },
+        {
+          "id": "8117",
+          "name": "Jalen Tolbert",
+          "position": "WR",
+          "team": "MIA",
+          "wasStatus": "O"
+        }
+      ],
+      "rookies": [
+        {
+          "id": "13806",
+          "name": "Matt Lauter",
+          "position": "TE",
+          "team": "NO",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        },
+        {
+          "id": "13957",
+          "name": "Kenny Fletcher Jr.",
+          "position": "TE",
+          "team": "GB",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        }
+      ],
+      "promoted": []
+    }
+  },
+  {
     "timestamp": "2026-11-09T18:01:09.288Z",
     "mode": "in-season",
     "playerCount": 899,
