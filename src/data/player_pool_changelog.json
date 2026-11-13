@@ -1,5 +1,308 @@
 [
   {
+    "timestamp": "2026-11-13T15:48:22.391Z",
+    "mode": "in-season",
+    "playerCount": 898,
+    "summary": {
+      "newPlayers": 6,
+      "teamChanges": 1,
+      "injuries": 35,
+      "returns": 11,
+      "practiceSquad": 0,
+      "depthShifts": 27,
+      "removed": 10
+    },
+    "highlights": {
+      "trades": [
+        {
+          "id": "11320",
+          "name": "Nikko Remigio",
+          "position": "WR",
+          "from": "KC",
+          "to": "HOU",
+          "status": "Active"
+        }
+      ],
+      "injuries": [
+        {
+          "id": "2471",
+          "name": "Michael Burton",
+          "position": "RB",
+          "team": "CLE",
+          "status": "Q",
+          "bodyPart": "Calf",
+          "notes": null
+        },
+        {
+          "id": "3161",
+          "name": "Carson Wentz",
+          "position": "QB",
+          "team": "MIN",
+          "status": "Q",
+          "bodyPart": "Ankle",
+          "notes": null
+        },
+        {
+          "id": "3214",
+          "name": "Hunter Henry",
+          "position": "TE",
+          "team": "NE",
+          "status": "Q",
+          "bodyPart": "Foot",
+          "notes": null
+        },
+        {
+          "id": "3271",
+          "name": "Tyler Higbee",
+          "position": "TE",
+          "team": "LAR",
+          "status": "Q",
+          "bodyPart": "Illness",
+          "notes": null
+        },
+        {
+          "id": "5844",
+          "name": "T.J. Hockenson",
+          "position": "TE",
+          "team": "MIN",
+          "status": "Q",
+          "bodyPart": "Wrist",
+          "notes": null
+        },
+        {
+          "id": "5947",
+          "name": "Jakobi Meyers",
+          "position": "WR",
+          "team": "JAX",
+          "status": "Q",
+          "bodyPart": "Ankle",
+          "notes": null
+        },
+        {
+          "id": "5967",
+          "name": "Tony Pollard",
+          "position": "RB",
+          "team": "TEN",
+          "status": "Q",
+          "bodyPart": "Finger",
+          "notes": null
+        },
+        {
+          "id": "6865",
+          "name": "Colby Parkinson",
+          "position": "TE",
+          "team": "LAR",
+          "status": "Q",
+          "bodyPart": "Ribs",
+          "notes": null
+        },
+        {
+          "id": "7547",
+          "name": "Amon-Ra St. Brown",
+          "position": "WR",
+          "team": "DET",
+          "status": "Q",
+          "bodyPart": "Ribs",
+          "notes": null
+        },
+        {
+          "id": "7568",
+          "name": "Brevin Jordan",
+          "position": "TE",
+          "team": "HOU",
+          "status": "Q",
+          "bodyPart": "Foot",
+          "notes": null
+        },
+        {
+          "id": "7571",
+          "name": "Rashod Bateman",
+          "position": "WR",
+          "team": "BAL",
+          "status": "Q",
+          "bodyPart": "Calf",
+          "notes": null
+        },
+        {
+          "id": "7611",
+          "name": "Rhamondre Stevenson",
+          "position": "RB",
+          "team": "NE",
+          "status": "Q",
+          "previousStatus": "D",
+          "bodyPart": "Knee",
+          "notes": null
+        },
+        {
+          "id": "8210",
+          "name": "Chig Okonkwo",
+          "position": "TE",
+          "team": "WAS",
+          "status": "Q",
+          "bodyPart": "Back",
+          "notes": null
+        },
+        {
+          "id": "9493",
+          "name": "Puka Nacua",
+          "position": "WR",
+          "team": "LAR",
+          "status": "IR",
+          "previousStatus": "D",
+          "bodyPart": "Knee - MCL",
+          "notes": "Sprain"
+        },
+        {
+          "id": "9511",
+          "name": "Keaton Mitchell",
+          "position": "RB",
+          "team": "LAC",
+          "status": "Q",
+          "bodyPart": "Hip",
+          "notes": null
+        },
+        {
+          "id": "10210",
+          "name": "Cameron Latu",
+          "position": "TE",
+          "team": "NE",
+          "status": "Q",
+          "bodyPart": "Back",
+          "notes": null
+        },
+        {
+          "id": "10214",
+          "name": "Davis Allen",
+          "position": "TE",
+          "team": "LAR",
+          "status": "Q",
+          "bodyPart": "Oblique",
+          "notes": null
+        },
+        {
+          "id": "10219",
+          "name": "Chris Rodriguez Jr.",
+          "position": "RB",
+          "team": "JAX",
+          "status": "Q",
+          "bodyPart": "Hand",
+          "notes": null
+        },
+        {
+          "id": "10236",
+          "name": "Dalton Kincaid",
+          "position": "TE",
+          "team": "BUF",
+          "status": "Q",
+          "bodyPart": "Ankle",
+          "notes": null
+        },
+        {
+          "id": "11056",
+          "name": "Jared Wayne",
+          "position": "WR",
+          "team": "MIA",
+          "status": "Q",
+          "bodyPart": "Quadriceps",
+          "notes": null
+        }
+      ],
+      "returns": [
+        {
+          "id": "4046",
+          "name": "Patrick Mahomes",
+          "position": "QB",
+          "team": "KC",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "6797",
+          "name": "Justin Herbert",
+          "position": "QB",
+          "team": "LAC",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "7757",
+          "name": "Ben Skowronek",
+          "position": "WR",
+          "team": "PIT",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "8135",
+          "name": "Treylon Burks",
+          "position": "WR",
+          "team": "WAS",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "8204",
+          "name": "Bo Melton",
+          "position": "WR",
+          "team": "GB",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "8676",
+          "name": "Rashid Shaheed",
+          "position": "WR",
+          "team": "SEA",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "10871",
+          "name": "Luke Schoonmaker",
+          "position": "TE",
+          "team": "DAL",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "11237",
+          "name": "Jacob Saylors",
+          "position": "RB",
+          "team": "DET",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "11581",
+          "name": "MarShawn Lloyd",
+          "position": "RB",
+          "team": "GB",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "11624",
+          "name": "Xavier Worthy",
+          "position": "WR",
+          "team": "KC",
+          "wasStatus": "Q"
+        }
+      ],
+      "rookies": [
+        {
+          "id": "13827",
+          "name": "Tanner Arkin",
+          "position": "TE",
+          "team": "NE",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        },
+        {
+          "id": "13949",
+          "name": "Damon Bankston",
+          "position": "RB",
+          "team": "MIN",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        }
+      ],
+      "promoted": []
+    }
+  },
+  {
     "timestamp": "2026-11-11T15:43:30.811Z",
     "mode": "in-season",
     "playerCount": 902,
