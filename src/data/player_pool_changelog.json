@@ -1,5 +1,287 @@
 [
   {
+    "timestamp": "2026-11-16T17:41:47.659Z",
+    "mode": "in-season",
+    "playerCount": 895,
+    "summary": {
+      "newPlayers": 1,
+      "teamChanges": 0,
+      "injuries": 71,
+      "returns": 33,
+      "practiceSquad": 0,
+      "depthShifts": 10,
+      "removed": 4
+    },
+    "highlights": {
+      "trades": [],
+      "injuries": [
+        {
+          "id": "829",
+          "name": "Andy Dalton",
+          "position": "QB",
+          "team": "ATL",
+          "status": "O",
+          "bodyPart": "Coach's Decision",
+          "notes": null
+        },
+        {
+          "id": "1373",
+          "name": "Geno Smith",
+          "position": "QB",
+          "team": "NYJ",
+          "status": "O",
+          "bodyPart": "Ankle",
+          "notes": null
+        },
+        {
+          "id": "1466",
+          "name": "Travis Kelce",
+          "position": "TE",
+          "team": "KC",
+          "status": "Q",
+          "bodyPart": "Ankle",
+          "notes": null
+        },
+        {
+          "id": "2197",
+          "name": "Brandin Cooks",
+          "position": "WR",
+          "team": "SF",
+          "status": "O",
+          "bodyPart": "Coach's Decision",
+          "notes": null
+        },
+        {
+          "id": "2216",
+          "name": "Mike Evans",
+          "position": "WR",
+          "team": "SF",
+          "status": "O",
+          "previousStatus": "Q",
+          "bodyPart": "Achilles",
+          "notes": "Tendinitis"
+        },
+        {
+          "id": "2471",
+          "name": "Michael Burton",
+          "position": "RB",
+          "team": "CLE",
+          "status": "IR",
+          "previousStatus": "Q",
+          "bodyPart": "Calf",
+          "notes": null
+        },
+        {
+          "id": "4054",
+          "name": "Mo Alie-Cox",
+          "position": "TE",
+          "team": "IND",
+          "status": "IR",
+          "previousStatus": "Q",
+          "bodyPart": "Groin",
+          "notes": null
+        },
+        {
+          "id": "4351",
+          "name": "Tim Patrick",
+          "position": "WR",
+          "team": "NYJ",
+          "status": "O",
+          "bodyPart": "Coach's Decision",
+          "notes": null
+        },
+        {
+          "id": "4892",
+          "name": "Baker Mayfield",
+          "position": "QB",
+          "team": "TB",
+          "status": "Q",
+          "bodyPart": "Lower Leg",
+          "notes": null
+        },
+        {
+          "id": "5844",
+          "name": "T.J. Hockenson",
+          "position": "TE",
+          "team": "MIN",
+          "status": "O",
+          "previousStatus": "Q",
+          "bodyPart": "Wrist",
+          "notes": null
+        },
+        {
+          "id": "5849",
+          "name": "Kyler Murray",
+          "position": "QB",
+          "team": "MIN",
+          "status": "O",
+          "previousStatus": "D",
+          "bodyPart": "Hamstring",
+          "notes": "Strain"
+        },
+        {
+          "id": "5859",
+          "name": "A.J. Brown",
+          "position": "WR",
+          "team": "NE",
+          "status": "O",
+          "previousStatus": "Q",
+          "bodyPart": "Hamstring",
+          "notes": null
+        },
+        {
+          "id": "5892",
+          "name": "David Montgomery",
+          "position": "RB",
+          "team": "HOU",
+          "status": "O",
+          "previousStatus": "Q",
+          "bodyPart": "Groin",
+          "notes": null
+        },
+        {
+          "id": "6828",
+          "name": "AJ Dillon",
+          "position": "RB",
+          "team": "CAR",
+          "status": "O",
+          "bodyPart": "Coach's Decision",
+          "notes": null
+        },
+        {
+          "id": "7049",
+          "name": "Jauan Jennings",
+          "position": "WR",
+          "team": "MIN",
+          "status": "O",
+          "previousStatus": "Q",
+          "bodyPart": "Calf",
+          "notes": null
+        },
+        {
+          "id": "7538",
+          "name": "Zach Wilson",
+          "position": "QB",
+          "team": "NO",
+          "status": "O",
+          "bodyPart": "Coach's Decision",
+          "notes": null
+        },
+        {
+          "id": "7568",
+          "name": "Brevin Jordan",
+          "position": "TE",
+          "team": "HOU",
+          "status": "O",
+          "previousStatus": "Q",
+          "bodyPart": "Finger",
+          "notes": null
+        },
+        {
+          "id": "8002",
+          "name": "Shane Buechele",
+          "position": "QB",
+          "team": "BUF",
+          "status": "O",
+          "bodyPart": "Coach's Decision",
+          "notes": null
+        },
+        {
+          "id": "8112",
+          "name": "Drake London",
+          "position": "WR",
+          "team": "ATL",
+          "status": "Q",
+          "bodyPart": "Head",
+          "notes": null
+        },
+        {
+          "id": "8116",
+          "name": "Pierre Strong Jr.",
+          "position": "RB",
+          "team": "GB",
+          "status": "O",
+          "bodyPart": "Coach's Decision",
+          "notes": null
+        }
+      ],
+      "returns": [
+        {
+          "id": "3161",
+          "name": "Carson Wentz",
+          "position": "QB",
+          "team": "MIN",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "3214",
+          "name": "Hunter Henry",
+          "position": "TE",
+          "team": "NE",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "3271",
+          "name": "Tyler Higbee",
+          "position": "TE",
+          "team": "LAR",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "5854",
+          "name": "Drew Lock",
+          "position": "QB",
+          "team": "SEA",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "5872",
+          "name": "Deebo Samuel Sr.",
+          "position": "WR",
+          "team": "SF",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "5947",
+          "name": "Jakobi Meyers",
+          "position": "WR",
+          "team": "JAX",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "5967",
+          "name": "Tony Pollard",
+          "position": "RB",
+          "team": "TEN",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "6865",
+          "name": "Colby Parkinson",
+          "position": "TE",
+          "team": "LAR",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "7204",
+          "name": "Reggie Gilliam",
+          "position": "RB",
+          "team": "NE",
+          "wasStatus": "IR"
+        },
+        {
+          "id": "7535",
+          "name": "Hunter Long",
+          "position": "TE",
+          "team": "ARI",
+          "wasStatus": "IR"
+        }
+      ],
+      "rookies": [],
+      "promoted": []
+    }
+  },
+  {
     "timestamp": "2026-11-13T15:48:22.391Z",
     "mode": "in-season",
     "playerCount": 898,
