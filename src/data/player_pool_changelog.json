@@ -1,5 +1,325 @@
 [
   {
+    "timestamp": "2026-11-18T16:50:14.592Z",
+    "mode": "in-season",
+    "playerCount": 911,
+    "summary": {
+      "newPlayers": 18,
+      "teamChanges": 1,
+      "injuries": 28,
+      "returns": 33,
+      "practiceSquad": 0,
+      "depthShifts": 20,
+      "removed": 2
+    },
+    "highlights": {
+      "trades": [
+        {
+          "id": "11306",
+          "name": "Xavier Gipson",
+          "position": "WR",
+          "from": "PHI",
+          "to": "NYG",
+          "status": "Active"
+        }
+      ],
+      "injuries": [
+        {
+          "id": "1373",
+          "name": "Geno Smith",
+          "position": "QB",
+          "team": "NYJ",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Ankle",
+          "notes": null
+        },
+        {
+          "id": "2216",
+          "name": "Mike Evans",
+          "position": "WR",
+          "team": "SF",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Achilles",
+          "notes": "Tendinitis"
+        },
+        {
+          "id": "5844",
+          "name": "T.J. Hockenson",
+          "position": "TE",
+          "team": "MIN",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Wrist",
+          "notes": null
+        },
+        {
+          "id": "7049",
+          "name": "Jauan Jennings",
+          "position": "WR",
+          "team": "MIN",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Calf",
+          "notes": null
+        },
+        {
+          "id": "7525",
+          "name": "DeVonta Smith",
+          "position": "WR",
+          "team": "PHI",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Hamstring",
+          "notes": null
+        },
+        {
+          "id": "7526",
+          "name": "Jaylen Waddle",
+          "position": "WR",
+          "team": "DEN",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Concussion",
+          "notes": null
+        },
+        {
+          "id": "7568",
+          "name": "Brevin Jordan",
+          "position": "TE",
+          "team": "HOU",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Foot",
+          "notes": null
+        },
+        {
+          "id": "8126",
+          "name": "Wan'Dale Robinson",
+          "position": "WR",
+          "team": "TEN",
+          "status": "IR",
+          "previousStatus": "Q",
+          "bodyPart": "Ankle",
+          "notes": null
+        },
+        {
+          "id": "8151",
+          "name": "Kenneth Walker III",
+          "position": "RB",
+          "team": "KC",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Groin",
+          "notes": null
+        },
+        {
+          "id": "8414",
+          "name": "Britain Covey",
+          "position": "WR",
+          "team": "PHI",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Knee",
+          "notes": null
+        },
+        {
+          "id": "9486",
+          "name": "Dontayvion Wicks",
+          "position": "WR",
+          "team": "PHI",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Ankle",
+          "notes": null
+        },
+        {
+          "id": "10220",
+          "name": "Will Mallory",
+          "position": "TE",
+          "team": "IND",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Hamstring",
+          "notes": null
+        },
+        {
+          "id": "10225",
+          "name": "Jonathan Mingo",
+          "position": "WR",
+          "team": "DAL",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Ankle",
+          "notes": null
+        },
+        {
+          "id": "11056",
+          "name": "Jared Wayne",
+          "position": "WR",
+          "team": "MIA",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Quadriceps",
+          "notes": null
+        },
+        {
+          "id": "11604",
+          "name": "Brock Bowers",
+          "position": "TE",
+          "team": "LV",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Ankle",
+          "notes": null
+        },
+        {
+          "id": "11628",
+          "name": "Marvin Harrison Jr.",
+          "position": "WR",
+          "team": "HOU",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Hamstring",
+          "notes": null
+        },
+        {
+          "id": "11635",
+          "name": "Ladd McConkey",
+          "position": "WR",
+          "team": "LAC",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Back",
+          "notes": "Spasms"
+        },
+        {
+          "id": "11762",
+          "name": "Anthony Gould",
+          "position": "WR",
+          "team": "IND",
+          "status": "Q",
+          "bodyPart": "Toe",
+          "notes": null
+        },
+        {
+          "id": "11942",
+          "name": "Colson Yankoff",
+          "position": "TE",
+          "team": "WAS",
+          "status": "Q",
+          "previousStatus": "O",
+          "bodyPart": "Knee",
+          "notes": null
+        },
+        {
+          "id": "12474",
+          "name": "Woody Marks",
+          "position": "RB",
+          "team": "HOU",
+          "status": "D",
+          "previousStatus": "O",
+          "bodyPart": "Concussion",
+          "notes": null
+        }
+      ],
+      "returns": [
+        {
+          "id": "1466",
+          "name": "Travis Kelce",
+          "position": "TE",
+          "team": "KC",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "1737",
+          "name": "Case Keenum",
+          "position": "QB",
+          "team": "CHI",
+          "wasStatus": "O"
+        },
+        {
+          "id": "2197",
+          "name": "Brandin Cooks",
+          "position": "WR",
+          "team": "SF",
+          "wasStatus": "O"
+        },
+        {
+          "id": "4033",
+          "name": "David Njoku",
+          "position": "TE",
+          "team": "LAC",
+          "wasStatus": "IR"
+        },
+        {
+          "id": "4351",
+          "name": "Tim Patrick",
+          "position": "WR",
+          "team": "NYJ",
+          "wasStatus": "O"
+        },
+        {
+          "id": "5892",
+          "name": "David Montgomery",
+          "position": "RB",
+          "team": "HOU",
+          "wasStatus": "O"
+        },
+        {
+          "id": "5938",
+          "name": "Lil'Jordan Humphrey",
+          "position": "WR",
+          "team": "DEN",
+          "wasStatus": "O"
+        },
+        {
+          "id": "6828",
+          "name": "AJ Dillon",
+          "position": "RB",
+          "team": "CAR",
+          "wasStatus": "O"
+        },
+        {
+          "id": "7538",
+          "name": "Zach Wilson",
+          "position": "QB",
+          "team": "NO",
+          "wasStatus": "O"
+        },
+        {
+          "id": "7583",
+          "name": "Sam Ehlinger",
+          "position": "QB",
+          "team": "DEN",
+          "wasStatus": "O"
+        }
+      ],
+      "rookies": [
+        {
+          "id": "13658",
+          "name": "Brady Boyd",
+          "position": "WR",
+          "team": "MIA",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        },
+        {
+          "id": "13778",
+          "name": "EJ Smith",
+          "position": "RB",
+          "team": "KC",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        }
+      ],
+      "promoted": []
+    }
+  },
+  {
     "timestamp": "2026-11-16T17:41:47.659Z",
     "mode": "in-season",
     "playerCount": 895,
