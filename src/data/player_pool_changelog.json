@@ -1,5 +1,280 @@
 [
   {
+    "timestamp": "2026-11-23T19:41:07.221Z",
+    "mode": "in-season",
+    "playerCount": 904,
+    "summary": {
+      "newPlayers": 0,
+      "teamChanges": 0,
+      "injuries": 56,
+      "returns": 28,
+      "practiceSquad": 0,
+      "depthShifts": 9,
+      "removed": 4
+    },
+    "highlights": {
+      "trades": [],
+      "injuries": [
+        {
+          "id": "1737",
+          "name": "Case Keenum",
+          "position": "QB",
+          "team": "CHI",
+          "status": "O",
+          "bodyPart": "Coach's Decision",
+          "notes": null
+        },
+        {
+          "id": "3198",
+          "name": "Derrick Henry",
+          "position": "RB",
+          "team": "BAL",
+          "status": "Q",
+          "bodyPart": "Concussion",
+          "notes": null
+        },
+        {
+          "id": "3286",
+          "name": "Demarcus Robinson",
+          "position": "WR",
+          "team": "SF",
+          "status": "O",
+          "bodyPart": "Coach's Decision",
+          "notes": null
+        },
+        {
+          "id": "4033",
+          "name": "David Njoku",
+          "position": "TE",
+          "team": "LAC",
+          "status": "Q",
+          "bodyPart": "Shoulder",
+          "notes": null
+        },
+        {
+          "id": "4866",
+          "name": "Saquon Barkley",
+          "position": "RB",
+          "team": "PHI",
+          "status": "Q",
+          "bodyPart": "Arm",
+          "notes": null
+        },
+        {
+          "id": "4983",
+          "name": "DJ Moore",
+          "position": "WR",
+          "team": "BUF",
+          "status": "Q",
+          "bodyPart": "Knee",
+          "notes": null
+        },
+        {
+          "id": "5938",
+          "name": "Lil'Jordan Humphrey",
+          "position": "WR",
+          "team": "DEN",
+          "status": "O",
+          "bodyPart": "Coach's Decision",
+          "notes": null
+        },
+        {
+          "id": "6185",
+          "name": "Easton Stick",
+          "position": "QB",
+          "team": "TB",
+          "status": "O",
+          "bodyPart": "Coach's Decision",
+          "notes": null
+        },
+        {
+          "id": "6797",
+          "name": "Justin Herbert",
+          "position": "QB",
+          "team": "LAC",
+          "status": "Q",
+          "bodyPart": "Concussion",
+          "notes": null
+        },
+        {
+          "id": "6828",
+          "name": "AJ Dillon",
+          "position": "RB",
+          "team": "CAR",
+          "status": "O",
+          "bodyPart": "Coach's Decision",
+          "notes": null
+        },
+        {
+          "id": "7002",
+          "name": "Juwan Johnson",
+          "position": "TE",
+          "team": "NO",
+          "status": "Q",
+          "bodyPart": "Hamstring",
+          "notes": null
+        },
+        {
+          "id": "7538",
+          "name": "Zach Wilson",
+          "position": "QB",
+          "team": "NO",
+          "status": "O",
+          "bodyPart": "Coach's Decision",
+          "notes": null
+        },
+        {
+          "id": "7583",
+          "name": "Sam Ehlinger",
+          "position": "QB",
+          "team": "DEN",
+          "status": "O",
+          "bodyPart": "Coach's Decision",
+          "notes": null
+        },
+        {
+          "id": "7828",
+          "name": "Noah Gray",
+          "position": "TE",
+          "team": "KC",
+          "status": "Q",
+          "bodyPart": "Ribs",
+          "notes": null
+        },
+        {
+          "id": "8136",
+          "name": "Rachaad White",
+          "position": "RB",
+          "team": "WAS",
+          "status": "Q",
+          "bodyPart": "Heel",
+          "notes": null
+        },
+        {
+          "id": "8150",
+          "name": "Kyren Williams",
+          "position": "RB",
+          "team": "LAR",
+          "status": "Q",
+          "bodyPart": "Toe",
+          "notes": "Soreness"
+        },
+        {
+          "id": "8151",
+          "name": "Kenneth Walker III",
+          "position": "RB",
+          "team": "KC",
+          "status": "O",
+          "previousStatus": "Q",
+          "bodyPart": "Groin",
+          "notes": "Soreness"
+        },
+        {
+          "id": "8219",
+          "name": "Jelani Woods",
+          "position": "TE",
+          "team": "NYJ",
+          "status": "O",
+          "bodyPart": "Coach's Decision",
+          "notes": null
+        },
+        {
+          "id": "8527",
+          "name": "Dareke Young",
+          "position": "WR",
+          "team": "LV",
+          "status": "Q",
+          "bodyPart": "Undisclosed",
+          "notes": null
+        },
+        {
+          "id": "9486",
+          "name": "Dontayvion Wicks",
+          "position": "WR",
+          "team": "PHI",
+          "status": "IR",
+          "previousStatus": "Q",
+          "bodyPart": "Ankle",
+          "notes": null
+        }
+      ],
+      "returns": [
+        {
+          "id": "1373",
+          "name": "Geno Smith",
+          "position": "QB",
+          "team": "NYJ",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "2216",
+          "name": "Mike Evans",
+          "position": "WR",
+          "team": "SF",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "2505",
+          "name": "Darren Waller",
+          "position": "TE",
+          "team": "CAR",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "4892",
+          "name": "Baker Mayfield",
+          "position": "QB",
+          "team": "TB",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "4995",
+          "name": "Ian Thomas",
+          "position": "TE",
+          "team": "LV",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "5844",
+          "name": "T.J. Hockenson",
+          "position": "TE",
+          "team": "MIN",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "5947",
+          "name": "Jakobi Meyers",
+          "position": "WR",
+          "team": "JAX",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "6083",
+          "name": "Matt Gay",
+          "position": "K",
+          "team": "LV",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "7526",
+          "name": "Jaylen Waddle",
+          "position": "WR",
+          "team": "DEN",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "7527",
+          "name": "Mac Jones",
+          "position": "QB",
+          "team": "SF",
+          "wasStatus": "Q"
+        }
+      ],
+      "rookies": [],
+      "promoted": []
+    }
+  },
+  {
     "timestamp": "2026-11-20T16:31:13.440Z",
     "mode": "in-season",
     "playerCount": 908,
