@@ -1,5 +1,285 @@
 [
   {
+    "timestamp": "2026-11-27T17:45:04.057Z",
+    "mode": "in-season",
+    "playerCount": 903,
+    "summary": {
+      "newPlayers": 5,
+      "teamChanges": 0,
+      "injuries": 45,
+      "returns": 9,
+      "practiceSquad": 0,
+      "depthShifts": 8,
+      "removed": 3
+    },
+    "highlights": {
+      "trades": [],
+      "injuries": [
+        {
+          "id": "1737",
+          "name": "Case Keenum",
+          "position": "QB",
+          "team": "CHI",
+          "status": "O",
+          "bodyPart": "Coach's Decision",
+          "notes": null
+        },
+        {
+          "id": "2216",
+          "name": "Mike Evans",
+          "position": "WR",
+          "team": "SF",
+          "status": "Q",
+          "bodyPart": "Achilles",
+          "notes": "Tendinitis"
+        },
+        {
+          "id": "2505",
+          "name": "Darren Waller",
+          "position": "TE",
+          "team": "CAR",
+          "status": "Q",
+          "bodyPart": "Knee",
+          "notes": null
+        },
+        {
+          "id": "3198",
+          "name": "Derrick Henry",
+          "position": "RB",
+          "team": "BAL",
+          "status": "Q",
+          "bodyPart": "Concussion",
+          "notes": null
+        },
+        {
+          "id": "3271",
+          "name": "Tyler Higbee",
+          "position": "TE",
+          "team": "LAR",
+          "status": "O",
+          "bodyPart": "Chest",
+          "notes": null
+        },
+        {
+          "id": "4033",
+          "name": "David Njoku",
+          "position": "TE",
+          "team": "LAC",
+          "status": "Q",
+          "bodyPart": "Shoulder",
+          "notes": null
+        },
+        {
+          "id": "4866",
+          "name": "Saquon Barkley",
+          "position": "RB",
+          "team": "PHI",
+          "status": "Q",
+          "bodyPart": "Neck",
+          "notes": "Stinger"
+        },
+        {
+          "id": "5001",
+          "name": "Dalton Schultz",
+          "position": "TE",
+          "team": "HOU",
+          "status": "Q",
+          "bodyPart": "Illness",
+          "notes": null
+        },
+        {
+          "id": "5022",
+          "name": "Dallas Goedert",
+          "position": "TE",
+          "team": "PHI",
+          "status": "O",
+          "bodyPart": "Shoulder",
+          "notes": null
+        },
+        {
+          "id": "5850",
+          "name": "Josh Jacobs",
+          "position": "RB",
+          "team": "GB",
+          "status": "O",
+          "previousStatus": "Q",
+          "bodyPart": "Finger",
+          "notes": "Surgery"
+        },
+        {
+          "id": "5854",
+          "name": "Drew Lock",
+          "position": "QB",
+          "team": "SEA",
+          "status": "Q",
+          "bodyPart": "Elbow",
+          "notes": null
+        },
+        {
+          "id": "5947",
+          "name": "Jakobi Meyers",
+          "position": "WR",
+          "team": "JAX",
+          "status": "Q",
+          "bodyPart": "Ankle",
+          "notes": null
+        },
+        {
+          "id": "6806",
+          "name": "J.K. Dobbins",
+          "position": "RB",
+          "team": "DEN",
+          "status": "SUS",
+          "previousStatus": "O",
+          "bodyPart": "Personal",
+          "notes": null
+        },
+        {
+          "id": "7204",
+          "name": "Reggie Gilliam",
+          "position": "RB",
+          "team": "NE",
+          "status": "Q",
+          "bodyPart": "Knee",
+          "notes": null
+        },
+        {
+          "id": "7525",
+          "name": "DeVonta Smith",
+          "position": "WR",
+          "team": "PHI",
+          "status": "Q",
+          "bodyPart": "Back",
+          "notes": null
+        },
+        {
+          "id": "7531",
+          "name": "Feleipe Franks",
+          "position": "TE",
+          "team": "CAR",
+          "status": "Q",
+          "bodyPart": "Wrist",
+          "notes": null
+        },
+        {
+          "id": "7535",
+          "name": "Hunter Long",
+          "position": "TE",
+          "team": "ARI",
+          "status": "Q",
+          "bodyPart": "Ankle",
+          "notes": null
+        },
+        {
+          "id": "7694",
+          "name": "Tommy Tremble",
+          "position": "TE",
+          "team": "CAR",
+          "status": "Q",
+          "bodyPart": "Knee",
+          "notes": null
+        },
+        {
+          "id": "7757",
+          "name": "Ben Skowronek",
+          "position": "WR",
+          "team": "PIT",
+          "status": "IR",
+          "previousStatus": "Q",
+          "bodyPart": "Calf",
+          "notes": null
+        },
+        {
+          "id": "8110",
+          "name": "Jake Ferguson",
+          "position": "TE",
+          "team": "DAL",
+          "status": "O",
+          "previousStatus": "D",
+          "bodyPart": "Knee",
+          "notes": null
+        }
+      ],
+      "returns": [
+        {
+          "id": "4943",
+          "name": "Sam Darnold",
+          "position": "QB",
+          "team": "SEA",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "6819",
+          "name": "Michael Pittman Jr.",
+          "position": "WR",
+          "team": "PIT",
+          "wasStatus": "IR"
+        },
+        {
+          "id": "7828",
+          "name": "Noah Gray",
+          "position": "TE",
+          "team": "KC",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "8168",
+          "name": "Skyy Moore",
+          "position": "WR",
+          "team": "GB",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "8204",
+          "name": "Bo Melton",
+          "position": "WR",
+          "team": "GB",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "8527",
+          "name": "Dareke Young",
+          "position": "WR",
+          "team": "LV",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "10236",
+          "name": "Dalton Kincaid",
+          "position": "TE",
+          "team": "BUF",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "11608",
+          "name": "Isaiah Williams",
+          "position": "WR",
+          "team": "NYJ",
+          "wasStatus": "Q"
+        },
+        {
+          "id": "11628",
+          "name": "Marvin Harrison Jr.",
+          "position": "WR",
+          "team": "HOU",
+          "wasStatus": "Q"
+        }
+      ],
+      "rookies": [
+        {
+          "id": "13861",
+          "name": "Daniel Sobkowicz",
+          "position": "WR",
+          "team": "HOU",
+          "status": "Active",
+          "yearsExp": 0,
+          "isRookie": true
+        }
+      ],
+      "promoted": []
+    }
+  },
+  {
     "timestamp": "2026-11-25T18:18:18.224Z",
     "mode": "in-season",
     "playerCount": 901,

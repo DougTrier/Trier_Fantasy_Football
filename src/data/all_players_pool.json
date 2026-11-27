@@ -37,43 +37,6 @@
     "trendingDrop": false
   },
   {
-    "id": "96",
-    "firstName": "Aaron",
-    "lastName": "Rodgers",
-    "fullName": "Aaron Rodgers",
-    "position": "QB",
-    "team": "PIT",
-    "number": 8,
-    "depthChartOrder": 2,
-    "depthChartPosition": "QB",
-    "status": "Active",
-    "practiceStatus": null,
-    "isActive": true,
-    "practiceSquad": false,
-    "injuryStatus": null,
-    "injuryBodyPart": null,
-    "injuryStartDate": null,
-    "injuryNotes": null,
-    "espnId": "8439",
-    "yahooId": "7200",
-    "gsisId": "00-0023459",
-    "sleeperTeamId": "PIT",
-    "yearsExp": 21,
-    "college": "California",
-    "age": 42,
-    "birthdate": "1983-12-02",
-    "height": "74",
-    "weight": "223",
-    "photoUrl": "https://a.espncdn.com/i/headshots/nfl/players/full/8439.png",
-    "fantasyPositions": [
-      "QB"
-    ],
-    "searchRank": 186,
-    "adp": null,
-    "trendingAdd": false,
-    "trendingDrop": true
-  },
-  {
     "id": "138",
     "firstName": "Ben",
     "lastName": "Roethlisberger",
@@ -179,10 +142,10 @@
     "fantasyPositions": [
       "QB"
     ],
-    "searchRank": 66,
+    "searchRank": 65,
     "adp": null,
     "trendingAdd": false,
-    "trendingDrop": false
+    "trendingDrop": true
   },
   {
     "id": "812",
@@ -329,7 +292,7 @@
     ],
     "searchRank": 261,
     "adp": null,
-    "trendingAdd": false,
+    "trendingAdd": true,
     "trendingDrop": false
   },
   {
@@ -364,7 +327,7 @@
     "fantasyPositions": [
       "K"
     ],
-    "searchRank": 659,
+    "searchRank": 662,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -753,8 +716,8 @@
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "O",
+    "injuryBodyPart": "Coach's Decision",
     "injuryStartDate": null,
     "injuryNotes": null,
     "espnId": "15168",
@@ -922,7 +885,7 @@
     "searchRank": 190,
     "adp": null,
     "trendingAdd": false,
-    "trendingDrop": true
+    "trendingDrop": false
   },
   {
     "id": "2078",
@@ -956,7 +919,7 @@
     "fantasyPositions": [
       "WR"
     ],
-    "searchRank": 445,
+    "searchRank": 446,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -1036,6 +999,43 @@
     "trendingDrop": false
   },
   {
+    "id": "2197",
+    "firstName": "Brandin",
+    "lastName": "Cooks",
+    "fullName": "Brandin Cooks",
+    "position": "WR",
+    "team": "SF",
+    "number": 84,
+    "depthChartOrder": null,
+    "depthChartPosition": null,
+    "status": "Active",
+    "practiceStatus": null,
+    "isActive": true,
+    "practiceSquad": false,
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryStartDate": null,
+    "injuryNotes": null,
+    "espnId": "16731",
+    "yahooId": "27548",
+    "gsisId": "00-0031236",
+    "sleeperTeamId": "SF",
+    "yearsExp": 12,
+    "college": "Oregon State",
+    "age": 33,
+    "birthdate": "1993-09-25",
+    "height": "70",
+    "weight": "189",
+    "photoUrl": "https://a.espncdn.com/i/headshots/nfl/players/full/16731.png",
+    "fantasyPositions": [
+      "WR"
+    ],
+    "searchRank": 588,
+    "adp": null,
+    "trendingAdd": false,
+    "trendingDrop": false
+  },
+  {
     "id": "2216",
     "firstName": "Mike",
     "lastName": "Evans",
@@ -1049,10 +1049,10 @@
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Q",
+    "injuryBodyPart": "Achilles",
     "injuryStartDate": null,
-    "injuryNotes": null,
+    "injuryNotes": "Tendinitis",
     "espnId": "16737",
     "yahooId": "27535",
     "gsisId": "00-0031408",
@@ -1178,7 +1178,7 @@
     "fantasyPositions": [
       "WR"
     ],
-    "searchRank": 560,
+    "searchRank": 559,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -1308,8 +1308,8 @@
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Q",
+    "injuryBodyPart": "Knee",
     "injuryStartDate": null,
     "injuryNotes": null,
     "espnId": "2576925",
@@ -1377,7 +1377,7 @@
     "team": "DET",
     "number": 86,
     "depthChartOrder": 5,
-    "depthChartPosition": "RWR",
+    "depthChartPosition": "SWR",
     "status": "Active",
     "practiceStatus": null,
     "isActive": true,
@@ -1641,8 +1641,8 @@
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Q",
+    "injuryBodyPart": "Concussion",
     "injuryStartDate": null,
     "injuryNotes": null,
     "espnId": "3043078",
@@ -1931,14 +1931,14 @@
     "position": "TE",
     "team": "LAR",
     "number": 89,
-    "depthChartOrder": 1,
+    "depthChartOrder": 2,
     "depthChartPosition": "TE",
     "status": "Active",
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "O",
+    "injuryBodyPart": "Chest",
     "injuryStartDate": null,
     "injuryNotes": null,
     "espnId": "2573401",
@@ -1957,8 +1957,8 @@
     ],
     "searchRank": 652,
     "adp": null,
-    "trendingAdd": true,
-    "trendingDrop": false
+    "trendingAdd": false,
+    "trendingDrop": true
   },
   {
     "id": "3286",
@@ -1968,7 +1968,7 @@
     "position": "WR",
     "team": "SF",
     "number": 11,
-    "depthChartOrder": 5,
+    "depthChartOrder": 7,
     "depthChartPosition": "LWR",
     "status": "Active",
     "practiceStatus": null,
@@ -1995,7 +1995,7 @@
     "searchRank": 679,
     "adp": null,
     "trendingAdd": false,
-    "trendingDrop": true
+    "trendingDrop": false
   },
   {
     "id": "3294",
@@ -2029,7 +2029,7 @@
     "fantasyPositions": [
       "QB"
     ],
-    "searchRank": 39,
+    "searchRank": 38,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -2399,10 +2399,10 @@
     "fantasyPositions": [
       "QB"
     ],
-    "searchRank": 290,
+    "searchRank": 291,
     "adp": null,
     "trendingAdd": true,
-    "trendingDrop": false
+    "trendingDrop": true
   },
   {
     "id": "4033",
@@ -2412,14 +2412,14 @@
     "position": "TE",
     "team": "LAC",
     "number": 83,
-    "depthChartOrder": 1,
+    "depthChartOrder": 2,
     "depthChartPosition": "TE",
     "status": "Active",
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Q",
+    "injuryBodyPart": "Shoulder",
     "injuryStartDate": null,
     "injuryNotes": null,
     "espnId": "3123076",
@@ -2523,7 +2523,7 @@
     "position": "WR",
     "team": "TB",
     "number": 14,
-    "depthChartOrder": 3,
+    "depthChartOrder": 2,
     "depthChartPosition": "SWR",
     "status": "Active",
     "practiceStatus": null,
@@ -2695,10 +2695,10 @@
     "fantasyPositions": [
       "TE"
     ],
-    "searchRank": 461,
+    "searchRank": 463,
     "adp": null,
     "trendingAdd": true,
-    "trendingDrop": false
+    "trendingDrop": true
   },
   {
     "id": "4080",
@@ -2843,7 +2843,7 @@
     "fantasyPositions": [
       "RB"
     ],
-    "searchRank": 458,
+    "searchRank": 456,
     "adp": null,
     "trendingAdd": true,
     "trendingDrop": false
@@ -2882,7 +2882,7 @@
     ],
     "searchRank": 697,
     "adp": null,
-    "trendingAdd": false,
+    "trendingAdd": true,
     "trendingDrop": false
   },
   {
@@ -3226,7 +3226,7 @@
     "position": "TE",
     "team": "PHI",
     "number": 83,
-    "depthChartOrder": 5,
+    "depthChartOrder": 4,
     "depthChartPosition": "TE",
     "status": "Active",
     "practiceStatus": null,
@@ -3250,7 +3250,7 @@
     "fantasyPositions": [
       "TE"
     ],
-    "searchRank": 550,
+    "searchRank": 549,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -3398,7 +3398,7 @@
     "fantasyPositions": [
       "TE"
     ],
-    "searchRank": 388,
+    "searchRank": 386,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -3663,43 +3663,6 @@
     "trendingDrop": false
   },
   {
-    "id": "4718",
-    "firstName": "Dare",
-    "lastName": "Ogunbowale",
-    "fullName": "Dare Ogunbowale",
-    "position": "RB",
-    "team": "HOU",
-    "number": 23,
-    "depthChartOrder": null,
-    "depthChartPosition": null,
-    "status": "Active",
-    "practiceStatus": null,
-    "isActive": true,
-    "practiceSquad": false,
-    "injuryStatus": null,
-    "injuryBodyPart": null,
-    "injuryStartDate": null,
-    "injuryNotes": null,
-    "espnId": "2983509",
-    "yahooId": "30860",
-    "gsisId": "00-0033854",
-    "sleeperTeamId": "HOU",
-    "yearsExp": 9,
-    "college": "Wisconsin",
-    "age": 32,
-    "birthdate": "1994-05-04",
-    "height": "70",
-    "weight": "205",
-    "photoUrl": "https://a.espncdn.com/i/headshots/nfl/players/full/2983509.png",
-    "fantasyPositions": [
-      "RB"
-    ],
-    "searchRank": 661,
-    "adp": null,
-    "trendingAdd": false,
-    "trendingDrop": false
-  },
-  {
     "id": "4744",
     "firstName": "Barrett",
     "lastName": "Burns",
@@ -3750,10 +3713,10 @@
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Q",
+    "injuryBodyPart": "Neck",
     "injuryStartDate": null,
-    "injuryNotes": null,
+    "injuryNotes": "Stinger",
     "espnId": "3929630",
     "yahooId": "30972",
     "gsisId": "00-0034844",
@@ -4120,8 +4083,8 @@
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": "Q",
-    "injuryBodyPart": "Quadriceps",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
     "injuryStartDate": null,
     "injuryNotes": null,
     "espnId": "3912547",
@@ -4138,9 +4101,9 @@
     "fantasyPositions": [
       "QB"
     ],
-    "searchRank": 92,
+    "searchRank": 93,
     "adp": null,
-    "trendingAdd": false,
+    "trendingAdd": true,
     "trendingDrop": false
   },
   {
@@ -4151,7 +4114,7 @@
     "position": "WR",
     "team": "SF",
     "number": 3,
-    "depthChartOrder": 7,
+    "depthChartOrder": 8,
     "depthChartPosition": "SWR",
     "status": "Inactive",
     "practiceStatus": null,
@@ -4323,7 +4286,7 @@
     "fantasyPositions": [
       "QB"
     ],
-    "searchRank": 3,
+    "searchRank": 4,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -4360,7 +4323,7 @@
     "fantasyPositions": [
       "TE"
     ],
-    "searchRank": 397,
+    "searchRank": 395,
     "adp": null,
     "trendingAdd": true,
     "trendingDrop": false
@@ -4416,8 +4379,8 @@
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Q",
+    "injuryBodyPart": "Illness",
     "injuryStartDate": null,
     "injuryNotes": null,
     "espnId": "3117256",
@@ -4564,8 +4527,8 @@
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "O",
+    "injuryBodyPart": "Shoulder",
     "injuryStartDate": null,
     "injuryNotes": null,
     "espnId": "3121023",
@@ -5335,13 +5298,13 @@
     "position": "RB",
     "team": "GB",
     "number": 8,
-    "depthChartOrder": 1,
+    "depthChartOrder": 4,
     "depthChartPosition": "RB",
     "status": "Active",
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": "Q",
+    "injuryStatus": "O",
     "injuryBodyPart": "Finger",
     "injuryStartDate": null,
     "injuryNotes": "Surgery",
@@ -5378,8 +5341,8 @@
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Q",
+    "injuryBodyPart": "Elbow",
     "injuryStartDate": null,
     "injuryNotes": null,
     "espnId": "3924327",
@@ -5711,8 +5674,8 @@
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Q",
+    "injuryBodyPart": "Ankle",
     "injuryStartDate": null,
     "injuryNotes": null,
     "espnId": "3916433",
@@ -5954,7 +5917,7 @@
     "searchRank": 220,
     "adp": null,
     "trendingAdd": true,
-    "trendingDrop": false
+    "trendingDrop": true
   },
   {
     "id": "6001",
@@ -6260,8 +6223,8 @@
     "position": "QB",
     "team": "LAC",
     "number": 6,
-    "depthChartOrder": null,
-    "depthChartPosition": null,
+    "depthChartOrder": 3,
+    "depthChartPosition": "QB",
     "status": "Active",
     "practiceStatus": null,
     "isActive": true,
@@ -7053,7 +7016,7 @@
     "sleeperTeamId": "NYG",
     "yearsExp": 7,
     "college": "Bemidji State",
-    "age": 29,
+    "age": 30,
     "birthdate": "1996-11-26",
     "height": "72",
     "weight": "190",
@@ -7246,7 +7209,7 @@
     "fantasyPositions": [
       "RB"
     ],
-    "searchRank": 46,
+    "searchRank": 44,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -7320,7 +7283,7 @@
     "fantasyPositions": [
       "QB"
     ],
-    "searchRank": 33,
+    "searchRank": 34,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -7400,6 +7363,43 @@
     "trendingDrop": false
   },
   {
+    "id": "6803",
+    "firstName": "Brandon",
+    "lastName": "Aiyuk",
+    "fullName": "Brandon Aiyuk",
+    "position": "WR",
+    "team": "WAS",
+    "number": 11,
+    "depthChartOrder": null,
+    "depthChartPosition": null,
+    "status": "Active",
+    "practiceStatus": null,
+    "isActive": true,
+    "practiceSquad": false,
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryStartDate": null,
+    "injuryNotes": null,
+    "espnId": "4360438",
+    "yahooId": "32695",
+    "gsisId": null,
+    "sleeperTeamId": "WAS",
+    "yearsExp": 6,
+    "college": "Arizona State",
+    "age": 28,
+    "birthdate": "1998-03-17",
+    "height": "72",
+    "weight": "200",
+    "photoUrl": "https://a.espncdn.com/i/headshots/nfl/players/full/4360438.png",
+    "fantasyPositions": [
+      "WR"
+    ],
+    "searchRank": 177,
+    "adp": null,
+    "trendingAdd": false,
+    "trendingDrop": false
+  },
+  {
     "id": "6804",
     "firstName": "Jordan",
     "lastName": "Love",
@@ -7444,13 +7444,13 @@
     "position": "RB",
     "team": "DEN",
     "number": 27,
-    "depthChartOrder": 3,
+    "depthChartOrder": 4,
     "depthChartPosition": "RB",
     "status": "Active",
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": "O",
+    "injuryStatus": "SUS",
     "injuryBodyPart": "Personal",
     "injuryStartDate": null,
     "injuryNotes": null,
@@ -7518,16 +7518,16 @@
     "position": "WR",
     "team": "PIT",
     "number": 11,
-    "depthChartOrder": 7,
+    "depthChartOrder": 4,
     "depthChartPosition": "RWR",
-    "status": "Inactive",
+    "status": "Active",
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": "IR",
-    "injuryBodyPart": "Foot",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
     "injuryStartDate": null,
-    "injuryNotes": "Plantar Fasciitis",
+    "injuryNotes": null,
     "espnId": "4035687",
     "yahooId": "32704",
     "gsisId": null,
@@ -7542,10 +7542,10 @@
     "fantasyPositions": [
       "WR"
     ],
-    "searchRank": 106,
+    "searchRank": 107,
     "adp": null,
     "trendingAdd": false,
-    "trendingDrop": false
+    "trendingDrop": true
   },
   {
     "id": "6826",
@@ -7740,7 +7740,7 @@
     "position": "TE",
     "team": "LAR",
     "number": 84,
-    "depthChartOrder": 2,
+    "depthChartOrder": 1,
     "depthChartPosition": "TE",
     "status": "Active",
     "practiceStatus": null,
@@ -7875,7 +7875,7 @@
     "fantasyPositions": [
       "QB"
     ],
-    "searchRank": 27,
+    "searchRank": 28,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -7998,7 +7998,7 @@
     "fullName": "Sean McKeon",
     "position": "TE",
     "team": "IND",
-    "number": 49,
+    "number": 48,
     "depthChartOrder": null,
     "depthChartPosition": null,
     "status": "Active",
@@ -8560,8 +8560,8 @@
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Q",
+    "injuryBodyPart": "Knee",
     "injuryStartDate": null,
     "injuryNotes": null,
     "espnId": "4039505",
@@ -8726,7 +8726,7 @@
     "fantasyPositions": [
       "QB"
     ],
-    "searchRank": 41,
+    "searchRank": 42,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -8745,8 +8745,8 @@
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Q",
+    "injuryBodyPart": "Back",
     "injuryStartDate": null,
     "injuryNotes": null,
     "espnId": null,
@@ -8765,7 +8765,7 @@
     ],
     "searchRank": 33,
     "adp": null,
-    "trendingAdd": false,
+    "trendingAdd": true,
     "trendingDrop": false
   },
   {
@@ -8856,8 +8856,8 @@
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Q",
+    "injuryBodyPart": "Wrist",
     "injuryStartDate": null,
     "injuryNotes": null,
     "espnId": null,
@@ -8893,8 +8893,8 @@
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Q",
+    "injuryBodyPart": "Ankle",
     "injuryStartDate": null,
     "injuryNotes": null,
     "espnId": null,
@@ -9061,7 +9061,7 @@
     ],
     "searchRank": 34,
     "adp": null,
-    "trendingAdd": true,
+    "trendingAdd": false,
     "trendingDrop": false
   },
   {
@@ -9173,7 +9173,7 @@
     "searchRank": 532,
     "adp": null,
     "trendingAdd": false,
-    "trendingDrop": true
+    "trendingDrop": false
   },
   {
     "id": "7562",
@@ -9183,8 +9183,8 @@
     "position": "WR",
     "team": "LAR",
     "number": 8,
-    "depthChartOrder": 2,
-    "depthChartPosition": "RWR",
+    "depthChartOrder": 3,
+    "depthChartPosition": "LWR",
     "status": "Active",
     "practiceStatus": null,
     "isActive": true,
@@ -9244,7 +9244,7 @@
     "fantasyPositions": [
       "WR"
     ],
-    "searchRank": 3,
+    "searchRank": 4,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -9283,8 +9283,8 @@
     ],
     "searchRank": 86,
     "adp": null,
-    "trendingAdd": true,
-    "trendingDrop": false
+    "trendingAdd": false,
+    "trendingDrop": true
   },
   {
     "id": "7568",
@@ -9318,7 +9318,7 @@
     "fantasyPositions": [
       "TE"
     ],
-    "searchRank": 454,
+    "searchRank": 456,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -9479,7 +9479,7 @@
     "position": "WR",
     "team": "WAS",
     "number": 6,
-    "depthChartOrder": 7,
+    "depthChartOrder": 8,
     "depthChartPosition": "RWR",
     "status": "Inactive",
     "practiceStatus": null,
@@ -10023,7 +10023,7 @@
     ],
     "searchRank": 58,
     "adp": null,
-    "trendingAdd": true,
+    "trendingAdd": false,
     "trendingDrop": false
   },
   {
@@ -10151,8 +10151,8 @@
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Q",
+    "injuryBodyPart": "Knee",
     "injuryStartDate": null,
     "injuryNotes": null,
     "espnId": null,
@@ -10293,13 +10293,13 @@
     "position": "WR",
     "team": "PIT",
     "number": 15,
-    "depthChartOrder": 4,
+    "depthChartOrder": 8,
     "depthChartPosition": "RWR",
-    "status": "Active",
+    "status": "Inactive",
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": "Q",
+    "injuryStatus": "IR",
     "injuryBodyPart": "Calf",
     "injuryStartDate": null,
     "injuryNotes": null,
@@ -10317,7 +10317,7 @@
     "fantasyPositions": [
       "WR"
     ],
-    "searchRank": 592,
+    "searchRank": 593,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -10373,8 +10373,8 @@
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": "Q",
-    "injuryBodyPart": "Ribs",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
     "injuryStartDate": null,
     "injuryNotes": null,
     "espnId": null,
@@ -10428,7 +10428,7 @@
     "fantasyPositions": [
       "K"
     ],
-    "searchRank": 153,
+    "searchRank": 155,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -10568,7 +10568,7 @@
     "sleeperTeamId": "DET",
     "yearsExp": 5,
     "college": "Notre Dame",
-    "age": 27,
+    "age": 28,
     "birthdate": "1998-11-27",
     "height": "77",
     "weight": "254",
@@ -10699,7 +10699,7 @@
     "fullName": "Shane Buechele",
     "position": "QB",
     "team": "IND",
-    "number": 6,
+    "number": 4,
     "depthChartOrder": 2,
     "depthChartPosition": "QB",
     "status": "Active",
@@ -10774,7 +10774,7 @@
     "position": "RB",
     "team": "DEN",
     "number": 46,
-    "depthChartOrder": 2,
+    "depthChartOrder": 3,
     "depthChartPosition": "RB",
     "status": "Active",
     "practiceStatus": null,
@@ -10909,7 +10909,7 @@
     "fantasyPositions": [
       "TE"
     ],
-    "searchRank": 296,
+    "searchRank": 295,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -10922,13 +10922,13 @@
     "position": "TE",
     "team": "DAL",
     "number": 87,
-    "depthChartOrder": 3,
+    "depthChartOrder": 4,
     "depthChartPosition": "TE",
     "status": "Active",
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": "D",
+    "injuryStatus": "O",
     "injuryBodyPart": "Knee",
     "injuryStartDate": null,
     "injuryNotes": null,
@@ -11150,8 +11150,8 @@
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Q",
+    "injuryBodyPart": "Hamstring",
     "injuryStartDate": null,
     "injuryNotes": null,
     "espnId": null,
@@ -11271,7 +11271,7 @@
     "sleeperTeamId": "CLE",
     "yearsExp": 4,
     "college": "Michigan",
-    "age": 26,
+    "age": 27,
     "birthdate": "1999-11-26",
     "height": "74",
     "weight": "228",
@@ -11446,8 +11446,8 @@
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Q",
+    "injuryBodyPart": "Groin",
     "injuryStartDate": null,
     "injuryNotes": null,
     "espnId": null,
@@ -11557,8 +11557,8 @@
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Q",
+    "injuryBodyPart": "Foot",
     "injuryStartDate": null,
     "injuryNotes": null,
     "espnId": null,
@@ -11578,7 +11578,7 @@
     "searchRank": 679,
     "adp": null,
     "trendingAdd": false,
-    "trendingDrop": true
+    "trendingDrop": false
   },
   {
     "id": "8136",
@@ -11921,7 +11921,7 @@
     "position": "WR",
     "team": "CAR",
     "number": 13,
-    "depthChartOrder": 4,
+    "depthChartOrder": 3,
     "depthChartPosition": "LWR",
     "status": "Active",
     "practiceStatus": null,
@@ -12032,7 +12032,7 @@
     "position": "RB",
     "team": "KC",
     "number": 9,
-    "depthChartOrder": 1,
+    "depthChartOrder": 4,
     "depthChartPosition": "RB",
     "status": "Active",
     "practiceStatus": null,
@@ -12056,7 +12056,7 @@
     "fantasyPositions": [
       "RB"
     ],
-    "searchRank": 19,
+    "searchRank": 17,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -12204,7 +12204,7 @@
     "fantasyPositions": [
       "QB"
     ],
-    "searchRank": 123,
+    "searchRank": 122,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -12260,8 +12260,8 @@
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "O",
+    "injuryBodyPart": "Concussion",
     "injuryStartDate": null,
     "injuryNotes": null,
     "espnId": null,
@@ -12297,8 +12297,8 @@
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": "Q",
-    "injuryBodyPart": "Ankle",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
     "injuryStartDate": null,
     "injuryNotes": null,
     "espnId": null,
@@ -12328,7 +12328,7 @@
     "position": "TE",
     "team": "DAL",
     "number": 84,
-    "depthChartOrder": 4,
+    "depthChartOrder": 3,
     "depthChartPosition": "TE",
     "status": "Active",
     "practiceStatus": null,
@@ -12402,14 +12402,14 @@
     "position": "TE",
     "team": "PHI",
     "number": 81,
-    "depthChartOrder": 4,
+    "depthChartOrder": 5,
     "depthChartPosition": "TE",
     "status": "Active",
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "O",
+    "injuryBodyPart": "Coach's Decision",
     "injuryStartDate": null,
     "injuryNotes": null,
     "espnId": null,
@@ -12519,8 +12519,8 @@
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Q",
+    "injuryBodyPart": "Ankle",
     "injuryStartDate": null,
     "injuryNotes": null,
     "espnId": null,
@@ -12699,13 +12699,13 @@
     "team": "GB",
     "number": 16,
     "depthChartOrder": 6,
-    "depthChartPosition": "RWR",
+    "depthChartPosition": "LWR",
     "status": "Active",
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": "Q",
-    "injuryBodyPart": "Thigh",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
     "injuryStartDate": null,
     "injuryNotes": null,
     "espnId": null,
@@ -12722,7 +12722,7 @@
     "fantasyPositions": [
       "WR"
     ],
-    "searchRank": 636,
+    "searchRank": 623,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -12846,16 +12846,16 @@
     "position": "RB",
     "team": "DEN",
     "number": 28,
-    "depthChartOrder": 5,
+    "depthChartOrder": 2,
     "depthChartPosition": "RB",
-    "status": "Inactive",
+    "status": "Active",
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": "IR",
+    "injuryStatus": "Q",
     "injuryBodyPart": "Thumb",
     "injuryStartDate": null,
-    "injuryNotes": null,
+    "injuryNotes": "Fracture",
     "espnId": null,
     "yahooId": null,
     "gsisId": null,
@@ -13364,7 +13364,7 @@
     "position": "RB",
     "team": "TEN",
     "number": 36,
-    "depthChartOrder": 3,
+    "depthChartOrder": 2,
     "depthChartPosition": "RB",
     "status": "Active",
     "practiceStatus": null,
@@ -13512,7 +13512,7 @@
     "position": "RB",
     "team": "CHI",
     "number": 38,
-    "depthChartOrder": 5,
+    "depthChartOrder": 4,
     "depthChartPosition": "RB",
     "status": "Inactive",
     "practiceStatus": null,
@@ -13647,7 +13647,7 @@
     "fantasyPositions": [
       "TE"
     ],
-    "searchRank": 392,
+    "searchRank": 393,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -13703,8 +13703,8 @@
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": "Q",
-    "injuryBodyPart": "Undisclosed",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
     "injuryStartDate": null,
     "injuryNotes": null,
     "espnId": null,
@@ -13721,7 +13721,7 @@
     "fantasyPositions": [
       "WR"
     ],
-    "searchRank": 672,
+    "searchRank": 675,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -13758,7 +13758,7 @@
     "fantasyPositions": [
       "TE"
     ],
-    "searchRank": 545,
+    "searchRank": 547,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -13972,7 +13972,7 @@
     "sleeperTeamId": "DAL",
     "yearsExp": 4,
     "college": "Florida",
-    "age": 27,
+    "age": 28,
     "birthdate": "1998-11-26",
     "height": "70",
     "weight": "205",
@@ -14091,7 +14091,7 @@
     "fantasyPositions": [
       "WR"
     ],
-    "searchRank": 446,
+    "searchRank": 445,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -14387,7 +14387,7 @@
     "fantasyPositions": [
       "QB"
     ],
-    "searchRank": 130,
+    "searchRank": 131,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -14424,7 +14424,7 @@
     "fantasyPositions": [
       "QB"
     ],
-    "searchRank": 476,
+    "searchRank": 474,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -14538,7 +14538,7 @@
     "searchRank": 104,
     "adp": null,
     "trendingAdd": true,
-    "trendingDrop": true
+    "trendingDrop": false
   },
   {
     "id": "9481",
@@ -14702,8 +14702,8 @@
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "O",
+    "injuryBodyPart": "Shoulder",
     "injuryStartDate": null,
     "injuryNotes": null,
     "espnId": null,
@@ -14739,8 +14739,8 @@
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Q",
+    "injuryBodyPart": "Ankle",
     "injuryStartDate": null,
     "injuryNotes": null,
     "espnId": null,
@@ -14979,7 +14979,7 @@
     "fantasyPositions": [
       "WR"
     ],
-    "searchRank": 485,
+    "searchRank": 484,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -14993,7 +14993,7 @@
     "team": "HOU",
     "number": 1,
     "depthChartOrder": 3,
-    "depthChartPosition": "SWR",
+    "depthChartPosition": "RWR",
     "status": "Active",
     "practiceStatus": null,
     "isActive": true,
@@ -15423,9 +15423,9 @@
     "fantasyPositions": [
       "QB"
     ],
-    "searchRank": 101,
+    "searchRank": 102,
     "adp": null,
-    "trendingAdd": false,
+    "trendingAdd": true,
     "trendingDrop": false
   },
   {
@@ -15648,7 +15648,7 @@
     "searchRank": 184,
     "adp": null,
     "trendingAdd": false,
-    "trendingDrop": false
+    "trendingDrop": true
   },
   {
     "id": "10214",
@@ -15664,8 +15664,8 @@
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Q",
+    "injuryBodyPart": "Ankle",
     "injuryStartDate": null,
     "injuryNotes": null,
     "espnId": null,
@@ -15733,7 +15733,7 @@
     "team": "HOU",
     "number": 19,
     "depthChartOrder": 2,
-    "depthChartPosition": "LWR",
+    "depthChartPosition": "SWR",
     "status": "Active",
     "practiceStatus": null,
     "isActive": true,
@@ -15916,7 +15916,7 @@
     "fullName": "Eric Gray",
     "position": "RB",
     "team": "IND",
-    "number": 38,
+    "number": 31,
     "depthChartOrder": null,
     "depthChartPosition": null,
     "status": "Active",
@@ -15941,7 +15941,7 @@
     "fantasyPositions": [
       "RB"
     ],
-    "searchRank": 569,
+    "searchRank": 568,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -15997,7 +15997,7 @@
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": "Q",
+    "injuryStatus": "O",
     "injuryBodyPart": "Ankle",
     "injuryStartDate": null,
     "injuryNotes": null,
@@ -16287,13 +16287,13 @@
     "position": "RB",
     "team": "CHI",
     "number": 23,
-    "depthChartOrder": 3,
+    "depthChartOrder": 5,
     "depthChartPosition": "RB",
     "status": "Active",
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": "Q",
+    "injuryStatus": "O",
     "injuryBodyPart": "Ankle",
     "injuryStartDate": null,
     "injuryNotes": null,
@@ -16330,8 +16330,8 @@
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": "Q",
-    "injuryBodyPart": "Thumb",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
     "injuryStartDate": null,
     "injuryNotes": null,
     "espnId": null,
@@ -16496,7 +16496,7 @@
     "fantasyPositions": [
       "QB"
     ],
-    "searchRank": 595,
+    "searchRank": 596,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -16681,7 +16681,7 @@
     "fantasyPositions": [
       "QB"
     ],
-    "searchRank": 588,
+    "searchRank": 589,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -16940,7 +16940,7 @@
     "fantasyPositions": [
       "TE"
     ],
-    "searchRank": 426,
+    "searchRank": 432,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -17126,43 +17126,6 @@
       "TE"
     ],
     "searchRank": 417,
-    "adp": null,
-    "trendingAdd": false,
-    "trendingDrop": false
-  },
-  {
-    "id": "11210",
-    "firstName": "Malik",
-    "lastName": "Heath",
-    "fullName": "Malik Heath",
-    "position": "WR",
-    "team": "WAS",
-    "number": 84,
-    "depthChartOrder": null,
-    "depthChartPosition": null,
-    "status": "Active",
-    "practiceStatus": null,
-    "isActive": true,
-    "practiceSquad": false,
-    "injuryStatus": null,
-    "injuryBodyPart": null,
-    "injuryStartDate": null,
-    "injuryNotes": null,
-    "espnId": null,
-    "yahooId": null,
-    "gsisId": null,
-    "sleeperTeamId": "WAS",
-    "yearsExp": 3,
-    "college": "Ole Miss",
-    "age": 26,
-    "birthdate": "2000-03-31",
-    "height": "74",
-    "weight": "213",
-    "photoUrl": "https://sleepercdn.com/content/nfl/players/thumb/11210.jpg",
-    "fantasyPositions": [
-      "WR"
-    ],
-    "searchRank": 419,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -17397,7 +17360,7 @@
     "position": "RB",
     "team": "KC",
     "number": 47,
-    "depthChartOrder": 4,
+    "depthChartOrder": 5,
     "depthChartPosition": "RB",
     "status": "Inactive",
     "practiceStatus": null,
@@ -17693,7 +17656,7 @@
     "position": "RB",
     "team": "GB",
     "number": 30,
-    "depthChartOrder": 4,
+    "depthChartOrder": 3,
     "depthChartPosition": "RB",
     "status": "Active",
     "practiceStatus": null,
@@ -17865,7 +17828,7 @@
     "fantasyPositions": [
       "RB"
     ],
-    "searchRank": 601,
+    "searchRank": 602,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -17902,7 +17865,7 @@
     "fantasyPositions": [
       "WR"
     ],
-    "searchRank": 610,
+    "searchRank": 611,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -18137,7 +18100,7 @@
     "position": "RB",
     "team": "DAL",
     "number": 30,
-    "depthChartOrder": 2,
+    "depthChartOrder": 3,
     "depthChartPosition": "RB",
     "status": "Active",
     "practiceStatus": null,
@@ -18235,7 +18198,7 @@
     "fantasyPositions": [
       "K"
     ],
-    "searchRank": 91,
+    "searchRank": 89,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -18275,7 +18238,7 @@
     "searchRank": 148,
     "adp": null,
     "trendingAdd": false,
-    "trendingDrop": true
+    "trendingDrop": false
   },
   {
     "id": "11557",
@@ -18311,7 +18274,7 @@
     ],
     "searchRank": 503,
     "adp": null,
-    "trendingAdd": false,
+    "trendingAdd": true,
     "trendingDrop": false
   },
   {
@@ -18402,8 +18365,8 @@
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Q",
+    "injuryBodyPart": "Undisclosed",
     "injuryStartDate": null,
     "injuryNotes": null,
     "espnId": null,
@@ -18420,7 +18383,7 @@
     "fantasyPositions": [
       "QB"
     ],
-    "searchRank": 23,
+    "searchRank": 22,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -18494,7 +18457,7 @@
     "fantasyPositions": [
       "QB"
     ],
-    "searchRank": 46,
+    "searchRank": 45,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": true
@@ -18605,7 +18568,7 @@
     "fantasyPositions": [
       "QB"
     ],
-    "searchRank": 21,
+    "searchRank": 22,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -18866,7 +18829,7 @@
     ],
     "searchRank": 686,
     "adp": null,
-    "trendingAdd": true,
+    "trendingAdd": false,
     "trendingDrop": false
   },
   {
@@ -18914,7 +18877,7 @@
     "position": "RB",
     "team": "GB",
     "number": 32,
-    "depthChartOrder": 3,
+    "depthChartOrder": 2,
     "depthChartPosition": "RB",
     "status": "Active",
     "practiceStatus": null,
@@ -19051,7 +19014,7 @@
     ],
     "searchRank": 68,
     "adp": null,
-    "trendingAdd": false,
+    "trendingAdd": true,
     "trendingDrop": false
   },
   {
@@ -19062,7 +19025,7 @@
     "position": "RB",
     "team": "HOU",
     "number": 25,
-    "depthChartOrder": 5,
+    "depthChartOrder": 4,
     "depthChartPosition": "RB",
     "status": "Active",
     "practiceStatus": null,
@@ -19475,8 +19438,8 @@
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": "Q",
-    "injuryBodyPart": "Ribs",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
     "injuryStartDate": null,
     "injuryNotes": null,
     "espnId": null,
@@ -19543,7 +19506,7 @@
     "position": "WR",
     "team": "SF",
     "number": 4,
-    "depthChartOrder": 6,
+    "depthChartOrder": 5,
     "depthChartPosition": "SWR",
     "status": "Active",
     "practiceStatus": null,
@@ -19755,7 +19718,7 @@
     "searchRank": 122,
     "adp": null,
     "trendingAdd": false,
-    "trendingDrop": false
+    "trendingDrop": true
   },
   {
     "id": "11625",
@@ -19765,7 +19728,7 @@
     "position": "WR",
     "team": "NYJ",
     "number": 15,
-    "depthChartOrder": 3,
+    "depthChartOrder": 2,
     "depthChartPosition": "RWR",
     "status": "Active",
     "practiceStatus": null,
@@ -19791,7 +19754,7 @@
     ],
     "searchRank": 162,
     "adp": null,
-    "trendingAdd": false,
+    "trendingAdd": true,
     "trendingDrop": true
   },
   {
@@ -19802,7 +19765,7 @@
     "position": "WR",
     "team": "CAR",
     "number": 17,
-    "depthChartOrder": 3,
+    "depthChartOrder": 4,
     "depthChartPosition": "RWR",
     "status": "Active",
     "practiceStatus": null,
@@ -19877,15 +19840,15 @@
     "team": "HOU",
     "number": 18,
     "depthChartOrder": 5,
-    "depthChartPosition": "RWR",
+    "depthChartPosition": "LWR",
     "status": "Active",
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": "Q",
-    "injuryBodyPart": "Hamstring",
+    "injuryStatus": null,
+    "injuryBodyPart": null,
     "injuryStartDate": null,
-    "injuryNotes": "Strain",
+    "injuryNotes": null,
     "espnId": null,
     "yahooId": null,
     "gsisId": null,
@@ -19976,7 +19939,7 @@
     ],
     "searchRank": 688,
     "adp": null,
-    "trendingAdd": true,
+    "trendingAdd": false,
     "trendingDrop": true
   },
   {
@@ -20013,7 +19976,7 @@
     ],
     "searchRank": 75,
     "adp": null,
-    "trendingAdd": false,
+    "trendingAdd": true,
     "trendingDrop": false
   },
   {
@@ -20048,7 +20011,7 @@
     "fantasyPositions": [
       "WR"
     ],
-    "searchRank": 28,
+    "searchRank": 26,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -20124,7 +20087,7 @@
     ],
     "searchRank": 35,
     "adp": null,
-    "trendingAdd": true,
+    "trendingAdd": false,
     "trendingDrop": false
   },
   {
@@ -20209,7 +20172,7 @@
     "position": "WR",
     "team": "SF",
     "number": 1,
-    "depthChartOrder": 9,
+    "depthChartOrder": 10,
     "depthChartPosition": null,
     "status": "Inactive",
     "practiceStatus": null,
@@ -20283,8 +20246,8 @@
     "position": "RB",
     "team": "DEN",
     "number": 25,
-    "depthChartOrder": null,
-    "depthChartPosition": null,
+    "depthChartOrder": 6,
+    "depthChartPosition": "RB",
     "status": "Active",
     "practiceStatus": null,
     "isActive": true,
@@ -20382,6 +20345,43 @@
       "RB"
     ],
     "searchRank": 141,
+    "adp": null,
+    "trendingAdd": false,
+    "trendingDrop": false
+  },
+  {
+    "id": "11648",
+    "firstName": "Kedon",
+    "lastName": "Slovis",
+    "fullName": "Kedon Slovis",
+    "position": "QB",
+    "team": "ARI",
+    "number": 15,
+    "depthChartOrder": 4,
+    "depthChartPosition": "QB",
+    "status": "Active",
+    "practiceStatus": null,
+    "isActive": true,
+    "practiceSquad": false,
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryStartDate": null,
+    "injuryNotes": null,
+    "espnId": null,
+    "yahooId": null,
+    "gsisId": null,
+    "sleeperTeamId": "ARI",
+    "yearsExp": 2,
+    "college": "BYU",
+    "age": 25,
+    "birthdate": "2001-04-11",
+    "height": "74",
+    "weight": "223",
+    "photoUrl": "https://sleepercdn.com/content/nfl/players/thumb/11648.jpg",
+    "fantasyPositions": [
+      "QB"
+    ],
+    "searchRank": 591,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -21013,7 +21013,7 @@
     "searchRank": 209,
     "adp": null,
     "trendingAdd": true,
-    "trendingDrop": false
+    "trendingDrop": true
   },
   {
     "id": "11895",
@@ -21207,7 +21207,7 @@
     "fullName": "Ian Wheeler",
     "position": "RB",
     "team": "LAC",
-    "number": 27,
+    "number": 40,
     "depthChartOrder": null,
     "depthChartPosition": null,
     "status": "Active",
@@ -21430,7 +21430,7 @@
     "position": "RB",
     "team": "HOU",
     "number": 44,
-    "depthChartOrder": 6,
+    "depthChartOrder": 5,
     "depthChartPosition": "RB",
     "status": "Inactive",
     "practiceStatus": null,
@@ -21494,7 +21494,7 @@
     "searchRank": 355,
     "adp": null,
     "trendingAdd": false,
-    "trendingDrop": true
+    "trendingDrop": false
   },
   {
     "id": "12217",
@@ -21763,7 +21763,7 @@
     "position": "RB",
     "team": "KC",
     "number": 24,
-    "depthChartOrder": 5,
+    "depthChartOrder": 6,
     "depthChartPosition": "RB",
     "status": "Inactive",
     "practiceStatus": null,
@@ -22065,8 +22065,8 @@
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Q",
+    "injuryBodyPart": "Achilles",
     "injuryStartDate": null,
     "injuryNotes": null,
     "espnId": null,
@@ -22305,7 +22305,7 @@
     "fantasyPositions": [
       "RB"
     ],
-    "searchRank": 37,
+    "searchRank": 36,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -22381,7 +22381,7 @@
     ],
     "searchRank": 208,
     "adp": null,
-    "trendingAdd": true,
+    "trendingAdd": false,
     "trendingDrop": false
   },
   {
@@ -22429,7 +22429,7 @@
     "position": "WR",
     "team": "TB",
     "number": 15,
-    "depthChartOrder": 2,
+    "depthChartOrder": 3,
     "depthChartPosition": "SWR",
     "status": "Active",
     "practiceStatus": null,
@@ -22530,7 +22530,7 @@
     "searchRank": 141,
     "adp": null,
     "trendingAdd": false,
-    "trendingDrop": true
+    "trendingDrop": false
   },
   {
     "id": "12489",
@@ -22688,7 +22688,7 @@
     "position": "TE",
     "team": "LAC",
     "number": 86,
-    "depthChartOrder": 2,
+    "depthChartOrder": 1,
     "depthChartPosition": "TE",
     "status": "Active",
     "practiceStatus": null,
@@ -22786,7 +22786,7 @@
     "fantasyPositions": [
       "RB"
     ],
-    "searchRank": 387,
+    "searchRank": 384,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -23048,7 +23048,7 @@
     "searchRank": 153,
     "adp": null,
     "trendingAdd": false,
-    "trendingDrop": true
+    "trendingDrop": false
   },
   {
     "id": "12503",
@@ -23095,7 +23095,7 @@
     "position": "RB",
     "team": "GB",
     "number": 26,
-    "depthChartOrder": 2,
+    "depthChartOrder": 1,
     "depthChartPosition": "RB",
     "status": "Active",
     "practiceStatus": null,
@@ -23138,8 +23138,8 @@
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "O",
+    "injuryBodyPart": "Ankle",
     "injuryStartDate": null,
     "injuryNotes": null,
     "espnId": null,
@@ -23323,8 +23323,8 @@
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Q",
+    "injuryBodyPart": "Illness",
     "injuryStartDate": null,
     "injuryNotes": null,
     "espnId": null,
@@ -23354,7 +23354,7 @@
     "position": "QB",
     "team": "PIT",
     "number": 18,
-    "depthChartOrder": 3,
+    "depthChartOrder": 2,
     "depthChartPosition": "QB",
     "status": "Active",
     "practiceStatus": null,
@@ -23508,8 +23508,8 @@
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "O",
+    "injuryBodyPart": "Knee",
     "injuryStartDate": null,
     "injuryNotes": null,
     "espnId": null,
@@ -23711,7 +23711,7 @@
     "fantasyPositions": [
       "QB"
     ],
-    "searchRank": 115,
+    "searchRank": 116,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -23804,10 +23804,10 @@
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Q",
+    "injuryBodyPart": "Foot",
     "injuryStartDate": null,
-    "injuryNotes": null,
+    "injuryNotes": "Soreness",
     "espnId": null,
     "yahooId": null,
     "gsisId": null,
@@ -24009,7 +24009,7 @@
     ],
     "searchRank": 61,
     "adp": null,
-    "trendingAdd": false,
+    "trendingAdd": true,
     "trendingDrop": false
   },
   {
@@ -24155,7 +24155,7 @@
     "fantasyPositions": [
       "WR"
     ],
-    "searchRank": 572,
+    "searchRank": 571,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -24195,7 +24195,7 @@
     "searchRank": 175,
     "adp": null,
     "trendingAdd": true,
-    "trendingDrop": false
+    "trendingDrop": true
   },
   {
     "id": "12541",
@@ -24340,7 +24340,7 @@
     "fantasyPositions": [
       "RB"
     ],
-    "searchRank": 511,
+    "searchRank": 512,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -24377,9 +24377,9 @@
     "fantasyPositions": [
       "QB"
     ],
-    "searchRank": 88,
+    "searchRank": 87,
     "adp": null,
-    "trendingAdd": false,
+    "trendingAdd": true,
     "trendingDrop": true
   },
   {
@@ -24433,8 +24433,8 @@
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Q",
+    "injuryBodyPart": "Groin",
     "injuryStartDate": null,
     "injuryNotes": null,
     "espnId": null,
@@ -24676,7 +24676,7 @@
     "searchRank": 667,
     "adp": null,
     "trendingAdd": false,
-    "trendingDrop": true
+    "trendingDrop": false
   },
   {
     "id": "12705",
@@ -24908,7 +24908,7 @@
     "position": "TE",
     "team": "DEN",
     "number": 84,
-    "depthChartOrder": 5,
+    "depthChartOrder": 6,
     "depthChartPosition": "TE",
     "status": "Inactive",
     "practiceStatus": null,
@@ -25302,7 +25302,7 @@
     "fantasyPositions": [
       "QB"
     ],
-    "searchRank": 613,
+    "searchRank": 612,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -25493,6 +25493,43 @@
     "trendingDrop": false
   },
   {
+    "id": "12860",
+    "firstName": "Theo",
+    "lastName": "Wease Jr.",
+    "fullName": "Theo Wease Jr.",
+    "position": "WR",
+    "team": "LAC",
+    "number": 82,
+    "depthChartOrder": null,
+    "depthChartPosition": null,
+    "status": "Active",
+    "practiceStatus": null,
+    "isActive": true,
+    "practiceSquad": false,
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryStartDate": null,
+    "injuryNotes": null,
+    "espnId": null,
+    "yahooId": null,
+    "gsisId": null,
+    "sleeperTeamId": "LAC",
+    "yearsExp": 1,
+    "college": "Missouri",
+    "age": 25,
+    "birthdate": "2001-06-25",
+    "height": "74",
+    "weight": "210",
+    "photoUrl": "https://sleepercdn.com/content/nfl/players/thumb/12860.jpg",
+    "fantasyPositions": [
+      "WR"
+    ],
+    "searchRank": 666,
+    "adp": null,
+    "trendingAdd": false,
+    "trendingDrop": false
+  },
+  {
     "id": "12863",
     "firstName": "Andrew",
     "lastName": "Armstrong",
@@ -25590,7 +25627,7 @@
     "sleeperTeamId": "CAR",
     "yearsExp": 1,
     "college": "South Carolina",
-    "age": 25,
+    "age": 26,
     "birthdate": "2000-11-27",
     "height": "76",
     "weight": "240",
@@ -26042,7 +26079,7 @@
     "fantasyPositions": [
       "RB"
     ],
-    "searchRank": 572,
+    "searchRank": 571,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -26227,7 +26264,7 @@
     "fantasyPositions": [
       "RB"
     ],
-    "searchRank": 282,
+    "searchRank": 278,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -26542,8 +26579,8 @@
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "Q",
+    "injuryBodyPart": "Knee",
     "injuryStartDate": null,
     "injuryNotes": null,
     "espnId": null,
@@ -26560,7 +26597,7 @@
     "fantasyPositions": [
       "WR"
     ],
-    "searchRank": 664,
+    "searchRank": 660,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -26943,8 +26980,8 @@
     "position": "WR",
     "team": "PIT",
     "number": 84,
-    "depthChartOrder": null,
-    "depthChartPosition": null,
+    "depthChartOrder": 5,
+    "depthChartPosition": "SWR",
     "status": "Active",
     "practiceStatus": null,
     "isActive": true,
@@ -26967,7 +27004,7 @@
     "fantasyPositions": [
       "WR"
     ],
-    "searchRank": 9999999,
+    "searchRank": 650,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -27115,7 +27152,7 @@
     "fantasyPositions": [
       "WR"
     ],
-    "searchRank": 628,
+    "searchRank": 627,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -27189,10 +27226,10 @@
     "fantasyPositions": [
       "QB"
     ],
-    "searchRank": 109,
+    "searchRank": 108,
     "adp": null,
     "trendingAdd": true,
-    "trendingDrop": false
+    "trendingDrop": true
   },
   {
     "id": "13270",
@@ -27202,7 +27239,7 @@
     "position": "WR",
     "team": "LAR",
     "number": 6,
-    "depthChartOrder": 3,
+    "depthChartOrder": 2,
     "depthChartPosition": "RWR",
     "status": "Active",
     "practiceStatus": null,
@@ -27263,7 +27300,7 @@
     "fantasyPositions": [
       "QB"
     ],
-    "searchRank": 287,
+    "searchRank": 288,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -27356,8 +27393,8 @@
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "O",
+    "injuryBodyPart": "Coach's Decision",
     "injuryStartDate": null,
     "injuryNotes": null,
     "espnId": null,
@@ -27387,13 +27424,13 @@
     "position": "WR",
     "team": "NYJ",
     "number": 11,
-    "depthChartOrder": 2,
+    "depthChartOrder": 3,
     "depthChartPosition": "SWR",
     "status": "Active",
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": "Q",
+    "injuryStatus": "O",
     "injuryBodyPart": "Ankle",
     "injuryStartDate": null,
     "injuryNotes": null,
@@ -27673,7 +27710,7 @@
     "searchRank": 52,
     "adp": null,
     "trendingAdd": false,
-    "trendingDrop": false
+    "trendingDrop": true
   },
   {
     "id": "13288",
@@ -27683,7 +27720,7 @@
     "position": "RB",
     "team": "TEN",
     "number": 32,
-    "depthChartOrder": 2,
+    "depthChartOrder": 3,
     "depthChartPosition": "RB",
     "status": "Active",
     "practiceStatus": null,
@@ -27720,7 +27757,7 @@
     "position": "QB",
     "team": "PIT",
     "number": 16,
-    "depthChartOrder": 4,
+    "depthChartOrder": 3,
     "depthChartPosition": "QB",
     "status": "Active",
     "practiceStatus": null,
@@ -27855,10 +27892,10 @@
     "fantasyPositions": [
       "WR"
     ],
-    "searchRank": 91,
+    "searchRank": 89,
     "adp": null,
     "trendingAdd": false,
-    "trendingDrop": true
+    "trendingDrop": false
   },
   {
     "id": "13295",
@@ -27929,7 +27966,7 @@
     "fantasyPositions": [
       "WR"
     ],
-    "searchRank": 199,
+    "searchRank": 197,
     "adp": null,
     "trendingAdd": true,
     "trendingDrop": true
@@ -28079,7 +28116,7 @@
     ],
     "searchRank": 156,
     "adp": null,
-    "trendingAdd": true,
+    "trendingAdd": false,
     "trendingDrop": false
   },
   {
@@ -28151,7 +28188,7 @@
     "fantasyPositions": [
       "QB"
     ],
-    "searchRank": 396,
+    "searchRank": 398,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -28188,7 +28225,7 @@
     "fantasyPositions": [
       "RB"
     ],
-    "searchRank": 123,
+    "searchRank": 124,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -28487,7 +28524,7 @@
     "searchRank": 196,
     "adp": null,
     "trendingAdd": true,
-    "trendingDrop": false
+    "trendingDrop": true
   },
   {
     "id": "13318",
@@ -28521,7 +28558,7 @@
     "fantasyPositions": [
       "WR"
     ],
-    "searchRank": 609,
+    "searchRank": 610,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -28671,7 +28708,7 @@
     ],
     "searchRank": 630,
     "adp": null,
-    "trendingAdd": false,
+    "trendingAdd": true,
     "trendingDrop": false
   },
   {
@@ -28873,8 +28910,8 @@
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "O",
+    "injuryBodyPart": "Coach's Decision",
     "injuryStartDate": null,
     "injuryNotes": null,
     "espnId": null,
@@ -28941,7 +28978,7 @@
     "position": "RB",
     "team": "KC",
     "number": 10,
-    "depthChartOrder": 2,
+    "depthChartOrder": 1,
     "depthChartPosition": "RB",
     "status": "Active",
     "practiceStatus": null,
@@ -28967,7 +29004,7 @@
     ],
     "searchRank": 113,
     "adp": null,
-    "trendingAdd": false,
+    "trendingAdd": true,
     "trendingDrop": false
   },
   {
@@ -29374,7 +29411,7 @@
     ],
     "searchRank": 656,
     "adp": null,
-    "trendingAdd": false,
+    "trendingAdd": true,
     "trendingDrop": false
   },
   {
@@ -29409,7 +29446,7 @@
     "fantasyPositions": [
       "TE"
     ],
-    "searchRank": 482,
+    "searchRank": 484,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -29465,8 +29502,8 @@
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "O",
+    "injuryBodyPart": "Coach's Decision",
     "injuryStartDate": null,
     "injuryNotes": null,
     "espnId": null,
@@ -29483,7 +29520,7 @@
     "fantasyPositions": [
       "WR"
     ],
-    "searchRank": 390,
+    "searchRank": 392,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -29539,8 +29576,8 @@
     "practiceStatus": null,
     "isActive": true,
     "practiceSquad": false,
-    "injuryStatus": null,
-    "injuryBodyPart": null,
+    "injuryStatus": "O",
+    "injuryBodyPart": "Coach's Decision",
     "injuryStartDate": null,
     "injuryNotes": null,
     "espnId": null,
@@ -29670,7 +29707,7 @@
     ],
     "searchRank": 363,
     "adp": null,
-    "trendingAdd": true,
+    "trendingAdd": false,
     "trendingDrop": false
   },
   {
@@ -29705,7 +29742,7 @@
     "fantasyPositions": [
       "WR"
     ],
-    "searchRank": 181,
+    "searchRank": 179,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -29742,7 +29779,7 @@
     "fantasyPositions": [
       "RB"
     ],
-    "searchRank": 161,
+    "searchRank": 162,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": true
@@ -29866,7 +29903,7 @@
     "position": "RB",
     "team": "KC",
     "number": 34,
-    "depthChartOrder": 3,
+    "depthChartOrder": 2,
     "depthChartPosition": "RB",
     "status": "Active",
     "practiceStatus": null,
@@ -29903,7 +29940,7 @@
     "position": "WR",
     "team": "NO",
     "number": 18,
-    "depthChartOrder": 4,
+    "depthChartOrder": 5,
     "depthChartPosition": "LWR",
     "status": "Active",
     "practiceStatus": null,
@@ -29964,7 +30001,7 @@
     "fantasyPositions": [
       "TE"
     ],
-    "searchRank": 363,
+    "searchRank": 364,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -30038,7 +30075,7 @@
     "fantasyPositions": [
       "RB"
     ],
-    "searchRank": 376,
+    "searchRank": 375,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": true
@@ -30088,7 +30125,7 @@
     "position": "QB",
     "team": "ARI",
     "number": 18,
-    "depthChartOrder": 4,
+    "depthChartOrder": 5,
     "depthChartPosition": "QB",
     "status": "Active",
     "practiceStatus": null,
@@ -30384,7 +30421,7 @@
     "position": "RB",
     "team": "HOU",
     "number": 26,
-    "depthChartOrder": 7,
+    "depthChartOrder": 6,
     "depthChartPosition": "RB",
     "status": "Active",
     "practiceStatus": null,
@@ -30458,7 +30495,7 @@
     "position": "WR",
     "team": "PIT",
     "number": 10,
-    "depthChartOrder": 5,
+    "depthChartOrder": 6,
     "depthChartPosition": "SWR",
     "status": "Active",
     "practiceStatus": null,
@@ -30532,7 +30569,7 @@
     "position": "WR",
     "team": "NO",
     "number": 19,
-    "depthChartOrder": 5,
+    "depthChartOrder": 4,
     "depthChartPosition": "SWR",
     "status": "Active",
     "practiceStatus": null,
@@ -30644,7 +30681,7 @@
     "team": "JAX",
     "number": 18,
     "depthChartOrder": 8,
-    "depthChartPosition": "LWR",
+    "depthChartPosition": "RWR",
     "status": "Active",
     "practiceStatus": null,
     "isActive": true,
@@ -30717,7 +30754,7 @@
     "position": "TE",
     "team": "DEN",
     "number": 89,
-    "depthChartOrder": 6,
+    "depthChartOrder": 4,
     "depthChartPosition": "TE",
     "status": "Active",
     "practiceStatus": null,
@@ -31296,7 +31333,7 @@
     "fantasyPositions": [
       "WR"
     ],
-    "searchRank": 343,
+    "searchRank": 341,
     "adp": null,
     "trendingAdd": false,
     "trendingDrop": false
@@ -31347,7 +31384,7 @@
     "team": "GB",
     "number": 87,
     "depthChartOrder": 4,
-    "depthChartPosition": "LWR",
+    "depthChartPosition": "RWR",
     "status": "Active",
     "practiceStatus": null,
     "isActive": true,
@@ -31635,6 +31672,43 @@
     "trendingDrop": false
   },
   {
+    "id": "13861",
+    "firstName": "Daniel",
+    "lastName": "Sobkowicz",
+    "fullName": "Daniel Sobkowicz",
+    "position": "WR",
+    "team": "HOU",
+    "number": 89,
+    "depthChartOrder": null,
+    "depthChartPosition": null,
+    "status": "Active",
+    "practiceStatus": null,
+    "isActive": true,
+    "practiceSquad": false,
+    "injuryStatus": null,
+    "injuryBodyPart": null,
+    "injuryStartDate": null,
+    "injuryNotes": null,
+    "espnId": null,
+    "yahooId": null,
+    "gsisId": null,
+    "sleeperTeamId": "HOU",
+    "yearsExp": 0,
+    "college": "Illinois State",
+    "age": 24,
+    "birthdate": "2002-09-16",
+    "height": "75",
+    "weight": "205",
+    "photoUrl": "https://sleepercdn.com/content/nfl/players/thumb/13861.jpg",
+    "fantasyPositions": [
+      "WR"
+    ],
+    "searchRank": 678,
+    "adp": null,
+    "trendingAdd": false,
+    "trendingDrop": false
+  },
+  {
     "id": "13870",
     "firstName": "Quentin",
     "lastName": "Moore",
@@ -31715,7 +31789,7 @@
     "fullName": "Jacob De Jesus",
     "position": "WR",
     "team": "SEA",
-    "number": 82,
+    "number": 30,
     "depthChartOrder": null,
     "depthChartPosition": null,
     "status": "Active",
@@ -32001,7 +32075,7 @@
     ],
     "searchRank": 630,
     "adp": null,
-    "trendingAdd": true,
+    "trendingAdd": false,
     "trendingDrop": false
   },
   {
@@ -32187,7 +32261,7 @@
     "searchRank": 9999,
     "adp": null,
     "trendingAdd": false,
-    "trendingDrop": true
+    "trendingDrop": false
   },
   {
     "id": "NE",
@@ -32482,7 +32556,7 @@
     ],
     "searchRank": 9999,
     "adp": null,
-    "trendingAdd": true,
+    "trendingAdd": false,
     "trendingDrop": false
   },
   {
@@ -32779,7 +32853,7 @@
     "searchRank": 9999,
     "adp": null,
     "trendingAdd": true,
-    "trendingDrop": true
+    "trendingDrop": false
   },
   {
     "id": "LAR",
@@ -33001,7 +33075,7 @@
     "searchRank": 9999,
     "adp": null,
     "trendingAdd": false,
-    "trendingDrop": true
+    "trendingDrop": false
   },
   {
     "id": "PHI",
@@ -33074,7 +33148,7 @@
     ],
     "searchRank": 9999,
     "adp": null,
-    "trendingAdd": true,
+    "trendingAdd": false,
     "trendingDrop": false
   },
   {
@@ -33333,7 +33407,7 @@
     ],
     "searchRank": 9999,
     "adp": null,
-    "trendingAdd": true,
+    "trendingAdd": false,
     "trendingDrop": false
   }
 ]
